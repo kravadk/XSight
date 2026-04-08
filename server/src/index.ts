@@ -15,8 +15,12 @@ import { startTokenCatalog } from './services/tokenCatalog.js';
 
 const app = express();
 
+const allowedOrigins = env.corsOrigin === '*'
+  ? true
+  : env.corsOrigin.split(',').map((o) => o.trim()).filter(Boolean);
+
 app.use(cors({
-  origin: env.corsOrigin === '*' ? true : env.corsOrigin,
+  origin: allowedOrigins,
   credentials: env.corsOrigin !== '*',
 }));
 app.use(express.json({ limit: '1mb' }));

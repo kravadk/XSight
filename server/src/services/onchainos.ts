@@ -52,11 +52,19 @@ function authHeaders(method: string, requestPath: string, body = ''): Record<str
   };
 }
 
-async function okxGet<T = unknown>(requestPath: string): Promise<T> {
+async function sleep(ms: number) { return new Promise((r) => setTimeout(r, ms)); }
+
+async function okxGet<T = unknown>(requestPath: string, retries = 2): Promise<T> {
   const res = await fetch(BASE_URL + requestPath, {
     method: 'GET',
     headers: authHeaders('GET', requestPath, ''),
+    signal: AbortSignal.timeout(15_000),
   });
+  if (res.status === 429 && retries > 0) {
+    const retryAfter = Number(res.headers.get('Retry-After') ?? 1) * 1000;
+    await sleep(Math.max(retryAfter, 1000));
+    return okxGet<T>(requestPath, retries - 1);
+  }
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new OnchainOsError(
@@ -66,13 +74,18 @@ async function okxGet<T = unknown>(requestPath: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-async function okxPost<T = unknown>(requestPath: string, payload: unknown): Promise<T> {
+async function okxPost<T = unknown>(requestPath: string, payload: unknown, retries = 1): Promise<T> {
   const body = JSON.stringify(payload);
   const res = await fetch(BASE_URL + requestPath, {
     method: 'POST',
     headers: authHeaders('POST', requestPath, body),
     body,
+    signal: AbortSignal.timeout(20_000),
   });
+  if (res.status === 429 && retries > 0) {
+    await sleep(1500);
+    return okxPost<T>(requestPath, payload, retries - 1);
+  }
   if (!res.ok) {
     const errBody = await res.text().catch(() => '');
     throw new OnchainOsError(

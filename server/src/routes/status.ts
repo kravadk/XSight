@@ -7,6 +7,7 @@ import {
   getEconomyConfig,
   getDeployHistory,
 } from '../services/economyLoop.js';
+import { getAddress } from 'ethers';
 import { getWalletBalances, getTokenSecurity, OnchainOsError } from '../services/onchainos.js';
 import { triggerAutoDeploy, readOkbPrice } from '../services/autoDeploy.js';
 import { activitySnapshot } from '../services/activityTracker.js';
@@ -133,9 +134,16 @@ statusRouter.get('/security', async (req: Request, res: Response) => {
   if (!tokenParam) {
     return res.status(400).json({ error: 'token query param required (symbol or 0x address)' });
   }
-  const resolved = tokenParam.startsWith('0x')
-    ? tokenParam.toLowerCase()
-    : SYMBOL_TO_ADDRESS[tokenParam.toUpperCase()];
+  let resolved: string | undefined;
+  if (tokenParam.startsWith('0x')) {
+    try {
+      resolved = getAddress(tokenParam).toLowerCase();
+    } catch {
+      return res.status(400).json({ error: 'invalid token address' });
+    }
+  } else {
+    resolved = SYMBOL_TO_ADDRESS[tokenParam.toUpperCase()];
+  }
   if (!resolved) {
     return res.status(400).json({ error: `unknown token symbol: ${tokenParam}` });
   }
@@ -152,9 +160,15 @@ statusRouter.get('/security', async (req: Request, res: Response) => {
 });
 
 statusRouter.get('/portfolio', async (req: Request, res: Response) => {
-  const address = String(req.query.address ?? env.agenticWalletAddress);
-  if (!address) {
+  const rawAddress = String(req.query.address ?? env.agenticWalletAddress);
+  if (!rawAddress) {
     return res.status(400).json({ error: 'address required' });
+  }
+  let address: string;
+  try {
+    address = getAddress(rawAddress); // validates checksum + format
+  } catch {
+    return res.status(400).json({ error: 'invalid wallet address' });
   }
   try {
     const balances = await getWalletBalances(address);

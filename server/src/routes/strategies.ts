@@ -64,7 +64,7 @@ strategyRouter.post('/', (req: Request, res: Response) => {
 
   // Per-trigger validation
   const needsTarget = body.kind !== 'new_token';
-  const needsThreshold = ['new_token'].includes(body.kind) ? false : body.kind !== 'new_token';
+  const needsThreshold = body.kind !== 'new_token';
   if (needsTarget && (!body.target || typeof body.target !== 'string')) {
     return res.status(400).json({ error: 'target is required for this trigger kind' });
   }

@@ -23,7 +23,7 @@ export const env = {
   x402PayoutAddress: required('X402_PAYOUT_ADDRESS'),
   x402Network: process.env.X402_NETWORK ?? 'xlayer-mainnet',
   x402Asset: process.env.X402_ASSET ?? 'USDT',
-  corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  corsOrigin: process.env.CORS_ORIGIN ?? 'https://x-sight.vercel.app,http://localhost:5173',
 } as const;
 
 export const isConfigured = {

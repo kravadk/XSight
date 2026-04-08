@@ -133,6 +133,9 @@ async function buildContextBlock(): Promise<string> {
       }
     }
   } else {
+    if (portfolioRes.status === 'rejected') {
+      console.error('[chat] portfolio fetch failed:', portfolioRes.reason instanceof Error ? portfolioRes.reason.message : portfolioRes.reason);
+    }
     lines.push('(portfolio unavailable — wallet not configured or fetch failed)');
   }
 
@@ -182,8 +185,15 @@ chatRouter.post('/sessions', async (req: Request, res: Response) => {
   res.json({ session: { id: s.id, title: s.title, createdAt: s.createdAt, messageCount: 0 } });
 });
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function validateSessionId(id: string, res: Response): boolean {
+  if (!UUID_RE.test(id)) { res.status(400).json({ error: 'Invalid session id' }); return false; }
+  return true;
+}
+
 // ── GET /api/chat/sessions/:id ────────────────────────────────────────────
 chatRouter.get('/sessions/:id', async (req: Request, res: Response) => {
+  if (!validateSessionId(req.params.id, res)) return;
   const s = await getSession(req.params.id);
   if (!s) { res.status(404).json({ error: 'Session not found' }); return; }
   res.json({ messages: s.messages });
@@ -191,6 +201,7 @@ chatRouter.get('/sessions/:id', async (req: Request, res: Response) => {
 
 // ── DELETE /api/chat/sessions/:id ─────────────────────────────────────────
 chatRouter.delete('/sessions/:id', async (req: Request, res: Response) => {
+  if (!validateSessionId(req.params.id, res)) return;
   await deleteSession(req.params.id);
   res.json({ ok: true });
 });
@@ -241,9 +252,9 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       { id: `${now}-ai`,  role: 'ai',   cards: response.cards ?? [],               createdAt: now + 1 },
     ];
     if (sessionId) {
-      appendToSession(sessionId, msgs).catch(() => {});
+      appendToSession(sessionId, msgs).catch((err) => console.error('[chat] session persist failed:', err instanceof Error ? err.message : err));
     } else {
-      appendMessages(msgs).catch(() => {});
+      appendMessages(msgs).catch((err) => console.error('[chat] history persist failed:', err instanceof Error ? err.message : err));
     }
 
     res.json(response);

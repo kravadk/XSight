@@ -10,6 +10,11 @@ export interface X402Options {
 
 export const x402Log: X402CallLog[] = [];
 
+// Warn once at startup so it's visible in logs
+if (process.env.NODE_ENV !== 'production') {
+  console.warn('[x402] dev-bypass is enabled — set NODE_ENV=production to disable');
+}
+
 function logCall(entry: X402CallLog) {
   x402Log.push(entry);
   if (x402Log.length > 500) x402Log.shift();

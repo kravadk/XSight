@@ -64,6 +64,8 @@ const dynamicTokens = new Map<string, string>(); // symbol -> address discovered
 let intervalHandle: NodeJS.Timeout | null = null;
 let lastTickMs = 0;
 let tickInProgress = false;
+let tickStartedAt = 0;
+const TICK_TIMEOUT_MS = 45_000; // reset stuck flag after 45s
 
 function pushSnapshot(symbol: string, snap: RawSnapshot) {
   const arr = snapshots.get(symbol) ?? [];
@@ -95,8 +97,14 @@ async function discoverWalletTokens(): Promise<void> {
 }
 
 async function tick(): Promise<void> {
+  // Reset stuck flag if the previous tick has been running too long
+  if (tickInProgress && Date.now() - tickStartedAt > TICK_TIMEOUT_MS) {
+    console.warn('[tokenTracker] tick timed out — resetting flag');
+    tickInProgress = false;
+  }
   if (tickInProgress) return;
   tickInProgress = true;
+  tickStartedAt = Date.now();
   try {
     await discoverWalletTokens();
     const targets = listAddresses();

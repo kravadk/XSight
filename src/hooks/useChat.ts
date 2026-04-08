@@ -39,6 +39,10 @@ export const useChat = () => {
   const send = useCallback(
     async (text: string) => {
       if (!text.trim()) return;
+      if (text.length > 8000) {
+        addMessage({ id: nextId(), role: 'ai', cards: [{ kind: 'error', text: 'Message too long (max 8000 characters).' }], createdAt: Date.now() });
+        return;
+      }
       // Snapshot history BEFORE we add the new user message — Claude already
       // gets the new message via the `userMessage` field; history should be
       // the prior turns only.

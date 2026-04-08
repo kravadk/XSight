@@ -5,6 +5,7 @@ import { ChatInput } from '../components/chat/ChatInput';
 import { EmptyChat } from '../components/chat/EmptyChat';
 import { ChatCard } from '../components/chat/ChatCard';
 import { AuditModal } from '../components/chat/AuditModal';
+import { ChatErrorBoundary } from '../components/chat/ChatErrorBoundary';
 import { useChatStore } from '../store/chatStore';
 import { api } from '../api/client';
 import type { SessionMeta } from '../api/client';
@@ -168,13 +169,15 @@ export function ChatPage() {
           ) : (
             <>
               {messages.map((m) => (
-                <MessageBubble key={m.id} isAi={m.role === 'ai'}>
-                  <div className="flex flex-col gap-3">
-                    {m.cards.map((c, i) => (
-                      <ChatCard key={i} card={c} />
-                    ))}
-                  </div>
-                </MessageBubble>
+                <ChatErrorBoundary key={m.id}>
+                  <MessageBubble isAi={m.role === 'ai'}>
+                    <div className="flex flex-col gap-3">
+                      {m.cards.map((c, i) => (
+                        <ChatCard key={i} card={c} />
+                      ))}
+                    </div>
+                  </MessageBubble>
+                </ChatErrorBoundary>
               ))}
               {typing && (
                 <motion.div

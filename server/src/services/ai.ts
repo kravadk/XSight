@@ -49,13 +49,19 @@ export async function chat(req: ChatRequest): Promise<ChatResponse> {
 
   let res;
   try {
-    res = await getClient().messages.create({
-      model: env.anthropicModel,
-      max_tokens: 4096, // raised from 1024 — analytical answers can be long
-      system: XSIGHT_SYSTEM_PROMPT,
-      messages,
-    });
+    res = await getClient().messages.create(
+      {
+        model: env.anthropicModel,
+        max_tokens: 4096,
+        system: XSIGHT_SYSTEM_PROMPT,
+        messages,
+      },
+      { signal: AbortSignal.timeout(45_000) },
+    );
   } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw new AiServiceError('AI request timed out after 45s');
+    }
     throw new AiServiceError(err instanceof Error ? err.message : 'anthropic call failed');
   }
 
@@ -90,18 +96,24 @@ export async function analyticsJson<T = unknown>(
 ): Promise<T> {
   let res;
   try {
-    res = await getClient().messages.create({
-      model: env.anthropicModel,
-      max_tokens: 2048,
-      system: ANALYTICS_SYSTEM_PROMPT,
-      messages: [
-        {
-          role: 'user',
-          content: `Task: ${task}\n\nContext (JSON):\n${JSON.stringify(context, null, 2)}\n\nReturn JSON only.`,
-        },
-      ],
-    });
+    res = await getClient().messages.create(
+      {
+        model: env.anthropicModel,
+        max_tokens: 2048,
+        system: ANALYTICS_SYSTEM_PROMPT,
+        messages: [
+          {
+            role: 'user',
+            content: `Task: ${task}\n\nContext (JSON):\n${JSON.stringify(context, null, 2)}\n\nReturn JSON only.`,
+          },
+        ],
+      },
+      { signal: AbortSignal.timeout(30_000) },
+    );
   } catch (err) {
+    if (err instanceof Error && err.name === 'TimeoutError') {
+      throw new AiServiceError('Analytics AI request timed out after 30s');
+    }
     throw new AiServiceError(err instanceof Error ? err.message : 'anthropic call failed');
   }
 

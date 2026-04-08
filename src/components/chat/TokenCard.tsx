@@ -50,12 +50,13 @@ export function TokenCard({ symbol = 'OKB' }: Props) {
           </div>
         </div>
 
-        <div className="w-[110px]">
+        <div className="w-[110px] flex flex-col items-end gap-0.5">
           <Sparkline
             data={series}
             color={positive ? '#22C55E' : '#EF4444'}
-            height={40}
+            height={36}
           />
+          <span className="text-[9px] text-[#525252] leading-none">simulated</span>
         </div>
       </div>
 
