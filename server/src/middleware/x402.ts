@@ -99,7 +99,12 @@ export function withX402(opts: X402Options) {
     const actualPayTo = proof.payTo.toLowerCase();
     const paid = Number(proof.amount);
 
+    // Validate payTo is a plausible Ethereum address before slicing
+    const isValidAddress = /^0x[0-9a-f]{40}$/.test(actualPayTo);
+    const callerLabel = proof.payer ?? (isValidAddress ? actualPayTo.slice(0, 12) : 'unknown');
+
     const valid =
+      isValidAddress &&
       actualPayTo === expectedPayTo &&
       paid >= required &&
       proof.network === env.x402Network &&
@@ -109,7 +114,7 @@ export function withX402(opts: X402Options) {
       logCall({
         timestamp: Date.now(),
         endpoint,
-        caller: proof.payer ?? actualPayTo.slice(0, 12),
+        caller: callerLabel,
         amount: paid,
         asset: env.x402Asset,
         status: 'rejected',
@@ -121,7 +126,7 @@ export function withX402(opts: X402Options) {
     logCall({
       timestamp: Date.now(),
       endpoint,
-      caller: proof.payer ?? actualPayTo.slice(0, 12),
+      caller: callerLabel,
       amount: paid,
       asset: env.x402Asset,
       status: 'paid',

@@ -137,11 +137,9 @@ export const useBackendSync = () => {
     };
 
     void tick().then(schedule);
-    const id = -1; // unused — using recursive setTimeout instead
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
-      void id; // suppress unused warning
     };
   }, [
     setPortfolio,

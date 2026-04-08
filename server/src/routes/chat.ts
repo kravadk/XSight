@@ -227,6 +227,9 @@ chatRouter.post('/', async (req: Request, res: Response) => {
   if (!message || typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'message is required' });
   }
+  if (message.length > 8000) {
+    return res.status(400).json({ error: 'message too long (max 8000 characters)' });
+  }
 
   let contextBlock: string;
   try {

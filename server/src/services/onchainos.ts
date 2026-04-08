@@ -496,7 +496,11 @@ export async function executeSwap(params: {
     const erc20 = new Contract(params.fromToken, ERC20_ABI, provider);
     let currentAllowance: bigint;
     try {
-      currentAllowance = (await erc20.allowance(signer.address, approveInfo.dexContractAddress)) as bigint;
+      const allowanceRaw = await erc20.allowance(signer.address, approveInfo.dexContractAddress);
+      if (typeof allowanceRaw !== 'bigint') {
+        throw new OnchainOsError(`allowance() returned unexpected type: ${typeof allowanceRaw}`);
+      }
+      currentAllowance = allowanceRaw;
     } catch (err) {
       throw new OnchainOsError(
         `Failed to read allowance: ${err instanceof Error ? err.message : 'unknown'}`,
@@ -524,8 +528,8 @@ export async function executeSwap(params: {
       try {
         const gasFee = receipt.gasUsed * receipt.gasPrice;
         recordGasSpend(Number(gasFee) / 1e18);
-      } catch {
-        /* */
+      } catch (err) {
+        console.warn('[executeSwap] failed to record approve gas:', err instanceof Error ? err.message : err);
       }
       recordActivity('dex.approve', approveTx.hash);
     }
@@ -562,8 +566,8 @@ export async function executeSwap(params: {
     try {
       const gasFee = receipt.gasUsed * receipt.gasPrice;
       recordGasSpend(Number(gasFee) / 1e18);
-    } catch {
-      /* */
+    } catch (err) {
+      console.warn('[executeSwap] failed to record swap gas:', err instanceof Error ? err.message : err);
     }
   }
   recordActivity('dex.swap', `${params.fromSymbol}->${params.toSymbol} ${swapTx.hash}`);

@@ -16,11 +16,14 @@ export function Allocation() {
     const sorted = [...tokens]
       .filter((t) => t.usdValue > 0)
       .sort((a, b) => b.usdValue - a.usdValue);
-    return sorted.map((t, i) => ({
-      ...t,
-      color: tokenMeta(t.symbol).color !== '#9CA3AF' ? tokenMeta(t.symbol).color : PALETTE[i % PALETTE.length],
-      pct: totalUsd > 0 ? (t.usdValue / totalUsd) * 100 : 0,
-    }));
+    return sorted.map((t, i) => {
+      const meta = tokenMeta(t.symbol);
+      return {
+        ...t,
+        color: meta.color !== '#9CA3AF' ? meta.color : PALETTE[i % PALETTE.length],
+        pct: totalUsd > 0 ? (t.usdValue / totalUsd) * 100 : 0,
+      };
+    });
   }, [tokens, totalUsd]);
 
   return (

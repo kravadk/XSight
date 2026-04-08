@@ -27,8 +27,11 @@ economyRouter.post('/configure', (req: Request, res: Response) => {
 });
 
 economyRouter.post('/trigger-deploy', async (req: Request, res: Response) => {
-  const body = (req.body ?? {}) as { force?: boolean; fraction?: number };
-  const result = await triggerAutoDeploy({ force: body.force, fraction: body.fraction });
+  const body = (req.body ?? {}) as Record<string, unknown>;
+  const force    = typeof body.force    === 'boolean' ? body.force    : undefined;
+  const fraction = typeof body.fraction === 'number'  && Number.isFinite(body.fraction) && body.fraction > 0 && body.fraction <= 1
+    ? body.fraction : undefined;
+  const result = await triggerAutoDeploy({ force, fraction });
   if (!result.ok) return res.status(409).json(result);
   res.json({
     ...result,

@@ -262,7 +262,7 @@ export const api = {
     request<{ ok: true }>(`/chat/sessions/${id}`, { method: 'DELETE' }),
 
   portfolio: (address?: string) =>
-    request<PortfolioResponse>('/status/portfolio' + (address ? `?address=${address}` : '')),
+    request<PortfolioResponse>('/status/portfolio' + (address ? `?address=${encodeURIComponent(address)}` : '')),
 
   x402Log: () => request<{ calls: X402CallLogEntry[] }>('/status/x402-log'),
 

@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import { getAddress } from 'ethers';
 import { withX402 } from '../middleware/x402.js';
 import { analyticsJson, AiServiceError } from '../services/ai.js';
 import {
@@ -9,6 +10,13 @@ import {
 } from '../services/onchainos.js';
 import { env } from '../config/env.js';
 import { X_LAYER } from '../utils/xlayer.js';
+
+function requireAddress(raw: string, res: Response): string | null {
+  const trimmed = raw.trim();
+  if (!trimmed) { res.status(400).json({ error: 'address param required' }); return null; }
+  try { return getAddress(trimmed); }
+  catch { res.status(400).json({ error: 'invalid Ethereum address' }); return null; }
+}
 
 export const analysisRouter = Router();
 
@@ -105,8 +113,8 @@ analysisRouter.get(
   '/token-analysis',
   withX402({ amount: '0.05', description: 'Deep AI token analysis with risk score' }),
   async (req: Request, res: Response) => {
-    const token = String(req.query.token ?? '');
-    if (!token) return res.status(400).json({ error: 'token query param required' });
+    const token = requireAddress(String(req.query.token ?? ''), res);
+    if (!token) return;
     try {
       const risk = await getTokenSecurity(token);
       const analysis = await analyticsJson('Analyze this token for traders', { token, risk });
@@ -138,8 +146,8 @@ analysisRouter.get(
   '/portfolio-advice',
   withX402({ amount: '0.05', description: 'AI rebalancing recommendations' }),
   async (req: Request, res: Response) => {
-    const wallet = String(req.query.wallet ?? '');
-    if (!wallet) return res.status(400).json({ error: 'wallet query param required' });
+    const wallet = requireAddress(String(req.query.wallet ?? ''), res);
+    if (!wallet) return;
     try {
       const portfolio = await getWalletBalances(wallet);
       const advice = await analyticsJson('Recommend rebalancing for this portfolio', { portfolio });

@@ -102,6 +102,9 @@ export function snapshot(inputs: SnapshotInputs = {}): EconomySnapshot {
   const lpYieldEarnedUsdt = lpCurrentUsdt - lpDepositedUsdt;
   const lpActive = deployHistory.length > 0;
 
+  if (!okbPrice && cumulativeGasOkb > 0) {
+    console.warn('[economyLoop] OKB price unavailable, using $80 fallback for gas cost estimate');
+  }
   const gasUsdt = cumulativeGasOkb * (okbPrice || 80);
   const netProfitUsdt = totalRevenueUsdt + lpYieldEarnedUsdt - cumulativeAiUsdt - gasUsdt;
 
