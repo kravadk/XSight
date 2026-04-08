@@ -6,6 +6,7 @@ import { useSyncStore } from '../store/syncStore';
 import { notify } from '../store/notificationsStore';
 
 const POLL_MS = 15_000;
+const MAX_BACKOFF_MS = 120_000; // 2 minutes max between retries when backend is down
 
 export const useBackendSync = () => {
   const setPortfolio = useWalletStore((s) => s.setPortfolio);
@@ -21,6 +22,8 @@ export const useBackendSync = () => {
 
   const seenCallIds = useRef<Set<string>>(new Set());
   const isFirstRun = useRef(true);
+  const tickInProgress = useRef(false);
+  const consecutiveFailures = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -104,22 +107,41 @@ export const useBackendSync = () => {
     };
 
     const tick = async () => {
-      const results = await Promise.allSettled([syncPortfolio(), syncApi(), syncEconomy()]);
-      if (cancelled) return;
-      const anyFulfilled = results.some((r) => r.status === 'fulfilled');
-      if (anyFulfilled) {
-        setLastSync(Date.now());
-      } else {
-        setOnline(false);
+      if (tickInProgress.current) return; // prevent parallel ticks
+      tickInProgress.current = true;
+      try {
+        const results = await Promise.allSettled([syncPortfolio(), syncApi(), syncEconomy()]);
+        if (cancelled) return;
+        const anyFulfilled = results.some((r) => r.status === 'fulfilled');
+        if (anyFulfilled) {
+          consecutiveFailures.current = 0;
+          setLastSync(Date.now());
+          setOnline(true);
+        } else {
+          consecutiveFailures.current += 1;
+          setOnline(false);
+        }
+        isFirstRun.current = false;
+      } finally {
+        tickInProgress.current = false;
       }
-      isFirstRun.current = false;
     };
 
-    void tick();
-    const id = window.setInterval(() => void tick(), POLL_MS);
+    // Exponential backoff: 15s, 30s, 60s, 120s max when backend is down
+    let timeoutId: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      const backoffMs = Math.min(POLL_MS * Math.pow(2, consecutiveFailures.current), MAX_BACKOFF_MS);
+      timeoutId = setTimeout(() => {
+        if (!cancelled) { void tick().then(schedule); }
+      }, backoffMs);
+    };
+
+    void tick().then(schedule);
+    const id = -1; // unused — using recursive setTimeout instead
     return () => {
       cancelled = true;
-      window.clearInterval(id);
+      clearTimeout(timeoutId);
+      void id; // suppress unused warning
     };
   }, [
     setPortfolio,

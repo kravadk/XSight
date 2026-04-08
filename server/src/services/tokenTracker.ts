@@ -9,21 +9,15 @@
  */
 import { getTokenPriceInfo, getWalletBalances, OnchainOsError } from './onchainos.js';
 import { env } from '../config/env.js';
+import { TOKEN_ADDRESSES, X_LAYER_CHAIN_ID } from '../utils/tokens.js';
 
 const TICK_MS = 60_000;
 const HISTORY_LIMIT = 200; // ~3.3 hours at 60s ticks
 
-const X_LAYER_CHAIN = '196';
+const X_LAYER_CHAIN = X_LAYER_CHAIN_ID;
 
-// Curated set of "always tracked" tokens. Wallet balances merge in dynamically.
-const SEED_TOKENS: Record<string, string> = {
-  OKB: '0xe538905cf8410324e03A5A23C1c177a474D59b2b',
-  WOKB: '0xe538905cf8410324e03A5A23C1c177a474D59b2b',
-  USDT: '0x1E4a5963aBFD975d8c9021ce480b42188849D41d',
-  USDC: '0x74b7F16337b8972027F6196A17a631aC6dE26d22',
-  WETH: '0x5A77f1443D16ee5761d310e38b62f77f726bC71c',
-  USDG: '0x4ae46a509f6b1d9056937ba4500cb143933d2dc8',
-};
+// Curated set of "always tracked" tokens — sourced from central registry.
+const SEED_TOKENS: Record<string, string> = TOKEN_ADDRESSES;
 
 interface RawSnapshot {
   ts: number;

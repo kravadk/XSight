@@ -86,7 +86,9 @@ async function refresh(): Promise<void> {
 export function startTokenCatalog() {
   if (refreshHandle) return;
   seedNative();
-  firstLoad = refresh();
+  firstLoad = refresh().catch((err) => {
+    console.error('[tokenCatalog] initial load failed:', err instanceof Error ? err.message : err);
+  });
   refreshHandle = setInterval(() => void refresh(), REFRESH_MS);
 }
 

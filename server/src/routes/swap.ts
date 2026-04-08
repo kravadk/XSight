@@ -36,12 +36,20 @@ function handleError(res: Response, err: unknown, fallback: string) {
   res.status(500).json({ error: msg });
 }
 
+function isValidAmount(v: string): boolean {
+  const n = Number(v);
+  return v.trim().length > 0 && Number.isFinite(n) && n > 0;
+}
+
 swapRouter.get('/quote', async (req: Request, res: Response) => {
   const from = String(req.query.from ?? '');
   const to = String(req.query.to ?? '');
   const amount = String(req.query.amount ?? '');
   if (!from || !to || !amount) {
     return res.status(400).json({ error: 'from, to, amount required' });
+  }
+  if (!isValidAmount(amount)) {
+    return res.status(400).json({ error: 'amount must be a positive finite number' });
   }
   if (!env.agenticWalletAddress) {
     return res.status(503).json({ error: 'AGENTIC_WALLET_ADDRESS not configured' });
@@ -65,6 +73,9 @@ swapRouter.post('/', async (req: Request, res: Response) => {
   const { from, to, amount } = req.body as { from?: string; to?: string; amount?: number | string };
   if (!from || !to || amount === undefined) {
     return res.status(400).json({ error: 'from, to, amount required' });
+  }
+  if (!isValidAmount(String(amount))) {
+    return res.status(400).json({ error: 'amount must be a positive finite number' });
   }
   if (!env.agenticWalletAddress) {
     return res.status(503).json({ error: 'AGENTIC_WALLET_ADDRESS not configured' });

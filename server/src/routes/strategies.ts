@@ -21,6 +21,21 @@ import {
   type ActionKind,
 } from '../services/strategyEngine.js';
 
+const MAX_STRATEGIES = 50;
+// Simple per-IP rate limit: max 10 creates per minute
+const createCounts = new Map<string, { count: number; resetAt: number }>();
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = createCounts.get(ip);
+  if (!entry || entry.resetAt < now) {
+    createCounts.set(ip, { count: 1, resetAt: now + 60_000 });
+    return true;
+  }
+  if (entry.count >= 10) return false;
+  entry.count += 1;
+  return true;
+}
+
 export const strategyRouter = Router();
 
 const VALID_TRIGGERS: TriggerKind[] = [
@@ -53,10 +68,26 @@ strategyRouter.get('/status', (_req: Request, res: Response) => {
 });
 
 strategyRouter.post('/', (req: Request, res: Response) => {
+  const ip = req.ip ?? 'unknown';
+  if (!checkRateLimit(ip)) {
+    return res.status(429).json({ error: 'Too many strategies created — wait a minute' });
+  }
+  if (listStrategies().length >= MAX_STRATEGIES) {
+    return res.status(400).json({ error: `Maximum of ${MAX_STRATEGIES} strategies reached` });
+  }
+
   const body = (req.body ?? {}) as Partial<StrategySpec>;
   if (!body.kind || !VALID_TRIGGERS.includes(body.kind)) {
     return res.status(400).json({ error: `kind must be one of ${VALID_TRIGGERS.join(', ')}` });
   }
+
+  // concentration_above requires live portfolio data the engine doesn't have autonomously
+  if (body.kind === 'concentration_above') {
+    return res.status(400).json({
+      error: 'concentration_above is not supported for autonomous evaluation — use the chat to get portfolio concentration alerts instead',
+    });
+  }
+
   const action: ActionKind = body.action ?? 'notify';
   if (!VALID_ACTIONS.includes(action)) {
     return res.status(400).json({ error: `action must be one of ${VALID_ACTIONS.join(', ')}` });

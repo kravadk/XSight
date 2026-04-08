@@ -89,9 +89,9 @@ export function EarnPage() {
       if (!res.ok) {
         toast.error(res.reason ?? 'deploy failed');
       } else {
-        toast.success(
-          `Deployed ${res.fromAmountUsdt?.toFixed(4)} USDT → ${res.toAmountOkb?.toFixed(8)} OKB`,
-        );
+        const from = res.fromAmountUsdt != null ? res.fromAmountUsdt.toFixed(4) : '?';
+        const to = res.toAmountOkb != null ? res.toAmountOkb.toFixed(8) : '?';
+        toast.success(`Deployed ${from} USDT → ${to} OKB`);
         const fresh = await api.economy();
         setEconomy(fresh);
         await loadHistory();
@@ -123,12 +123,16 @@ export function EarnPage() {
   const deployAmount = Math.max(0.001, (surplus * deployFraction) / 100);
   const canDeploy = surplus > 0;
 
-  // Live yield projection from deployed position + current pool APR (≈ tracked
-  // lpYieldEarned vs deposited, annualized over uptime — best-effort honest)
+  // Annualize yield using actual elapsed time since first deploy.
+  // Formula: (yield / deposited) / (elapsedDays / 365) * 100
   const aprEstimate = useMemo(() => {
-    if (!lpActive || lpDeposited <= 0) return 0;
-    return ((lpYield / lpDeposited) * 365 * 100) / 30; // simple annualization assuming ~30d window
-  }, [lpActive, lpDeposited, lpYield]);
+    if (!lpActive || lpDeposited <= 0 || lpYield <= 0) return 0;
+    const lastDeployAt = economy?.lastDeployAt ?? 0;
+    if (!lastDeployAt) return 0;
+    const elapsedMs = Date.now() - lastDeployAt;
+    const elapsedDays = Math.max(elapsedMs / 86_400_000, 1 / 24); // minimum 1 hour
+    return (lpYield / lpDeposited) * (365 / elapsedDays) * 100;
+  }, [lpActive, lpDeposited, lpYield, economy?.lastDeployAt]);
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full pb-10">
@@ -320,9 +324,10 @@ export function EarnPage() {
             <button
               onClick={withdrawLp}
               disabled={!lpActive}
+              title="Opens AI chat — ask XSight to help you swap OKB back to USDT"
               className="flex-1 h-9 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-[#F5F5F5] text-xs font-bold rounded-lg transition-colors disabled:opacity-40"
             >
-              Withdraw via AI
+              Ask AI to withdraw
             </button>
           </div>
         </div>

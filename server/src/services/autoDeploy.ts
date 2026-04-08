@@ -16,10 +16,10 @@ import { env } from '../config/env.js';
 import { getWalletBalances, getTokenPrice, executeSwap, OnchainOsError } from './onchainos.js';
 import { recordDeployment, getEconomyConfig } from './economyLoop.js';
 import { WalletError } from './wallet.js';
+import { TOKEN_ADDRESSES, USDT_DECIMALS } from '../utils/tokens.js';
 
-const USDT_ADDRESS = '0x1E4a5963aBFD975d8c9021ce480b42188849D41d';
-const WOKB_ADDRESS = '0xe538905cf8410324e03A5A23C1c177a474D59b2b';
-const USDT_DECIMALS = 6;
+const USDT_ADDRESS = TOKEN_ADDRESSES.USDT;
+const WOKB_ADDRESS = TOKEN_ADDRESSES.WOKB;
 
 export interface DeployResult {
   ok: boolean;
@@ -113,7 +113,8 @@ export async function triggerAutoDeploy(opts: { force?: boolean; fraction?: numb
 export async function readOkbPrice(): Promise<number> {
   try {
     return await getTokenPrice(WOKB_ADDRESS);
-  } catch {
+  } catch (err) {
+    console.warn('[autoDeploy] OKB price fetch failed — using 0 for mark-to-market:', err instanceof Error ? err.message : err);
     return 0;
   }
 }
