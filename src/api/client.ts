@@ -190,6 +190,13 @@ export interface TokenSecurityDto {
   verdict: string;
 }
 
+export interface SessionMeta {
+  id: string;
+  title: string;
+  createdAt: number;
+  messageCount: number;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -221,10 +228,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  chat: (message: string, history?: { role: 'user' | 'assistant'; content: string }[]) =>
+  chat: (message: string, history?: { role: 'user' | 'assistant'; content: string }[], sessionId?: string) =>
     request<ChatResponse>('/chat', {
       method: 'POST',
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, sessionId }),
     }),
 
   chatHistory: () =>
@@ -238,6 +245,21 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ messages }),
     }),
+
+  listSessions: () =>
+    request<{ sessions: SessionMeta[] }>('/chat/sessions'),
+
+  createSession: (title?: string) =>
+    request<{ session: SessionMeta }>('/chat/sessions', {
+      method: 'POST',
+      body: JSON.stringify({ title }),
+    }),
+
+  loadSession: (id: string) =>
+    request<{ messages: import('../store/chatStore').ChatMessage[] }>(`/chat/sessions/${id}`),
+
+  deleteSession: (id: string) =>
+    request<{ ok: true }>(`/chat/sessions/${id}`, { method: 'DELETE' }),
 
   portfolio: (address?: string) =>
     request<PortfolioResponse>('/status/portfolio' + (address ? `?address=${address}` : '')),

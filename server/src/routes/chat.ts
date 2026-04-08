@@ -5,7 +5,11 @@ import { getAllTrackedTokens } from '../services/tokenTracker.js';
 import { getAllPools } from '../services/poolTracker.js';
 import { listStrategies } from '../services/strategyEngine.js';
 import { env } from '../config/env.js';
-import { getHistory, appendMessages, clearHistory, type StoredMessage } from '../services/chatHistory.js';
+import {
+  getHistory, appendMessages, clearHistory,
+  listSessions, getSession, createSession, appendToSession, deleteSession,
+  type StoredMessage,
+} from '../services/chatHistory.js';
 
 export const chatRouter = Router();
 
@@ -166,32 +170,49 @@ async function buildContextBlock(): Promise<string> {
   return lines.join('\n');
 }
 
-// ── GET /api/chat/history ────────────────────────────────────────────────
-chatRouter.get('/history', async (_req: Request, res: Response) => {
-  const messages = await getHistory();
-  res.json({ messages });
+// ── GET /api/chat/sessions ────────────────────────────────────────────────
+chatRouter.get('/sessions', async (_req: Request, res: Response) => {
+  res.json({ sessions: await listSessions() });
 });
 
-// ── DELETE /api/chat/history ─────────────────────────────────────────────
+// ── POST /api/chat/sessions ───────────────────────────────────────────────
+chatRouter.post('/sessions', async (req: Request, res: Response) => {
+  const { title } = req.body as { title?: string };
+  const s = await createSession(title);
+  res.json({ session: { id: s.id, title: s.title, createdAt: s.createdAt, messageCount: 0 } });
+});
+
+// ── GET /api/chat/sessions/:id ────────────────────────────────────────────
+chatRouter.get('/sessions/:id', async (req: Request, res: Response) => {
+  const s = await getSession(req.params.id);
+  if (!s) { res.status(404).json({ error: 'Session not found' }); return; }
+  res.json({ messages: s.messages });
+});
+
+// ── DELETE /api/chat/sessions/:id ─────────────────────────────────────────
+chatRouter.delete('/sessions/:id', async (req: Request, res: Response) => {
+  await deleteSession(req.params.id);
+  res.json({ ok: true });
+});
+
+// ── legacy single-session history routes ─────────────────────────────────
+chatRouter.get('/history', async (_req: Request, res: Response) => {
+  res.json({ messages: await getHistory() });
+});
 chatRouter.delete('/history', async (_req: Request, res: Response) => {
   await clearHistory();
   res.json({ ok: true });
 });
-
-// ── POST /api/chat/messages  (save arbitrary messages, e.g. txSuccess) ───
 chatRouter.post('/messages', async (req: Request, res: Response) => {
   const { messages } = req.body as { messages?: StoredMessage[] };
-  if (!Array.isArray(messages)) {
-    res.status(400).json({ error: 'messages must be an array' });
-    return;
-  }
+  if (!Array.isArray(messages)) { res.status(400).json({ error: 'messages must be an array' }); return; }
   await appendMessages(messages);
   res.json({ ok: true });
 });
 
 // ── POST /api/chat ───────────────────────────────────────────────────────
 chatRouter.post('/', async (req: Request, res: Response) => {
-  const { message, history } = req.body as { message?: string; history?: ChatTurn[] };
+  const { message, history, sessionId } = req.body as { message?: string; history?: ChatTurn[]; sessionId?: string };
   if (!message || typeof message !== 'string' || !message.trim()) {
     return res.status(400).json({ error: 'message is required' });
   }
@@ -213,22 +234,17 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       history: trimmedHistory,
     });
 
-    // Persist both turns to server-side history
+    // Persist both turns to the session
     const now = Date.now();
-    await appendMessages([
-      {
-        id: `${now}-user`,
-        role: 'user',
-        cards: [{ kind: 'text', text: message }],
-        createdAt: now,
-      },
-      {
-        id: `${now}-ai`,
-        role: 'ai',
-        cards: response.cards ?? [],
-        createdAt: now + 1,
-      },
-    ]).catch(() => { /* non-fatal */ });
+    const msgs: StoredMessage[] = [
+      { id: `${now}-user`, role: 'user', cards: [{ kind: 'text', text: message }], createdAt: now },
+      { id: `${now}-ai`,  role: 'ai',   cards: response.cards ?? [],               createdAt: now + 1 },
+    ];
+    if (sessionId) {
+      appendToSession(sessionId, msgs).catch(() => {});
+    } else {
+      appendMessages(msgs).catch(() => {});
+    }
 
     res.json(response);
   } catch (err) {

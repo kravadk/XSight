@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { CardPayload } from '../types/cards';
+import type { SessionMeta } from '../api/client';
 
 export interface ChatMessage {
   id: string;
@@ -9,8 +10,14 @@ export interface ChatMessage {
 }
 
 interface ChatState {
+  sessionId: string | null;
+  sessions: SessionMeta[];
   messages: ChatMessage[];
   typing: boolean;
+  setSessionId: (id: string | null) => void;
+  setSessions: (s: SessionMeta[]) => void;
+  addSession: (s: SessionMeta) => void;
+  removeSession: (id: string) => void;
   addMessage: (m: ChatMessage) => void;
   loadMessages: (messages: ChatMessage[]) => void;
   setTyping: (t: boolean) => void;
@@ -19,14 +26,18 @@ interface ChatState {
 }
 
 export const useChatStore = create<ChatState>((set) => ({
+  sessionId: null,
+  sessions: [],
   messages: [],
   typing: false,
-  addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
+  setSessionId: (id) => set({ sessionId: id }),
+  setSessions:  (s)  => set({ sessions: s }),
+  addSession:   (s)  => set((st) => ({ sessions: [s, ...st.sessions] })),
+  removeSession: (id) => set((st) => ({ sessions: st.sessions.filter(s => s.id !== id) })),
+  addMessage:   (m)  => set((s) => ({ messages: [...s.messages, m] })),
   loadMessages: (messages) => set({ messages }),
-  setTyping: (t) => set({ typing: t }),
+  setTyping:    (t)  => set({ typing: t }),
   replaceMessage: (id, m) =>
-    set((s) => ({
-      messages: s.messages.map((x) => (x.id === id ? m : x)),
-    })),
+    set((s) => ({ messages: s.messages.map((x) => (x.id === id ? m : x)) })),
   clear: () => set({ messages: [] }),
 }));
