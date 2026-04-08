@@ -1,65 +1,33 @@
-import { useUiStore, type TabKey } from '../../store/uiStore';
-import { useWalletStore } from '../../store/walletStore';
+import { Zap } from 'lucide-react';
+import { SidebarNav } from './SidebarNav';
+import { SidebarPositions } from './SidebarPositions';
+import { SidebarStatus } from './SidebarStatus';
+import { useUiStore } from '../../store/uiStore';
 
-interface NavItem {
-  key: TabKey;
-  label: string;
-  icon: string;
-}
-
-const items: NavItem[] = [
-  { key: 'chat', label: 'Chat', icon: '💬' },
-  { key: 'portfolio', label: 'Portfolio', icon: '📊' },
-  { key: 'api', label: 'API', icon: '🔌' },
-  { key: 'earn', label: 'Earn', icon: '💰' },
-];
-
-export const Sidebar = () => {
-  const active = useUiStore((s) => s.activeTab);
-  const setTab = useUiStore((s) => s.setTab);
-  const short = useWalletStore((s) => s.short);
+export function Sidebar() {
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
 
   return (
-    <aside className="hidden md:flex fixed inset-y-0 left-0 w-[220px] flex-col bg-[#1A1A1A] text-white">
-      <div className="px-6 pt-6 pb-8">
-        <div className="flex items-center gap-2 text-[18px] font-bold tracking-tight">
-          <span className="text-[#00C853]">⚡</span> XSight
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-[240px] bg-[#0A0A0A] border-r border-[rgba(255,255,255,0.06)] flex-col z-50">
+      <button
+        onClick={() => setActiveTab('portfolio')}
+        className="px-6 py-6 flex items-center justify-between hover:bg-[rgba(255,255,255,0.02)] transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Zap className="w-6 h-6 text-[#BFFF00] fill-[#BFFF00]" />
+          <span className="text-lg font-bold text-[#F5F5F5]">XSight</span>
         </div>
+        <div className="text-micro px-2 py-0.5 bg-[rgba(191,255,0,0.08)] rounded text-[#BFFF00]">
+          Beta
+        </div>
+      </button>
+
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <SidebarNav />
+        <SidebarPositions />
       </div>
 
-      <nav className="flex flex-col gap-1 px-3">
-        {items.map((item) => {
-          const isActive = active === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => setTab(item.key)}
-              className={`relative flex h-11 items-center gap-3 rounded-[10px] px-4 text-[14px] font-medium transition-colors ${
-                isActive
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-[#9CA3AF] hover:bg-white/[0.05]'
-              }`}
-            >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[#00C853]" />
-              )}
-              <span className="text-[16px]">{item.icon}</span>
-              {item.label}
-            </button>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto px-5 pb-6">
-        <div className="mb-3 border-t border-white/10 pt-4" />
-        <div className="mb-3 flex items-center gap-2 text-[12px] text-[#9CA3AF]">
-          <span className="pulse-dot" />
-          X Layer
-        </div>
-        <div className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1.5 font-mono text-[11px] text-[#9CA3AF]">
-          {short}
-        </div>
-      </div>
+      <SidebarStatus />
     </aside>
   );
-};
+}

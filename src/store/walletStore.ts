@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import { WALLET } from '../utils/mockData';
+
+export interface WalletToken {
+  symbol: string;
+  address: string;
+  amount: number;
+  usdValue: number;
+}
 
 interface WalletState {
   connected: boolean;
@@ -7,16 +13,43 @@ interface WalletState {
   short: string;
   network: string;
   chainId: number;
-  okb: number;
-  usdt: number;
+  tokens: WalletToken[];
+  totalUsd: number;
+  loading: boolean;
+  error: string | null;
+  setPortfolio: (input: {
+    address: string;
+    network: string;
+    tokens: WalletToken[];
+    totalUsd: number;
+  }) => void;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
 }
 
-export const useWalletStore = create<WalletState>(() => ({
-  connected: true,
-  address: WALLET.address,
-  short: WALLET.short,
-  network: WALLET.network,
-  chainId: WALLET.chainId,
-  okb: 0.42,
-  usdt: 350,
+const shorten = (a: string) => (a && a.length > 10 ? `${a.slice(0, 6)}...${a.slice(-4)}` : a);
+
+export const useWalletStore = create<WalletState>((set) => ({
+  connected: false,
+  address: '',
+  short: '',
+  network: 'X Layer Mainnet',
+  chainId: 196,
+  tokens: [],
+  totalUsd: 0,
+  loading: false,
+  error: null,
+  setPortfolio: ({ address, network, tokens, totalUsd }) =>
+    set({
+      connected: true,
+      address,
+      short: shorten(address),
+      network,
+      tokens,
+      totalUsd,
+      loading: false,
+      error: null,
+    }),
+  setLoading: (loading) => set({ loading }),
+  setError: (error) => set({ error, loading: false }),
 }));

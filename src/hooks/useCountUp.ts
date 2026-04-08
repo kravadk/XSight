@@ -1,22 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 
-export const useCountUp = (target: number, duration = 1200): number => {
-  const [value, setValue] = useState(0);
-  const startRef = useRef<number | null>(null);
+/**
+ * Animates a numeric value from its previous render to the new target.
+ * Uses cubic ease-out. Returns the current animated value.
+ */
+export const useCountUp = (target: number, duration = 900): number => {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const rafRef = useRef(0);
 
   useEffect(() => {
-    let raf = 0;
+    const from = fromRef.current;
+    const delta = target - from;
+    if (delta === 0) {
+      setValue(target);
+      return;
+    }
+    let start: number | null = null;
     const step = (ts: number) => {
-      if (startRef.current == null) startRef.current = ts;
-      const progress = Math.min(1, (ts - startRef.current) / duration);
+      if (start == null) start = ts;
+      const progress = Math.min(1, (ts - start) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(target * eased);
+      setValue(from + delta * eased);
       if (progress < 1) {
-        raf = requestAnimationFrame(step);
+        rafRef.current = requestAnimationFrame(step);
+      } else {
+        fromRef.current = target;
       }
     };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    rafRef.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafRef.current);
   }, [target, duration]);
 
   return value;

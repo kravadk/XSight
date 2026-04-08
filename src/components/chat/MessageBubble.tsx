@@ -1,113 +1,36 @@
-import { motion } from 'framer-motion';
-import type { ChatMessage } from '../../store/chatStore';
-import { TokenCard } from './TokenCard';
-import { SwapPreview } from './SwapPreview';
-import { PortfolioCard } from './PortfolioCard';
-import { RiskCard } from './RiskCard';
-import { YieldCard } from './YieldCard';
-import { TxPending } from './TxPending';
-import { TxSuccess } from './TxSuccess';
+import React from 'react';
+import { Sparkles } from 'lucide-react';
+import { cn } from '../../utils/format';
+import { motion } from 'motion/react';
 
-interface Props {
-  message: ChatMessage;
+interface MessageBubbleProps {
+  isAi?: boolean;
+  children: React.ReactNode;
 }
 
-export const MessageBubble = ({ message }: Props) => {
-  const isUser = message.role === 'user';
-
+export function MessageBubble({ isAi, children }: MessageBubbleProps) {
   return (
-    <motion.div
+    <motion.div 
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, delay: isUser ? 0 : 0.1 }}
-      className={`flex w-full gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}
+      transition={{ duration: 0.25, delay: isAi ? 0.1 : 0 }}
+      className={cn("flex gap-4 max-w-[85%]", isAi ? "self-start" : "self-end flex-row-reverse")}
     >
-      {!isUser && (
-        <div className="mt-1 flex h-7 w-7 flex-none items-center justify-center rounded-full bg-[#F3F0FF] text-[14px] text-[#7C5CFC]">
-          ✦
+      {isAi && (
+        <div className="w-7 h-7 rounded-full bg-[#A78BFA] flex items-center justify-center shrink-0 mt-1">
+          <Sparkles className="w-4 h-4 text-[#0A0A0A]" />
         </div>
       )}
-      <div
-        className={`flex max-w-[85%] flex-col gap-3 ${
-          isUser ? 'items-end' : 'items-start'
-        }`}
-      >
-        {message.cards.map((card, idx) => {
-          if (card.kind === 'text') {
-            return (
-              <div
-                key={idx}
-                className={
-                  isUser
-                    ? 'rounded-2xl bg-[#F5F5F5] px-4 py-3 text-[14px] text-[#0D0D0D]'
-                    : 'rounded-2xl border-l-2 border-[#7C5CFC] bg-white px-4 py-3 text-[14px] text-[#0D0D0D] shadow-[0_1px_3px_rgba(0,0,0,0.04)]'
-                }
-              >
-                {card.text}
-              </div>
-            );
-          }
-          if (card.kind === 'tokens') {
-            return (
-              <div key={idx} className="flex flex-wrap gap-3">
-                {card.symbols.map((s) => (
-                  <TokenCard key={s} symbol={s} />
-                ))}
-              </div>
-            );
-          }
-          if (card.kind === 'swap') {
-            return (
-              <SwapPreview
-                key={idx}
-                fromSymbol={card.fromSymbol}
-                toSymbol={card.toSymbol}
-                fromAmount={card.fromAmount}
-                toAmount={card.toAmount}
-              />
-            );
-          }
-          if (card.kind === 'portfolio') {
-            return <PortfolioCard key={idx} advice={card.advice} />;
-          }
-          if (card.kind === 'risk') {
-            return <RiskCard key={idx} symbol={card.symbol} />;
-          }
-          if (card.kind === 'yield') {
-            return (
-              <div key={idx} className="flex flex-wrap gap-3">
-                {card.names.map((n) => (
-                  <YieldCard key={n} name={n} />
-                ))}
-              </div>
-            );
-          }
-          if (card.kind === 'txPending') {
-            return (
-              <TxPending
-                key={idx}
-                fromSymbol={card.fromSymbol}
-                toSymbol={card.toSymbol}
-                fromAmount={card.fromAmount}
-                toAmount={card.toAmount}
-              />
-            );
-          }
-          if (card.kind === 'txSuccess') {
-            return (
-              <TxSuccess
-                key={idx}
-                fromSymbol={card.fromSymbol}
-                toSymbol={card.toSymbol}
-                fromAmount={card.fromAmount}
-                toAmount={card.toAmount}
-                hash={card.hash}
-              />
-            );
-          }
-          return null;
-        })}
+      <div className={cn(
+        "px-5 py-3.5 rounded-2xl text-sm leading-relaxed",
+        isAi 
+          ? "bg-[#151515] text-[#F5F5F5] border-l-2 border-[#A78BFA]" 
+          : "bg-[#1A1A1A] text-[#F5F5F5]"
+      )}>
+        {children}
       </div>
     </motion.div>
   );
-};
+}
+
+

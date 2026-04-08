@@ -1,69 +1,53 @@
-import { AiBadge } from '../common/AiBadge';
-import { Badge } from '../common/Badge';
-import { Button } from '../common/Button';
+import { Briefcase } from 'lucide-react';
+import { useWalletStore } from '../../store/walletStore';
+import { useChat } from '../../hooks/useChat';
 import { TokenIcon } from '../common/TokenIcon';
-import { HOLDINGS, WALLET } from '../../utils/mockData';
-import { formatNum, formatUsd } from '../../utils/format';
 
 interface Props {
   advice: string;
 }
 
-export const PortfolioCard = ({ advice }: Props) => {
-  const total = HOLDINGS.reduce((s, h) => s + h.value, 0);
+export function PortfolioCard({ advice }: Props) {
+  const tokens = useWalletStore((s) => s.tokens);
+  const totalUsd = useWalletStore((s) => s.totalUsd);
+  const { send } = useChat();
+
   return (
-    <div className="card relative w-full max-w-[440px] p-5">
-      <div className="absolute right-4 top-4">
-        <AiBadge />
-      </div>
-      <div className="mb-1 text-[13px] font-medium text-[#6B7280]">Portfolio</div>
-      <div className="mb-4 flex items-end gap-3">
-        <div className="text-[28px] font-bold leading-none">{formatUsd(total)}</div>
-        <Badge tone="green">+{formatUsd(WALLET.todayPnl)} ({WALLET.todayPnlPct}%)</Badge>
+    <div className="bg-[#151515] rounded-2xl border border-[rgba(255,255,255,0.06)] p-5 mt-1 w-full max-w-[400px]">
+      <div className="flex items-center gap-2 mb-4">
+        <Briefcase className="w-4 h-4 text-[#BFFF00]" />
+        <h3 className="text-sm font-bold text-[#F5F5F5]">Your Portfolio</h3>
       </div>
 
-      <div className="mb-4 overflow-hidden rounded-[12px] border border-[#F0F0F0]">
-        <div className="grid grid-cols-[1.2fr_1fr_1fr_1.2fr] gap-2 bg-[#FAFAFA] px-4 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#9CA3AF]">
-          <span>Token</span>
-          <span>Balance</span>
-          <span>Value</span>
-          <span>Share</span>
-        </div>
-        {HOLDINGS.map((h) => {
-          const share = (h.value / total) * 100;
-          return (
-            <div
-              key={h.symbol}
-              className="grid grid-cols-[1.2fr_1fr_1fr_1.2fr] items-center gap-2 border-t border-[#F0F0F0] px-4 py-3 text-[13px]"
-            >
-              <div className="flex items-center gap-2">
-                <TokenIcon symbol={h.symbol} size={22} />
-                <span className="font-medium">{h.symbol}</span>
-              </div>
-              <span className="text-[#6B7280]">{formatNum(h.amount, h.amount < 1 ? 4 : 2)}</span>
-              <span className="font-medium">{formatUsd(h.value)}</span>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 flex-1 rounded-full bg-[#F0F0F0]">
-                  <div
-                    className="h-full rounded-full bg-[#00C853]"
-                    style={{ width: `${share}%` }}
-                  />
-                </div>
-                <span className="w-9 text-right text-[#6B7280]">{share.toFixed(0)}%</span>
-              </div>
+      <div className="text-2xl font-bold text-[#F5F5F5] mb-4">
+        ${totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+      </div>
+
+      <div className="flex flex-col gap-2 mb-4">
+        {tokens.length === 0 && <div className="text-xs text-[#666666]">No holdings</div>}
+        {tokens.map((t) => (
+          <div key={t.symbol} className="flex justify-between items-center text-xs">
+            <div className="flex items-center gap-2">
+              <TokenIcon symbol={t.symbol} size={16} />
+              <span className="text-[#A3A3A3]">{t.symbol}</span>
             </div>
-          );
-        })}
+            <span className="font-mono text-[#F5F5F5] tabular">${t.usdValue.toFixed(2)}</span>
+          </div>
+        ))}
       </div>
 
-      <div className="mb-4 rounded-[12px] border-l-2 border-[#7C5CFC] bg-[#F3F0FF] px-4 py-3 text-[13px] italic text-[#4B3AA8]">
-        "{advice}"
-      </div>
+      {advice && (
+        <div className="text-xs text-[#A3A3A3] leading-relaxed mb-4 p-3 bg-[#1A1A1A] rounded-lg">
+          {advice}
+        </div>
+      )}
 
-      <div className="flex items-center gap-2">
-        <Button variant="ai">Rebalance ✦</Button>
-        <Button variant="ghost">Refresh</Button>
-      </div>
+      <button
+        onClick={() => void send('Rebalance my portfolio')}
+        className="w-full h-9 bg-[#BFFF00] text-[#0A0A0A] text-xs font-bold rounded-lg hover:bg-[#D4FF33] transition-colors"
+      >
+        Rebalance
+      </button>
     </div>
   );
-};
+}

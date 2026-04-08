@@ -1,40 +1,49 @@
-import { Area, AreaChart, ResponsiveContainer } from 'recharts';
+import { ResponsiveContainer, AreaChart, Area, YAxis } from 'recharts';
 
-interface SparklineProps {
+interface Props {
   data: number[];
   color?: string;
   height?: number;
-  width?: number | string;
+  fillOpacity?: number;
 }
 
-export const Sparkline = ({
-  data,
-  color = '#00C853',
-  height = 32,
-  width = '100%',
-}: SparklineProps) => {
-  const chartData = data.map((v, i) => ({ i, v }));
+/**
+ * Tiny inline area chart. Renders nothing if no data.
+ */
+export function Sparkline({ data, color = '#BFFF00', height = 36, fillOpacity = 0.18 }: Props) {
+  if (!data || data.length === 0) {
+    return (
+      <div
+        style={{ height }}
+        className="w-full flex items-center justify-center text-[10px] text-[#444]"
+      >
+        no data
+      </div>
+    );
+  }
+  const series = data.map((v, i) => ({ i, v }));
+  const gradId = `spark-${color.replace('#', '')}`;
   return (
-    <div style={{ width, height }}>
+    <div style={{ height }} className="w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
+        <AreaChart data={series} margin={{ top: 2, right: 0, left: 0, bottom: 0 }}>
           <defs>
-            <linearGradient id={`sp-${color}`} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.22} />
+            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={fillOpacity} />
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
+          <YAxis hide domain={['dataMin', 'dataMax']} />
           <Area
             type="monotone"
             dataKey="v"
             stroke={color}
-            strokeWidth={1.8}
-            fill={`url(#sp-${color})`}
-            isAnimationActive
-            animationDuration={800}
+            strokeWidth={1.5}
+            fill={`url(#${gradId})`}
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
     </div>
   );
-};
+}

@@ -1,66 +1,83 @@
-import { AiBadge } from '../common/AiBadge';
-import { Button } from '../common/Button';
-import { TOKENS } from '../../utils/mockData';
+import { useEffect, useState } from 'react';
+import { ShieldAlert, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { api, type TokenSecurityDto } from '../../api/client';
+import { useChat } from '../../hooks/useChat';
+import { tokenMeta } from '../../config/tokens';
+import { TokenIcon } from '../common/TokenIcon';
 
 interface Props {
   symbol: string;
 }
 
-const CHECKS = [
-  { ok: true, label: 'Contract verified' },
-  { ok: true, label: 'High liquidity' },
-  { ok: true, label: 'Not a honeypot' },
-  { ok: false, label: 'Top holders concentrated' },
-];
+export function RiskCard({ symbol }: Props) {
+  const [data, setData] = useState<TokenSecurityDto | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { send } = useChat();
+  const meta = tokenMeta(symbol);
 
-export const RiskCard = ({ symbol }: Props) => {
-  const token = TOKENS[symbol];
-  const score = token?.risk ?? 10;
-  const label = score < 20 ? 'LOW' : score < 50 ? 'MED' : 'HIGH';
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await api.security(symbol);
+        if (!cancelled) setData(res);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : 'failed');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [symbol]);
+
+  const levelColor =
+    data?.level === 'LOW'
+      ? 'text-[#22C55E]'
+      : data?.level === 'MEDIUM'
+        ? 'text-[#F59E0B]'
+        : 'text-[#EF4444]';
+
+  const Icon = data?.level === 'LOW' ? ShieldCheck : data?.level === 'HIGH' ? AlertTriangle : ShieldAlert;
 
   return (
-    <div className="card relative w-full max-w-[360px] p-5">
-      <div className="absolute right-4 top-4">
-        <AiBadge />
+    <div className="bg-[#151515] rounded-2xl border border-[rgba(255,255,255,0.06)] p-5 mt-1 w-full max-w-[360px]">
+      <div className="flex items-center gap-2 mb-3">
+        <TokenIcon symbol={meta.symbol} size={20} />
+        <h3 className="text-sm font-bold text-[#F5F5F5] flex-1">Risk Scan: {meta.symbol}</h3>
+        <Icon className={`w-4 h-4 ${levelColor}`} />
       </div>
-      <div className="mb-1 text-[13px] font-medium text-[#6B7280]">
-        🛡️ Security Scan
-      </div>
-      <div className="mb-3 text-[16px] font-semibold">{symbol}</div>
 
-      <div className="mb-4">
-        <div className="mb-1 flex items-baseline justify-between">
-          <div className="text-[22px] font-bold">
-            {score}<span className="text-[13px] text-[#6B7280]">/100</span>
+      {error && <div className="text-xs text-[#EF4444]">{error}</div>}
+      {!data && !error && <div className="text-xs text-[#A3A3A3]">Scanning...</div>}
+
+      {data && (
+        <>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span className={`text-3xl font-bold ${levelColor}`}>{data.riskScore}</span>
+            <span className="text-xs text-[#A3A3A3]">/ 100</span>
+            <span className={`ml-auto text-xs font-bold ${levelColor}`}>{data.level}</span>
           </div>
-          <div className="text-[12px] font-semibold text-[#00A344]">{label}</div>
-        </div>
-        <div className="h-1.5 w-full rounded-full bg-[#F0F0F0]">
-          <div
-            className="h-full rounded-full bg-[#00C853]"
-            style={{ width: `${100 - score}%` }}
-          />
-        </div>
-      </div>
 
-      <ul className="mb-4 space-y-2 text-[13px]">
-        {CHECKS.map((c) => (
-          <li key={c.label} className="flex items-center gap-2">
-            <span className={c.ok ? 'text-[#00C853]' : 'text-[#F59E0B]'}>
-              {c.ok ? '✅' : '⚠️'}
-            </span>
-            <span className="text-[#0D0D0D]">{c.label}</span>
-          </li>
-        ))}
-      </ul>
+          {data.warnings.length > 0 && (
+            <ul className="text-xs text-[#A3A3A3] mb-3 space-y-1">
+              {data.warnings.map((w, i) => (
+                <li key={i}>• {w}</li>
+              ))}
+            </ul>
+          )}
 
-      <div className="mb-4 rounded-[12px] bg-[#F3F0FF] px-4 py-3 text-[13px] italic text-[#4B3AA8]">
-        "{symbol} looks solid — established token with strong liquidity. Minor concentration risk but no honeypot signals."
-      </div>
+          <div className="text-xs text-[#A3A3A3] mb-4 p-3 bg-[#1A1A1A] rounded-lg leading-relaxed">
+            {data.verdict}
+          </div>
 
-      <Button variant="ghost" className="!text-[#00C853]">
-        Buy {symbol} →
-      </Button>
+          <button
+            onClick={() => void send(`Swap 50 USDT to ${meta.symbol}`)}
+            className="w-full h-9 bg-[rgba(255,255,255,0.06)] hover:bg-[rgba(255,255,255,0.1)] text-[#F5F5F5] text-xs font-bold rounded-lg transition-colors"
+          >
+            Buy {meta.symbol}
+          </button>
+        </>
+      )}
     </div>
   );
-};
+}

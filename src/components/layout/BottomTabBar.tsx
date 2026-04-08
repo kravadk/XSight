@@ -1,33 +1,34 @@
-import { useUiStore, type TabKey } from '../../store/uiStore';
+import { Briefcase, MessageSquare, Plug, Coins } from 'lucide-react';
+import { useUiStore, type Tab } from '../../store/uiStore';
+import { cn } from '../../utils/format';
 
-const items: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'chat', label: 'Chat', icon: '💬' },
-  { key: 'portfolio', label: 'Portfolio', icon: '📊' },
-  { key: 'api', label: 'API', icon: '🔌' },
-  { key: 'earn', label: 'Earn', icon: '💰' },
+const items: { id: Tab; label: string; icon: any }[] = [
+  { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'api', label: 'API', icon: Plug },
+  { id: 'earn', label: 'Earn', icon: Coins },
 ];
 
-export const BottomTabBar = () => {
-  const active = useUiStore((s) => s.activeTab);
-  const setTab = useUiStore((s) => s.setTab);
-
+export function BottomTabBar() {
+  const { activeTab, setActiveTab } = useUiStore();
   return (
-    <nav className="md:hidden fixed inset-x-0 bottom-0 z-30 flex h-16 items-center justify-around border-t border-[#F0F0F0] bg-white">
-      {items.map((item) => {
-        const a = active === item.key;
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0A0A0A] border-t border-[rgba(255,255,255,0.06)] flex justify-around h-16">
+      {items.map((it) => {
+        const active = activeTab === it.id || (it.id === 'portfolio' && activeTab === 'dashboard');
         return (
           <button
-            key={item.key}
-            onClick={() => setTab(item.key)}
-            className={`flex flex-1 flex-col items-center justify-center gap-0.5 text-[11px] font-medium ${
-              a ? 'text-[#00C853]' : 'text-[#9CA3AF]'
-            }`}
+            key={it.id}
+            onClick={() => setActiveTab(it.id)}
+            className={cn(
+              'flex-1 flex flex-col items-center justify-center gap-1 transition-colors',
+              active ? 'text-[#BFFF00]' : 'text-[#A3A3A3]',
+            )}
           >
-            <span className="text-[18px]">{item.icon}</span>
-            {item.label}
+            <it.icon className="w-5 h-5" />
+            <span className="text-[10px] font-semibold">{it.label}</span>
           </button>
         );
       })}
     </nav>
   );
-};
+}

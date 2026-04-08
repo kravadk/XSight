@@ -1,52 +1,56 @@
-import { AnimatePresence, motion } from 'framer-motion';
-import { BottomTabBar } from './components/layout/BottomTabBar';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
-import { ApiPage } from './pages/ApiPage';
-import { ChatPage } from './pages/ChatPage';
-import { EarnPage } from './pages/EarnPage';
-import { PortfolioPage } from './pages/PortfolioPage';
 import { useUiStore } from './store/uiStore';
+import { PortfolioPage } from './pages/PortfolioPage';
+import { ChatPage } from './pages/ChatPage';
+import { ApiPage } from './pages/ApiPage';
+import { EarnPage } from './pages/EarnPage';
+import { GuidePage } from './pages/GuidePage';
+import { BuildPage } from './pages/BuildPage';
+import { AnimatePresence, motion } from 'motion/react';
+import { ToastHost } from './components/common/ToastHost';
+import { useBackendSync } from './hooks/useBackendSync';
+import { BottomTabBar } from './components/layout/BottomTabBar';
+import { CommandPalette } from './components/common/CommandPalette';
 
-const renderTab = (tab: string) => {
-  switch (tab) {
-    case 'chat':
-      return <ChatPage />;
-    case 'portfolio':
-      return <PortfolioPage />;
-    case 'api':
-      return <ApiPage />;
-    case 'earn':
-      return <EarnPage />;
-    default:
-      return null;
-  }
-};
+export default function App() {
+  const { activeTab } = useUiStore();
+  useBackendSync();
 
-const App = () => {
-  const tab = useUiStore((s) => s.activeTab);
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-[#0F0F0F] text-[#F5F5F5] flex">
       <Sidebar />
-      <div className="md:pl-[220px]">
+      <div className="flex-1 md:ml-[240px] flex flex-col min-h-screen">
         <TopBar />
-        <main>
+        <main className="flex-1 p-3 md:p-5 relative pb-24 md:pb-5">
           <AnimatePresence mode="wait">
             <motion.div
-              key={tab}
-              initial={{ opacity: 0, y: 8 }}
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
+              exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
+              className="h-full"
             >
-              {renderTab(tab)}
+              {activeTab === 'portfolio' && <PortfolioPage />}
+              {activeTab === 'dashboard' && <PortfolioPage />}
+              {activeTab === 'chat' && <ChatPage />}
+              {activeTab === 'api' && <ApiPage />}
+              {activeTab === 'earn' && <EarnPage />}
+              {activeTab === 'guide' && <GuidePage />}
+              {activeTab === 'build' && <BuildPage />}
+              {!['portfolio', 'dashboard', 'chat', 'api', 'earn', 'guide', 'build'].includes(activeTab) && (
+                <div className="flex items-center justify-center h-full text-[#A3A3A3]">
+                  {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} coming soon
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </main>
       </div>
       <BottomTabBar />
+      <ToastHost />
+      <CommandPalette />
     </div>
   );
-};
-
-export default App;
+}

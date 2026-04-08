@@ -7,13 +7,27 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "lint": "tsc -b --noEmit"
+    "lint": "tsc -b --noEmit",
+    "server:install": "npm --prefix server install",
+    "server:dev": "npm --prefix server run dev",
+    "server:build": "npm --prefix server run build",
+    "server:typecheck": "npm --prefix server run typecheck",
+    "test:api": "npm --prefix server run test:api",
+    "test:api:full": "npm --prefix server run test:api:full",
+    "test:health": "node scripts/health-check.mjs",
+    "test:activity": "npm --prefix server run activity",
+    "test:all": "npm run test:health && npm run test:api"
   },
   "dependencies": {
-    "framer-motion": "^11.11.0",
+    "@types/qrcode": "^1.5.6",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^2.13.0",
+    "tailwind-merge": "^3.5.0",
     "zustand": "^5.0.0"
   },
   "devDependencies": {

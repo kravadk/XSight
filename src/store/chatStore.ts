@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { CardPayload } from '../utils/aiResponder';
+import type { CardPayload } from '../types/cards';
 
 export interface ChatMessage {
   id: string;
@@ -20,8 +20,7 @@ interface ChatState {
 export const useChatStore = create<ChatState>((set) => ({
   messages: [],
   typing: false,
-  addMessage: (m) =>
-    set((s) => ({ messages: [...s.messages, m] })),
+  addMessage: (m) => set((s) => ({ messages: [...s.messages, m] })),
   setTyping: (t) => set({ typing: t }),
   replaceMessage: (id, m) =>
     set((s) => ({
