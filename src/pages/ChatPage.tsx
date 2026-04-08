@@ -6,12 +6,26 @@ import { EmptyChat } from '../components/chat/EmptyChat';
 import { ChatCard } from '../components/chat/ChatCard';
 import { AuditModal } from '../components/chat/AuditModal';
 import { useChatStore } from '../store/chatStore';
+import { api } from '../api/client';
 import { motion } from 'motion/react';
 
 export function ChatPage() {
   const messages = useChatStore((s) => s.messages);
   const typing = useChatStore((s) => s.typing);
   const clear = useChatStore((s) => s.clear);
+  const loadMessages = useChatStore((s) => s.loadMessages);
+
+  // Load server-side history on first mount
+  useEffect(() => {
+    api.chatHistory()
+      .then(({ messages: saved }) => { if (saved.length) loadMessages(saved); })
+      .catch(() => {});
+  }, [loadMessages]);
+
+  const handleClear = () => {
+    clear();
+    api.clearChatHistory().catch(() => {});
+  };
   const scrollRef = useRef<HTMLDivElement>(null);
   const [auditOpen, setAuditOpen] = useState(false);
 
@@ -34,7 +48,7 @@ export function ChatPage() {
             <ScrollText className="w-3 h-3" /> Audit
           </button>
           <button
-            onClick={clear}
+            onClick={handleClear}
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(239,68,68,0.1)] text-[#A3A3A3] hover:text-[#EF4444] text-[10px] font-bold uppercase tracking-wider"
           >
             <Trash2 className="w-3 h-3" /> Clear

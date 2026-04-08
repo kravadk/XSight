@@ -5,6 +5,7 @@ import { getAllTrackedTokens } from '../services/tokenTracker.js';
 import { getAllPools } from '../services/poolTracker.js';
 import { listStrategies } from '../services/strategyEngine.js';
 import { env } from '../config/env.js';
+import { getHistory, appendMessages, clearHistory, type StoredMessage } from '../services/chatHistory.js';
 
 export const chatRouter = Router();
 
@@ -165,6 +166,30 @@ async function buildContextBlock(): Promise<string> {
   return lines.join('\n');
 }
 
+// ── GET /api/chat/history ────────────────────────────────────────────────
+chatRouter.get('/history', async (_req: Request, res: Response) => {
+  const messages = await getHistory();
+  res.json({ messages });
+});
+
+// ── DELETE /api/chat/history ─────────────────────────────────────────────
+chatRouter.delete('/history', async (_req: Request, res: Response) => {
+  await clearHistory();
+  res.json({ ok: true });
+});
+
+// ── POST /api/chat/messages  (save arbitrary messages, e.g. txSuccess) ───
+chatRouter.post('/messages', async (req: Request, res: Response) => {
+  const { messages } = req.body as { messages?: StoredMessage[] };
+  if (!Array.isArray(messages)) {
+    res.status(400).json({ error: 'messages must be an array' });
+    return;
+  }
+  await appendMessages(messages);
+  res.json({ ok: true });
+});
+
+// ── POST /api/chat ───────────────────────────────────────────────────────
 chatRouter.post('/', async (req: Request, res: Response) => {
   const { message, history } = req.body as { message?: string; history?: ChatTurn[] };
   if (!message || typeof message !== 'string' || !message.trim()) {
@@ -187,6 +212,24 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       contextBlock,
       history: trimmedHistory,
     });
+
+    // Persist both turns to server-side history
+    const now = Date.now();
+    await appendMessages([
+      {
+        id: `${now}-user`,
+        role: 'user',
+        cards: [{ kind: 'text', text: message }],
+        createdAt: now,
+      },
+      {
+        id: `${now}-ai`,
+        role: 'ai',
+        cards: response.cards ?? [],
+        createdAt: now + 1,
+      },
+    ]).catch(() => { /* non-fatal */ });
+
     res.json(response);
   } catch (err) {
     if (err instanceof AiServiceError) {

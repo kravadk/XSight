@@ -227,6 +227,18 @@ export const api = {
       body: JSON.stringify({ message, history }),
     }),
 
+  chatHistory: () =>
+    request<{ messages: import('../store/chatStore').ChatMessage[] }>('/chat/history'),
+
+  clearChatHistory: () =>
+    request<{ ok: true }>('/chat/history', { method: 'DELETE' }),
+
+  saveMessages: (messages: import('../store/chatStore').ChatMessage[]) =>
+    request<{ ok: true }>('/chat/messages', {
+      method: 'POST',
+      body: JSON.stringify({ messages }),
+    }),
+
   portfolio: (address?: string) =>
     request<PortfolioResponse>('/status/portfolio' + (address ? `?address=${address}` : '')),
 
