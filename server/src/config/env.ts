@@ -24,7 +24,6 @@ export const env = {
   x402Network: process.env.X402_NETWORK ?? 'xlayer-mainnet',
   x402Asset: process.env.X402_ASSET ?? 'USDT',
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
-  blockaidApiKey: process.env.BLOCKAID_API_KEY ?? '',
 } as const;
 
 export const isConfigured = {

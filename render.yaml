@@ -33,5 +33,3 @@ services:
         sync: false
       - key: X402_PAYOUT_ADDRESS
         sync: false
-      - key: BLOCKAID_API_KEY
-        sync: false
