@@ -96,6 +96,19 @@ export const useChat = () => {
         cards,
         createdAt: Date.now(),
       });
+
+      // Refresh session meta after first turn so AI-generated title is reflected
+      if (sessionId) {
+        const { sessions } = useChatStore.getState();
+        const sess = sessions.find(s => s.id === sessionId);
+        if (sess && sess.messageCount <= 1) {
+          api.listSessions().then(({ sessions: list }) => {
+            const updated = list.find(s => s.id === sessionId);
+            if (updated) useChatStore.getState().updateSession(sessionId, { title: updated.title, messageCount: updated.messageCount });
+          }).catch(() => {});
+        }
+      }
+
       setTyping(false);
     },
     [addMessage, setTyping],

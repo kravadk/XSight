@@ -1,5 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import { x402Log } from '../middleware/x402.js';
+import { getHeartbeatStatus } from '../services/agentHeartbeat.js';
+import { recordPortfolioSnapshot, getPortfolioHistory } from '../services/portfolioHistory.js';
 import {
   snapshot,
   setAutoDeploy,
@@ -154,6 +156,14 @@ statusRouter.get('/security', async (req: Request, res: Response) => {
   }
 });
 
+statusRouter.get('/heartbeat', (_req: Request, res: Response) => {
+  res.json(getHeartbeatStatus());
+});
+
+statusRouter.get('/portfolio/history', (_req: Request, res: Response) => {
+  res.json({ history: getPortfolioHistory() });
+});
+
 statusRouter.get('/portfolio', async (req: Request, res: Response) => {
   const rawAddress = String(req.query.address ?? env.agenticWalletAddress);
   if (!rawAddress) {
@@ -168,6 +178,7 @@ statusRouter.get('/portfolio', async (req: Request, res: Response) => {
   try {
     const balances = await getWalletBalances(address);
     const totalUsd = balances.reduce((sum, b) => sum + b.usdValue, 0);
+    recordPortfolioSnapshot(totalUsd);
     const payload: PortfolioResponse = {
       address,
       network: 'X Layer Mainnet',

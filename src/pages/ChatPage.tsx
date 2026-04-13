@@ -128,9 +128,19 @@ export function ChatPage() {
                 }`}
               >
                 <MessageSquare className="w-3 h-3 mt-0.5 shrink-0 opacity-60" />
-                <span className="flex-1 text-[11px] leading-tight line-clamp-2 break-words">
-                  {s.title}
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[11px] leading-tight line-clamp-1 break-words font-medium">
+                    {s.title}
+                  </div>
+                  {s.lastMessage && (
+                    <div className="text-[10px] text-[#525252] line-clamp-1 mt-0.5">
+                      {s.lastMessage}
+                    </div>
+                  )}
+                  {s.messageCount > 0 && (
+                    <div className="text-[9px] text-[#444] mt-0.5">{Math.ceil(s.messageCount / 2)} msg{Math.ceil(s.messageCount / 2) !== 1 ? 's' : ''}</div>
+                  )}
+                </div>
                 <span
                   role="button"
                   onClick={(e) => { e.stopPropagation(); void handleDeleteSession(e as React.MouseEvent, s.id); }}

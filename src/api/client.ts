@@ -144,6 +144,7 @@ export interface StrategyDto {
   lastFiredAt: number;
   lastEvaluatedAt: number;
   cooldownMs: number;
+  webhookUrl?: string;
 }
 
 export interface StrategyFireDto {
@@ -159,6 +160,7 @@ export interface StrategyCreateBody {
   threshold?: number;
   action?: StrategyAction;
   label?: string;
+  webhookUrl?: string;
 }
 
 export interface SwapResultDto {
@@ -195,6 +197,7 @@ export interface SessionMeta {
   title: string;
   createdAt: number;
   messageCount: number;
+  lastMessage?: string;
 }
 
 export class ApiError extends Error {
@@ -327,4 +330,16 @@ export const api = {
   deleteStrategy: (id: string) =>
     request<{ ok: true }>(`/strategies/${id}`, { method: 'DELETE' }),
   strategyFires: () => request<{ fires: StrategyFireDto[] }>('/strategies/fires'),
+
+  heartbeat: () =>
+    request<{ running: boolean; count: number; lastAt: number; lastTxHash: string | null; intervalMs: number }>('/status/heartbeat'),
+
+  portfolioHistory: () =>
+    request<{ history: { timestamp: number; totalUsd: number }[] }>('/status/portfolio/history'),
+
+  updateSessionTitle: (id: string, title: string) =>
+    request<{ ok: true }>(`/chat/sessions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title }),
+    }),
 };

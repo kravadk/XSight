@@ -8,12 +8,33 @@ import { env } from '../config/env.js';
 import {
   getHistory, appendMessages, clearHistory,
   listSessions, getSession, createSession, appendToSession, deleteSession,
+  updateSessionTitle,
   type StoredMessage,
 } from '../services/chatHistory.js';
 
 export const chatRouter = Router();
 
 const HISTORY_MAX = 15;
+
+async function generateSessionTitle(message: string): Promise<string | null> {
+  if (!env.anthropicApiKey) return null;
+  try {
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: env.anthropicApiKey });
+    const res = await client.messages.create(
+      {
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 15,
+        messages: [{ role: 'user', content: `3-5 word chat title for: "${message.slice(0, 180)}". Reply ONLY with the title, no quotes.` }],
+      },
+      { signal: AbortSignal.timeout(4000) },
+    );
+    const t = res.content[0];
+    return t.type === 'text' ? t.text.trim().replace(/^["']|["']$/g, '').slice(0, 60) : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Heuristics that turn raw numbers into analytical annotations the AI can
@@ -206,6 +227,17 @@ chatRouter.delete('/sessions/:id', async (req: Request, res: Response) => {
   res.json({ ok: true });
 });
 
+// ── PATCH /api/chat/sessions/:id ─────────────────────────────────────────
+chatRouter.patch('/sessions/:id', async (req: Request, res: Response) => {
+  if (!validateSessionId(req.params.id, res)) return;
+  const { title } = req.body as { title?: string };
+  if (typeof title !== 'string' || !title.trim()) {
+    return res.status(400).json({ error: 'title required' });
+  }
+  await updateSessionTitle(req.params.id, title.trim().slice(0, 80));
+  res.json({ ok: true });
+});
+
 // ── legacy single-session history routes ─────────────────────────────────
 chatRouter.get('/history', async (_req: Request, res: Response) => {
   res.json({ messages: await getHistory() });
@@ -258,6 +290,16 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       appendToSession(sessionId, msgs).catch((err) => console.error('[chat] session persist failed:', err instanceof Error ? err.message : err));
     } else {
       appendMessages(msgs).catch((err) => console.error('[chat] history persist failed:', err instanceof Error ? err.message : err));
+    }
+
+    // Auto-generate AI title for the first turn of a new session
+    if (sessionId) {
+      const sess = await getSession(sessionId);
+      if (sess && sess.messages.length <= 2) {
+        generateSessionTitle(message).then(title => {
+          if (title) return updateSessionTitle(sessionId, title);
+        }).catch(() => {});
+      }
     }
 
     res.json(response);

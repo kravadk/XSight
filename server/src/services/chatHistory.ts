@@ -31,6 +31,7 @@ export interface SessionMeta {
   title: string;
   createdAt: number;
   messageCount: number;
+  lastMessage?: string;
 }
 
 // ── in-memory cache ──────────────────────────────────────────────────────────
@@ -60,7 +61,20 @@ async function init() { if (!ready) await load(); }
 export async function listSessions(): Promise<SessionMeta[]> {
   await init();
   return sessions
-    .map(s => ({ id: s.id, title: s.title, createdAt: s.createdAt, messageCount: s.messages.length }))
+    .map(s => {
+      const last = s.messages[s.messages.length - 1];
+      const lastMessage = last
+        ? (last.cards as Array<{ kind: string; text?: string }>)
+            .find(c => c.kind === 'text')?.text?.slice(0, 80)
+        : undefined;
+      return {
+        id: s.id,
+        title: s.title,
+        createdAt: s.createdAt,
+        messageCount: s.messages.length,
+        lastMessage,
+      };
+    })
     .sort((a, b) => b.createdAt - a.createdAt);
 }
 
@@ -98,6 +112,14 @@ export async function clearSession(id: string): Promise<void> {
   await init();
   const s = sessions.find(s => s.id === id);
   if (s) { s.messages = []; await flush(); }
+}
+
+export async function updateSessionTitle(id: string, title: string): Promise<void> {
+  await init();
+  const s = sessions.find(s => s.id === id);
+  if (!s) return;
+  s.title = title.slice(0, 80);
+  await flush();
 }
 
 // legacy compat — used by /api/chat/history routes (single-session)

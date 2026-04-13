@@ -10,6 +10,8 @@ import { useUiStore } from '../store/uiStore';
 import { Toggle } from '../components/common/Toggle';
 import { AnimatedNumber } from '../components/common/AnimatedNumber';
 import { StrategiesPanel } from '../components/earn/StrategiesPanel';
+import { EarnLoopDiagram } from '../components/earn/EarnLoopDiagram';
+import { HeartbeatCard } from '../components/earn/HeartbeatCard';
 
 export function EarnPage() {
   const economy = useApiStore((s) => s.economy);
@@ -136,6 +138,8 @@ export function EarnPage() {
 
   return (
     <div className="flex flex-col gap-5 max-w-5xl mx-auto w-full pb-10">
+      <EarnLoopDiagram />
+      <HeartbeatCard />
       {/* Compact header — replaces the big animated 4-node banner */}
       <div className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-4 md:p-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">

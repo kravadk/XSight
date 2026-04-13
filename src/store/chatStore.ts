@@ -22,6 +22,7 @@ interface ChatState {
   loadMessages: (messages: ChatMessage[]) => void;
   setTyping: (t: boolean) => void;
   replaceMessage: (id: string, m: ChatMessage) => void;
+  updateSession: (id: string, updates: { title?: string; messageCount?: number; lastMessage?: string }) => void;
   clear: () => void;
 }
 
@@ -39,5 +40,9 @@ export const useChatStore = create<ChatState>((set) => ({
   setTyping:    (t)  => set({ typing: t }),
   replaceMessage: (id, m) =>
     set((s) => ({ messages: s.messages.map((x) => (x.id === id ? m : x)) })),
+  updateSession: (id, updates) =>
+    set((st) => ({
+      sessions: st.sessions.map(s => s.id === id ? { ...s, ...updates } : s),
+    })),
   clear: () => set({ messages: [] }),
 }));

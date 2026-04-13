@@ -33,6 +33,7 @@ export function StrategiesPanel() {
   const [target, setTarget] = useState('OKB');
   const [threshold, setThreshold] = useState('20');
   const [label, setLabel] = useState('');
+  const [webhookUrl, setWebhookUrl] = useState('');
 
   const refresh = async () => {
     try {
@@ -61,6 +62,7 @@ export function StrategiesPanel() {
         kind,
         action: 'notify',
         label: label || undefined,
+        webhookUrl: webhookUrl || undefined,
       };
       if (triggerSpec.needsTarget) body.target = target;
       if (triggerSpec.needsThreshold) {
@@ -75,6 +77,7 @@ export function StrategiesPanel() {
       toast.success(`Alert created: ${res.strategy.description}`);
       setShowForm(false);
       setLabel('');
+      setWebhookUrl('');
       await refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'create failed');
@@ -172,6 +175,17 @@ export function StrategiesPanel() {
               onChange={(e) => setLabel(e.target.value)}
               placeholder="My OKB dip alert"
               className="w-full mt-1 h-8 px-2 bg-[#0A0A0A] border border-[rgba(255,255,255,0.08)] rounded text-xs text-[#F5F5F5] focus:outline-none focus:border-[rgba(191,255,0,0.3)]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[10px] text-[#666] mb-1">Webhook URL (optional)</label>
+            <input
+              type="url"
+              value={webhookUrl}
+              onChange={e => setWebhookUrl(e.target.value)}
+              className="w-full h-8 px-3 bg-[#0A0A0A] border border-[rgba(255,255,255,0.08)] rounded-lg text-xs text-[#F5F5F5] placeholder-[#444] focus:outline-none focus:border-[rgba(191,255,0,0.3)]"
+              placeholder="https://hooks.slack.com/..."
             />
           </div>
 

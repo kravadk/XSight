@@ -38,6 +38,8 @@ export interface StrategySpec {
   action: ActionKind;
   /** Free-text label the user gave the alert (or auto-generated) */
   label?: string;
+  /** Optional HTTPS webhook URL to POST a JSON payload when this strategy fires */
+  webhookUrl?: string;
 }
 
 export interface Strategy extends StrategySpec {
@@ -227,13 +229,36 @@ function evaluate(s: Strategy): EvalResult {
   }
 }
 
+async function fireWebhook(s: Strategy, reason: string, actionResult: string): Promise<void> {
+  if (!s.webhookUrl) return;
+  try {
+    const url = new URL(s.webhookUrl); // validate URL
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return;
+    await fetch(s.webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        strategyId: s.id,
+        label: s.label ?? s.description,
+        reason,
+        actionResult,
+        timestamp: Date.now(),
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch { /* best-effort */ }
+}
+
 async function executeAction(s: Strategy, reason: string): Promise<string> {
   if (s.action === 'notify') {
     notifySink('event', s.label ?? s.description, reason);
-    return 'notified';
+    const result = 'notified';
+    await fireWebhook(s, reason, result);
+    return result;
   }
   if (s.action === 'auto_deploy') {
     notifySink('event', `Auto-deploy triggered by ${s.description}`, reason);
+    let result: string;
     try {
       const res = await triggerAutoDeploy({ force: true });
       if (res.ok) {
@@ -242,15 +267,18 @@ async function executeAction(s: Strategy, reason: string): Promise<string> {
           'Auto-deploy executed',
           `${res.fromAmountUsdt} USDT → ${res.toAmountOkb?.toFixed(8)} OKB`,
         );
-        return `deployed ${res.fromAmountUsdt} USDT`;
+        result = `deployed ${res.fromAmountUsdt} USDT`;
+      } else {
+        notifySink('error', 'Auto-deploy failed', res.reason ?? 'unknown');
+        result = `deploy failed: ${res.reason}`;
       }
-      notifySink('error', 'Auto-deploy failed', res.reason ?? 'unknown');
-      return `deploy failed: ${res.reason}`;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'unknown';
       notifySink('error', 'Auto-deploy threw', msg);
-      return `error: ${msg}`;
+      result = `error: ${msg}`;
     }
+    await fireWebhook(s, reason, result);
+    return result;
   }
   return 'noop';
 }
