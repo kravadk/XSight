@@ -26,10 +26,4 @@ export type CardPayload =
       toAmount: number;
       hash: string;
     }
-  | { kind: 'error'; text: string }
-  | MezoTrovePayload;
-
-export interface MezoTrovePayload {
-  kind: 'mezoTrove';
-  address: string;
-}
+  | { kind: 'error'; text: string };
