@@ -20,7 +20,7 @@ export function TopBar() {
 
   const handleConnect = (kind: 'demo' | 'metamask' | 'okx' | 'walletconnect') => {
     if (kind === 'walletconnect') {
-      toast.info('WalletConnect — coming soon');
+      toast.info('WalletConnect is not supported in this build — use OKX Wallet or MetaMask');
       return;
     }
     if (kind === 'metamask' || kind === 'okx') {
@@ -183,14 +183,16 @@ export function TopBar() {
                 </button>
                 <button
                   onClick={() => handleConnect('walletconnect')}
-                  className="w-full h-12 px-4 flex items-center gap-3 rounded-xl bg-[#1A1A1A] hover:bg-[#1F1F1F] border border-[rgba(255,255,255,0.08)] text-[#F5F5F5] text-sm font-semibold transition-colors"
+                  className="w-full h-12 px-4 flex items-center gap-3 rounded-xl bg-[#1A1A1A] border border-[rgba(255,255,255,0.08)] text-[#666] text-sm font-semibold cursor-not-allowed opacity-50"
+                  disabled
                 >
                   <img
                     src="https://avatars.githubusercontent.com/u/37784886?s=48&v=4"
                     alt="WalletConnect"
-                    className="w-7 h-7 rounded-lg object-contain"
+                    className="w-7 h-7 rounded-lg object-contain opacity-50"
                   />
                   <span className="flex-1 text-left">WalletConnect</span>
+                  <span className="text-[9px] uppercase tracking-wider text-[#666]">not supported</span>
                 </button>
                 <div className="h-px bg-[rgba(255,255,255,0.06)] my-1" />
                 <button

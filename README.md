@@ -235,12 +235,12 @@ XSight exposes a **Model Context Protocol (MCP) server** at `POST /mcp`, allowin
 
 ```bash
 # Discover available tools
-curl -s -X POST https://xsight-server.onrender.com/mcp \
+curl -s -X POST https://xsight-2hqq.onrender.com/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .result.tools[].name
 
 # Call a tool
-curl -s -X POST https://xsight-server.onrender.com/mcp \
+curl -s -X POST https://xsight-2hqq.onrender.com/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_market_data","arguments":{}}}'
 ```
@@ -415,7 +415,7 @@ Every Claude call records `res.usage.input_tokens / output_tokens` and converts 
 ## Quick start
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/xsight.git
+git clone https://github.com/kravadk/XSight-.git
 cd xsight
 
 npm install
@@ -441,7 +441,7 @@ npm --prefix server run activity
 | **Agentic Wallet** | `0x0E437c109A4C1e15172c4dA557E77724D7243F71` |
 | **X Layer Explorer** | https://www.okx.com/web3/explorer/xlayer/address/0x0E437c109A4C1e15172c4dA557E77724D7243F71 |
 | **Frontend (Vercel)** | https://x-sight.vercel.app |
-| **Backend (Render)** | https://xsight-server.onrender.com |
+| **Backend (Render)** | https://xsight-2hqq.onrender.com |
 | **Network** | X Layer Mainnet (Chain ID 196) |
 
 ---
@@ -456,4 +456,4 @@ npm --prefix server run activity
 
 ## Submission summary
 
-> XSight is the first AI trading copilot on X Layer. Users chat in natural language; the agent reads their portfolio, scans tokens via OnchainOS Security, finds yield in real Uniswap pools, and executes swaps through the OKX DEX aggregator on X Layer mainnet. The same brain is exposed as four x402-monetized HTTP endpoints — any agent can pay 0.01–0.10 USDT (zero gas on X Layer) to consume AI market summaries, trading signals, token analysis, and portfolio advice. Revenue accumulates in the Agentic Wallet and a single `POST /api/status/economy/trigger-deploy` call converts surplus USDT into yield-bearing OKB on-chain — the real PAY leg of the earn-pay-earn loop. Built with all five OnchainOS modules (Wallet, Trade, Market, Security, Payments) and Uniswap pool data, every call recorded in a live activity tracker so "Most Active Agent" metrics are verifiable in real time.
+> XSight is the first AI trading copilot on X Layer. Users chat in natural language; the agent reads their portfolio, scans tokens via OnchainOS Security, finds yield in real Uniswap pools, and executes swaps through the OKX DEX aggregator on X Layer mainnet. The same brain is exposed as four x402-monetized HTTP endpoints — any agent can pay 0.01–0.10 USDT (zero gas on X Layer) to consume AI market summaries, trading signals, token analysis, and portfolio advice. Revenue accumulates in the Agentic Wallet and a `POST /api/status/economy/trigger-deploy` call converts surplus USDT into yield-bearing OKB on-chain — the real PAY leg of the earn-pay-earn loop. An **agent heartbeat** fires every 8 minutes to execute a real micro-swap independently of any user action, proving continuous autonomous on-chain activity. XSight also runs a full **MCP server** (`POST /mcp`, JSON-RPC 2.0) so any Claude-powered agent can call XSight as a reusable onchain skill — portfolio lookup, market data, security scan, swap execution. Built with all five OnchainOS modules (Wallet, Trade, Market, Security, Payments) and Uniswap pool data, every call recorded in a live activity tracker so "Most Active Agent" metrics are verifiable in real time.
