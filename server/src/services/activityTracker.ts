@@ -24,7 +24,8 @@ export type ActivityKind =
   | 'x402.rejected'
   | 'ai.chat'
   | 'ai.analytics'
-  | 'economy.deploy';
+  | 'economy.deploy'
+  | 'heartbeat.swap';
 
 interface CounterState {
   total: number;

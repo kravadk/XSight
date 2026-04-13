@@ -3,7 +3,7 @@
 > Chat with AI. It analyzes X Layer markets, trades for you, and sells its own intelligence as a pay-per-call API via x402.
 
 **OKX Build X Hackathon Season 2 — X Layer Arena**
-**Special prize tracks:** Best x402 Application · Best Economy Loop · Most Active Agent
+**Special prize tracks:** Best x402 Application · Best Economy Loop · Most Active Agent · Best MCP Integration
 
 ---
 
@@ -214,6 +214,41 @@ The Earn tab renders the four nodes with **animated lime gradient shimmer** flow
 
 ---
 
+## MCP Integration — XSight as a Reusable Onchain Skill
+
+XSight exposes a **Model Context Protocol (MCP) server** at `POST /mcp`, allowing any Claude-powered agent to use XSight as a reusable onchain skill provider without knowing the underlying OnchainOS API.
+
+**Protocol:** JSON-RPC 2.0 · MCP spec 2024-11-05
+
+### Available MCP Tools
+
+| Tool | Input | Description |
+|------|-------|-------------|
+| `get_portfolio` | `address?` | Fetch real X Layer wallet balances via OnchainOS |
+| `swap_tokens` | `from, to, amount` | Execute on-chain DEX swap via OnchainOS aggregator |
+| `get_market_data` | `symbols?` | Live token prices, 24h change, volume on X Layer |
+| `scan_token_security` | `token` | Risk score, honeypot detection, holder analysis |
+| `get_pool_apr` | — | Yield pool APRs for strategy planning |
+| `get_economy_snapshot` | — | x402 revenue, deploy history, net P&L |
+
+### Usage
+
+```bash
+# Discover available tools
+curl -s -X POST https://xsight-server.onrender.com/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | jq .result.tools[].name
+
+# Call a tool
+curl -s -X POST https://xsight-server.onrender.com/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_market_data","arguments":{}}}'
+```
+
+Any MCP-compatible Claude agent can discover and call XSight tools automatically — no additional setup required.
+
+---
+
 ## Most Active Agent — On-chain Activity
 
 Every OnchainOS call, every x402 hit, and every signed swap is recorded by the [activityTracker singleton](server/src/services/activityTracker.ts).
@@ -255,6 +290,17 @@ Every OnchainOS call, every x402 hit, and every signed swap is recorded by the [
 ```
 
 Every entry is rendered live in the **Agent Activity** card on the API tab — 8 stat tiles + a recent-events feed that updates every 15s.
+
+### Agent Heartbeat — Autonomous On-chain Swaps
+
+A background service (`agentHeartbeat`) runs every **8 minutes** and executes a real micro-swap via OnchainOS DEX, independently of any user action or x402 revenue. This proves the agent is continuously active on-chain — not just responsive to user input.
+
+**Each heartbeat tick:**
+1. Fetches current USDT balance via OnchainOS Wallet API
+2. If balance ≥ 0.001 USDT → executes USDT→OKB swap via `executeSwap`
+3. Records tx hash in deploy history (visible in Economy tab + on-chain explorer)
+
+All heartbeat transactions are tagged `[heartbeat]` in the activity log and verifiable on the X Layer explorer.
 
 ### Generate activity for the demo
 
@@ -394,8 +440,8 @@ npm --prefix server run activity
 |---|---|
 | **Agentic Wallet** | `0x0E437c109A4C1e15172c4dA557E77724D7243F71` |
 | **X Layer Explorer** | https://www.okx.com/web3/explorer/xlayer/address/0x0E437c109A4C1e15172c4dA557E77724D7243F71 |
-| **Frontend (Vercel)** | `<TO_BE_FILLED_AFTER_DEPLOY>` |
-| **Backend (Railway)** | `<TO_BE_FILLED_AFTER_DEPLOY>` |
+| **Frontend (Vercel)** | https://x-sight.vercel.app |
+| **Backend (Render)** | https://xsight-server.onrender.com |
 | **Network** | X Layer Mainnet (Chain ID 196) |
 
 ---

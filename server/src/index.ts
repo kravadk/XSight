@@ -8,11 +8,12 @@ import { swapRouter } from './routes/swap.js';
 import { economyRouter } from './routes/economy.js';
 import { marketRouter } from './routes/market.js';
 import { strategyRouter } from './routes/strategies.js';
+import { mcpRouter } from './routes/mcp.js';
 import { startTokenTracker } from './services/tokenTracker.js';
 import { startPoolTracker } from './services/poolTracker.js';
 import { startStrategyEngine } from './services/strategyEngine.js';
 import { startTokenCatalog } from './services/tokenCatalog.js';
-import { mezoRouter } from './routes/mezo.js';
+import { startAgentHeartbeat } from './services/agentHeartbeat.js';
 
 const app = express();
 
@@ -33,13 +34,14 @@ app.use('/api/economy', economyRouter); // spec-aliased shim, see routes/economy
 app.use('/api/market', marketRouter);
 app.use('/api/strategies', strategyRouter);
 app.use('/api/v1', analysisRouter);
-app.use('/api/mezo', mezoRouter);
+app.use('/mcp', mcpRouter);
 
 // Background data trackers + automation engine
 startTokenCatalog(); // must run before swap routes resolve
 startTokenTracker();
 startPoolTracker();
 startStrategyEngine();
+startAgentHeartbeat(); // autonomous micro-swaps every 8 min for on-chain activity
 
 app.get('/', (_req, res) => {
   res.json({
@@ -68,6 +70,8 @@ app.get('/', (_req, res) => {
       strategiesList: 'GET /api/strategies',
       strategiesCreate: 'POST /api/strategies',
       strategiesFires: 'GET /api/strategies/fires',
+      mcp: 'POST /mcp  (MCP JSON-RPC 2.0)',
+      mcpDiscover: 'GET /mcp  (capability discovery)',
       x402Spec: 'GET /api/v1/x402-spec',
       monetized: [
         'GET /api/v1/market-summary  (0.01 USDT)',
