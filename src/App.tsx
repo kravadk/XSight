@@ -4,8 +4,19 @@ import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { BottomTabBar } from './components/layout/BottomTabBar';
 import { ToastHost } from './components/common/ToastHost';
+import { CommandPalette } from './components/common/CommandPalette';
 import { useUiStore } from './store/uiStore';
+import { useBackendSync } from './hooks/useBackendSync';
 
+// XSight copilot
+const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })));
+const ChatPage = lazy(() => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })));
+const ApiPage = lazy(() => import('./pages/ApiPage').then((m) => ({ default: m.ApiPage })));
+const EarnPage = lazy(() => import('./pages/EarnPage').then((m) => ({ default: m.EarnPage })));
+const GuidePage = lazy(() => import('./pages/GuidePage').then((m) => ({ default: m.GuidePage })));
+const BuildPage = lazy(() => import('./pages/BuildPage').then((m) => ({ default: m.BuildPage })));
+
+// X Cup prediction market
 const MarketsPage = lazy(() => import('./pages/MarketsPage').then((m) => ({ default: m.MarketsPage })));
 const MarketDetailPage = lazy(() => import('./pages/MarketDetailPage').then((m) => ({ default: m.MarketDetailPage })));
 const BetsPage = lazy(() => import('./pages/BetsPage').then((m) => ({ default: m.BetsPage })));
@@ -15,10 +26,9 @@ const PunditPage = lazy(() => import('./pages/PunditPage').then((m) => ({ defaul
 const FanPassPage = lazy(() => import('./pages/FanPassPage').then((m) => ({ default: m.FanPassPage })));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((m) => ({ default: m.DevelopersPage })));
 
-const X_CUP_TABS = ['markets', 'market-detail', 'bets', 'bracket', 'leaderboard', 'pundit', 'fanpass', 'developers'];
-
 export default function App() {
-  const activeTab = useUiStore((s) => s.activeTab);
+  const { product, activeTab } = useUiStore();
+  useBackendSync();
 
   return (
     <div className="flex min-h-screen w-full overflow-x-hidden bg-stadium-base text-stadium-text">
@@ -36,6 +46,15 @@ export default function App() {
               className="h-full min-w-0"
             >
               <Suspense fallback={<PageSkeleton />}>
+                {/* XSight copilot */}
+                {(activeTab === 'portfolio' || activeTab === 'dashboard') && <PortfolioPage />}
+                {activeTab === 'chat' && <ChatPage />}
+                {activeTab === 'api' && <ApiPage />}
+                {activeTab === 'earn' && <EarnPage />}
+                {activeTab === 'guide' && <GuidePage />}
+                {activeTab === 'build' && <BuildPage />}
+                {/* X Cup */}
+                {activeTab === 'markets' && <MarketsPage />}
                 {activeTab === 'market-detail' && <MarketDetailPage />}
                 {activeTab === 'bets' && <BetsPage />}
                 {activeTab === 'bracket' && <BracketPage />}
@@ -43,7 +62,9 @@ export default function App() {
                 {activeTab === 'pundit' && <PunditPage />}
                 {activeTab === 'fanpass' && <FanPassPage />}
                 {activeTab === 'developers' && <DevelopersPage />}
-                {(activeTab === 'markets' || !X_CUP_TABS.includes(activeTab)) && <MarketsPage />}
+                {/* fallback for any unrouted tab */}
+                {['cup', 'agentbet', 'files', 'rewards'].includes(activeTab) &&
+                  (product === 'xcup' ? <MarketsPage /> : <ChatPage />)}
               </Suspense>
             </motion.div>
           </AnimatePresence>
@@ -51,6 +72,7 @@ export default function App() {
       </div>
       <BottomTabBar />
       <ToastHost />
+      <CommandPalette />
     </div>
   );
 }

@@ -1,9 +1,39 @@
-import { Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2 } from 'lucide-react';
+import {
+  Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2,
+  Briefcase, MessageSquare, Plug, Coins, BookOpen,
+} from 'lucide-react';
 import { useUiStore, type Tab } from '../../store/uiStore';
 import { cn } from '../../utils/format';
 import { motion } from 'motion/react';
 
-const navGroups: { label: string; items: { id: Tab; label: string; icon: typeof Swords; badge?: 'live' }[] }[] = [
+type NavItem = { id: Tab; label: string; icon: typeof Swords; badge?: 'live' };
+type NavGroup = { label: string; items: NavItem[] };
+
+const XSIGHT_NAV: NavGroup[] = [
+  {
+    label: 'Trading',
+    items: [
+      { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
+      { id: 'chat', label: 'AI Chat', icon: MessageSquare, badge: 'live' },
+    ],
+  },
+  {
+    label: 'Earn',
+    items: [
+      { id: 'api', label: 'x402 API', icon: Plug },
+      { id: 'earn', label: 'Auto-Yield', icon: Coins },
+    ],
+  },
+  {
+    label: 'Docs',
+    items: [
+      { id: 'guide', label: 'Guide', icon: BookOpen },
+      { id: 'build', label: 'Build', icon: Code2 },
+    ],
+  },
+];
+
+const XCUP_NAV: NavGroup[] = [
   {
     label: 'Predict',
     items: [
@@ -29,17 +59,20 @@ const navGroups: { label: string; items: { id: Tab; label: string; icon: typeof 
 ];
 
 export function SidebarNav() {
-  const { activeTab, setActiveTab } = useUiStore();
+  const { product, activeTab, setActiveTab } = useUiStore();
+  const groups = product === 'xcup' ? XCUP_NAV : XSIGHT_NAV;
 
   return (
-    <nav className="mt-6 flex flex-col gap-5">
-      {navGroups.map((group) => (
+    <nav className="mt-5 flex flex-col gap-5">
+      {groups.map((group) => (
         <div key={group.label}>
           <div className="px-6 mb-1.5 text-micro text-stadium-text-muted">{group.label}</div>
           <div className="flex flex-col gap-0.5">
             {group.items.map((item) => {
               const isActive =
-                activeTab === item.id || (item.id === 'markets' && activeTab === 'market-detail');
+                activeTab === item.id ||
+                (item.id === 'markets' && activeTab === 'market-detail') ||
+                (item.id === 'portfolio' && activeTab === 'dashboard');
               return (
                 <button
                   key={item.id}

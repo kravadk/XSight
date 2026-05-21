@@ -1,28 +1,50 @@
-import { Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2, MoreHorizontal, X } from 'lucide-react';
+import {
+  Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2,
+  Briefcase, MessageSquare, Plug, Coins, BookOpen, MoreHorizontal, X,
+} from 'lucide-react';
 import { useUiStore, type Tab } from '../../store/uiStore';
 import { cn } from '../../utils/format';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { ProductSwitch } from './ProductSwitch';
 
-const mainItems: { id: Tab; label: string; icon: typeof Swords }[] = [
-  { id: 'markets', label: 'Markets', icon: Swords },
-  { id: 'bets', label: 'My Bets', icon: Ticket },
-  { id: 'bracket', label: 'Bracket', icon: Network },
-  { id: 'leaderboard', label: 'Ranks', icon: Crown },
-];
+type Item = { id: Tab; label: string; icon: typeof Swords };
 
-const moreItems: { id: Tab; label: string; icon: typeof Swords }[] = [
-  { id: 'pundit', label: 'AI Pundit', icon: Bot },
-  { id: 'fanpass', label: 'FanPass', icon: BadgeCheck },
-  { id: 'developers', label: 'Developers', icon: Code2 },
-];
+const NAV: Record<'xsight' | 'xcup', { main: Item[]; more: Item[] }> = {
+  xsight: {
+    main: [
+      { id: 'portfolio', label: 'Portfolio', icon: Briefcase },
+      { id: 'chat', label: 'Chat', icon: MessageSquare },
+      { id: 'api', label: 'API', icon: Plug },
+      { id: 'earn', label: 'Earn', icon: Coins },
+    ],
+    more: [
+      { id: 'guide', label: 'Guide', icon: BookOpen },
+      { id: 'build', label: 'Build', icon: Code2 },
+    ],
+  },
+  xcup: {
+    main: [
+      { id: 'markets', label: 'Markets', icon: Swords },
+      { id: 'bets', label: 'My Bets', icon: Ticket },
+      { id: 'bracket', label: 'Bracket', icon: Network },
+      { id: 'leaderboard', label: 'Ranks', icon: Crown },
+    ],
+    more: [
+      { id: 'pundit', label: 'AI Pundit', icon: Bot },
+      { id: 'fanpass', label: 'FanPass', icon: BadgeCheck },
+      { id: 'developers', label: 'Developers', icon: Code2 },
+    ],
+  },
+};
 
 export function BottomTabBar() {
-  const { activeTab, setActiveTab } = useUiStore();
+  const { product, activeTab, setActiveTab } = useUiStore();
   const [moreOpen, setMoreOpen] = useState(false);
-  const isMoreActive = moreItems.some((i) => i.id === activeTab);
+  const { main, more } = NAV[product];
+  const isMoreActive = more.some((i) => i.id === activeTab);
 
-  const handleSelect = (id: Tab) => {
+  const select = (id: Tab) => {
     setActiveTab(id);
     setMoreOpen(false);
   };
@@ -46,7 +68,10 @@ export function BottomTabBar() {
               transition={{ type: 'spring', damping: 26, stiffness: 260 }}
               className="md:hidden fixed bottom-16 left-3 right-3 z-50 rounded-2xl border border-stadium-line bg-stadium-card p-3 shadow-2xl"
             >
-              <div className="mb-3 flex items-center justify-between px-1">
+              <div className="mb-2 px-1">
+                <ProductSwitch />
+              </div>
+              <div className="mb-2 flex items-center justify-between px-1">
                 <span className="text-micro text-stadium-text-secondary">More</span>
                 <button
                   onClick={() => setMoreOpen(false)}
@@ -57,12 +82,12 @@ export function BottomTabBar() {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {moreItems.map((it) => {
+                {more.map((it) => {
                   const active = activeTab === it.id;
                   return (
                     <button
                       key={it.id}
-                      onClick={() => handleSelect(it.id)}
+                      onClick={() => select(it.id)}
                       className={cn(
                         'flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 transition-colors',
                         active ? 'bg-pitch-bg text-pitch' : 'bg-[rgba(255,255,255,0.04)] text-stadium-text-secondary',
@@ -80,8 +105,11 @@ export function BottomTabBar() {
       </AnimatePresence>
 
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 flex h-[70px] justify-around border-t border-stadium-line bg-stadium-base/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        {mainItems.map((it) => {
-          const active = activeTab === it.id || (it.id === 'markets' && activeTab === 'market-detail');
+        {main.map((it) => {
+          const active =
+            activeTab === it.id ||
+            (it.id === 'markets' && activeTab === 'market-detail') ||
+            (it.id === 'portfolio' && activeTab === 'dashboard');
           return (
             <button
               key={it.id}

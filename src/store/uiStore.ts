@@ -1,10 +1,14 @@
 import { create } from 'zustand';
 
+/** The two product surfaces under the XSight umbrella. */
+export type Product = 'xsight' | 'xcup';
+
 /**
- * X Cup destinations (DESIGN §5). Legacy XSight tabs are kept in the union so the
- * retired trading components still type-check; they are no longer in the nav.
+ * Tabs across both products. `xsight` = the trading copilot; `xcup` = the prediction
+ * market. The union is shared so the layout chrome stays type-safe across the switch.
  */
 export type Tab =
+  // X Cup
   | 'markets'
   | 'market-detail'
   | 'bets'
@@ -13,37 +17,44 @@ export type Tab =
   | 'pundit'
   | 'fanpass'
   | 'developers'
-  // legacy — retired from the X Cup nav
+  // XSight copilot
+  | 'portfolio'
   | 'dashboard'
   | 'chat'
-  | 'portfolio'
   | 'api'
   | 'earn'
-  | 'cup'
-  | 'agentbet'
   | 'guide'
   | 'build'
+  // legacy / unused
+  | 'cup'
+  | 'agentbet'
   | 'files'
   | 'rewards';
 
 export type SubTab = 'chat' | 'trade';
 
+const DEFAULT_TAB: Record<Product, Tab> = { xsight: 'chat', xcup: 'markets' };
+
 interface UiState {
+  product: Product;
   activeTab: Tab;
   activeSubTab: SubTab;
-  /** CupHub match id of the market open in the detail screen. */
+  /** CupHub match id of the market open in the X Cup detail screen. */
   marketDetailId: string | null;
+  setProduct: (product: Product) => void;
   setActiveTab: (tab: Tab) => void;
   setActiveSubTab: (subTab: SubTab) => void;
-  /** Open the Market detail screen for a given match. */
+  /** Open the X Cup Market detail screen for a given match. */
   openMarket: (matchId: string) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  activeTab: 'markets',
+  product: 'xsight',
+  activeTab: 'chat',
   activeSubTab: 'chat',
   marketDetailId: null,
+  setProduct: (product) => set({ product, activeTab: DEFAULT_TAB[product] }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setActiveSubTab: (subTab) => set({ activeSubTab: subTab }),
-  openMarket: (matchId) => set({ marketDetailId: matchId, activeTab: 'market-detail' }),
+  openMarket: (matchId) => set({ marketDetailId: matchId, activeTab: 'market-detail', product: 'xcup' }),
 }));

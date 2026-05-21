@@ -6,9 +6,11 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CipherScramble } from '../common/CipherScramble';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { MagneticButton } from '../common/MagneticButton';
+import { useUiStore } from '../../store/uiStore';
 
 export function TopBar() {
   const { connected, short, address, onXLayer, connecting, connect, disconnect, ensureXLayer } = useWalletStore();
+  const product = useUiStore((s) => s.product);
   const notifications = useNotificationsStore((s) => s.items);
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const markRead = useNotificationsStore((s) => s.markRead);
@@ -42,7 +44,7 @@ export function TopBar() {
           X Layer · 196
         </div>
         <div className="flex items-center gap-1.5 rounded-full border border-gold-border bg-gold-bg px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold">
-          <Sparkles className="h-3 w-3" /> World Cup 2026
+          <Sparkles className="h-3 w-3" /> {product === 'xcup' ? 'World Cup 2026' : 'AI Copilot'}
         </div>
         {connected && !onXLayer && (
           <button
