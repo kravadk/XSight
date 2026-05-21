@@ -7,6 +7,7 @@ import { useWalletStore } from '../store/walletStore';
 import { toast } from '../store/toastStore';
 import { MatchupHeader, MarketStatusBadge, StatePanel, toBaseUnits, formatPool } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
+import { FreePickPanel } from '../components/cup/FreePickPanel';
 
 const OUTCOMES = [
   { id: 1, label: 'Home', color: 'var(--color-outcome-home)' },
@@ -200,6 +201,9 @@ export function MarketDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* free-to-play pick */}
+            <FreePickPanel matchId={matchId} locked={data.matchStatus !== 'scheduled'} />
 
             {/* oracle strip */}
             <div className="stadium-card flex items-center justify-between p-3.5 text-xs">

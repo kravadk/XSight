@@ -663,6 +663,17 @@ export interface PunditProfileDto {
   bio: string;
 }
 
+export interface FreePickDto {
+  id: string;
+  fixtureId: string;
+  wallet: string;
+  outcome: 'HOME' | 'DRAW' | 'AWAY';
+  points: number;
+  resolvedCorrect: boolean | null;
+  createdAt: string;
+  scoredAt: string | null;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -845,6 +856,18 @@ export const api = {
   cupPundit: () => request<{ profile: PunditProfileDto; picks: PunditPickDto[] }>('/cup/pundit'),
   cupPunditPick: (matchId: string) =>
     request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
+  freePicks: (filter: { wallet?: string; matchId?: string }) => {
+    const qs = new URLSearchParams();
+    if (filter.wallet) qs.set('wallet', filter.wallet);
+    if (filter.matchId) qs.set('matchId', filter.matchId);
+    const q = qs.toString();
+    return request<{ picks: FreePickDto[] }>(`/cup/free-picks${q ? `?${q}` : ''}`);
+  },
+  makeFreePick: (fixtureId: string, wallet: string, outcome: 'HOME' | 'DRAW' | 'AWAY') =>
+    request<{ pick: FreePickDto }>('/cup/free-picks', {
+      method: 'POST',
+      body: JSON.stringify({ fixtureId, wallet, outcome }),
+    }),
   marketPositions: (wallet: string) =>
     request<{ wallet: string; positions: (MarketPositionDto & { market: MarketViewDto })[] }>(
       `/markets/positions?wallet=${encodeURIComponent(wallet)}`,
