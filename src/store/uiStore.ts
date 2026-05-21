@@ -49,8 +49,8 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  product: 'xsight',
-  activeTab: 'chat',
+  product: 'xcup',
+  activeTab: 'markets',
   activeSubTab: 'chat',
   marketDetailId: null,
   setProduct: (product) => set({ product, activeTab: DEFAULT_TAB[product] }),
