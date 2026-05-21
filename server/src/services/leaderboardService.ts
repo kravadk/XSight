@@ -51,6 +51,8 @@ export async function recordPunditFreePicks(): Promise<{ mirrored: number }> {
   const picks = await listPunditPicks();
   let mirrored = 0;
   for (const pick of picks) {
+    // recordFreePick is a no-op once a fixture locks at kickoff — re-mirroring an
+    // already-locked fixture is intentional and harmless; the first mirror persisted.
     if (pick.pick === 'PASS') continue;
     const res = await recordFreePick(pick.matchId, hermes, pick.pick);
     if (res.ok) mirrored += 1;

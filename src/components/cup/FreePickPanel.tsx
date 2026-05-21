@@ -13,8 +13,8 @@ const OUTCOMES = [
 ] as const;
 
 /**
- * Free-to-play pick panel — records a no-money outcome call for the fixture and shows
- * the player's existing pick + its scored result. Sits below the staking panel.
+ * Free-to-play pick panel — records a no-money outcome call for the fixture. While the
+ * fixture is still open the pick can be changed; once it locks the result is shown.
  */
 export function FreePickPanel({ matchId, locked }: { matchId: string; locked: boolean }) {
   const { connected, address, connect } = useWalletStore();
@@ -26,12 +26,16 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
   const [choice, setChoice] = useState<'HOME' | 'DRAW' | 'AWAY' | null>(null);
   const [busy, setBusy] = useState(false);
 
+  // The active selection: an explicit choice, otherwise the wallet's existing pick.
+  const selected = choice ?? myPick?.outcome ?? null;
+
   async function submit() {
-    if (!address || !choice) return;
+    if (!address || !selected) return;
     setBusy(true);
     try {
-      await api.makeFreePick(matchId, address, choice);
-      toast.success('Free pick recorded');
+      await api.makeFreePick(matchId, address, selected);
+      toast.success(myPick ? 'Free pick updated' : 'Free pick recorded');
+      setChoice(null);
       reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Free pick failed');
@@ -39,6 +43,17 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
       setBusy(false);
     }
   }
+
+  const pickResult = myPick ? (
+    <div className="text-xs text-stadium-text-secondary">
+      Your free pick: <span className="font-bold text-stadium-text">{myPick.outcome}</span>
+      {myPick.resolvedCorrect === null
+        ? ' · pending result'
+        : myPick.resolvedCorrect
+          ? ` · correct +${myPick.points} pts`
+          : ' · missed'}
+    </div>
+  ) : null;
 
   return (
     <div className="stadium-card p-4">
@@ -48,17 +63,10 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
         <span className="ml-auto text-[10px] text-stadium-text-muted">earns points, not USDC</span>
       </div>
 
-      {myPick ? (
-        <div className="text-xs text-stadium-text-secondary">
-          Your free pick: <span className="font-bold text-stadium-text">{myPick.outcome}</span>
-          {myPick.resolvedCorrect === null
-            ? ' · pending result'
-            : myPick.resolvedCorrect
-              ? ` · correct +${myPick.points} pts`
-              : ' · missed'}
-        </div>
-      ) : locked ? (
-        <div className="text-xs text-stadium-text-secondary">Free picks are closed for this fixture.</div>
+      {locked ? (
+        pickResult ?? (
+          <div className="text-xs text-stadium-text-secondary">Free picks are closed for this fixture.</div>
+        )
       ) : !connected ? (
         <button
           onClick={() => void connect()}
@@ -75,7 +83,7 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
                 onClick={() => setChoice(o.id)}
                 className={cn(
                   'rounded-xl border p-2 text-sm font-bold transition-all',
-                  choice === o.id
+                  selected === o.id
                     ? 'border-pitch bg-pitch-bg text-stadium-text'
                     : 'border-stadium-line text-stadium-text-secondary hover:border-stadium-line-strong',
                 )}
@@ -86,11 +94,12 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
           </div>
           <button
             onClick={() => void submit()}
-            disabled={busy || !choice}
+            disabled={busy || !selected || selected === myPick?.outcome}
             className="mt-3 w-full rounded-xl bg-gold py-2.5 text-sm font-bold text-stadium-base hover:opacity-90 disabled:opacity-50"
           >
-            {busy ? 'Recording…' : 'Make free pick'}
+            {busy ? 'Recording…' : myPick ? 'Update free pick' : 'Make free pick'}
           </button>
+          {pickResult && <div className="mt-2">{pickResult}</div>}
         </>
       )}
     </div>
