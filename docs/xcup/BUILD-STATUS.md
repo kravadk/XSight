@@ -4,6 +4,13 @@
 > `docs/superpowers/plans/` (per-plan implementation plans).
 > Updated: 2026-05-21 · Branch: `feat/xcup-prediction-market`.
 
+> 🔴 **DIRECTIVE (user, 2026-05-21): NO MOCKS, NO LOCAL STAND-INS — everything real.**
+> Product AND tests use only real components. Rework the contract test layer to run
+> against a **forked X Layer mainnet** with the real `CupOracleV2` + real stablecoin
+> (Hardhat account impersonation), and **delete `contracts/test/Mocks.sol`**. Sole
+> exception to confirm with the user: a reentrancy test needs a crafted attacker
+> contract (an exploit harness, not a stub of a real thing) — keep it or drop that test.
+
 ## What this is
 World Cup prediction market on X Layer: real-money USDC pari-mutuel pools on football
 match outcomes, settled by a trustless multi-source oracle, with an autonomous AI pundit
