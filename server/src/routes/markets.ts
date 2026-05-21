@@ -103,7 +103,10 @@ marketsRouter.get('/:id/claim-tx', (req: Request, res: Response) => {
 // Operator actions (gated).
 marketsRouter.post('/ensure', async (req: Request, res: Response) => {
   if (!requireWrite(req, res)) return;
-  res.json(await ensureMarketsForUpcomingFixtures());
+  const body = req.body as { limit?: number };
+  // default cap of 16 so a bare call never fires the whole fixture list
+  const limit = Number.isInteger(body.limit) && (body.limit ?? 0) > 0 ? body.limit : 16;
+  res.json(await ensureMarketsForUpcomingFixtures(limit));
 });
 
 marketsRouter.post('/:id/settle', async (req: Request, res: Response) => {

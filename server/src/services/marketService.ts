@@ -15,6 +15,7 @@ import {
   hasClaimed,
   parimutuelMetadata,
   readAllowance,
+  readMarket,
   readSettlementToken,
   readStakeOf,
   settleMarketTx,
@@ -233,10 +234,13 @@ export async function listWalletPositions(
 }
 
 /**
- * Operator: create a ParimutuelMarket on-chain for every scheduled fixture that has a
- * future kickoff and no market yet. Gated by CUP_WRITE_API_ENABLED.
+ * Operator: create a ParimutuelMarket on-chain for scheduled fixtures with a future
+ * kickoff and no market yet. Gated by CUP_WRITE_API_ENABLED. `limit` caps how many
+ * markets are created in one call (fixtures are kickoff-sorted, soonest first) — keep
+ * the gas/time bounded. Existence is checked on-chain (`readMarket`), so it is safe to
+ * re-run.
  */
-export async function ensureMarketsForUpcomingFixtures(): Promise<{
+export async function ensureMarketsForUpcomingFixtures(limit?: number): Promise<{
   created: Array<{ id: string; txHash: string }>;
   skipped: Array<{ id: string; reason: string }>;
 }> {
@@ -251,13 +255,15 @@ export async function ensureMarketsForUpcomingFixtures(): Promise<{
   const feed = await getCupFeed();
   const nowSec = Math.floor(Date.now() / 1000);
   for (const match of feed.fixtures) {
+    if (limit !== undefined && created.length >= limit) break;
     const kickoff = Math.floor(Date.parse(match.kickoffUtc) / 1000);
     if (!Number.isFinite(kickoff) || kickoff <= nowSec) {
       skipped.push({ id: match.id, reason: 'kickoff not in the future' });
       continue;
     }
     const marketId = deriveMarketId(match.id);
-    if (getIndexedMarket(marketId)?.createdBlock) {
+    const onchain = await readMarket(marketId);
+    if (onchain?.exists) {
       skipped.push({ id: match.id, reason: 'market already exists' });
       continue;
     }

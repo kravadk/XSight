@@ -13,6 +13,7 @@
     "deploy:cup-oracle": "tsx scripts/deploy-cup-oracle.ts",
     "deploy:fanpass-sbt": "tsx scripts/deploy-fanpass-sbt.ts",
     "deploy:parimutuel": "tsx scripts/deploy-parimutuel-market.ts",
+    "ensure:markets": "tsx scripts/ensure-markets.ts",
     "seed:cup-oracle": "tsx scripts/seed-cup-oracle.ts",
     "test:cup-auth": "tsx scripts/test-cup-write-auth.ts",
     "test:cup-log": "tsx scripts/test-cup-settlement-log.ts",
