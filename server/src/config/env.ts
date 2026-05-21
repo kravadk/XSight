@@ -58,6 +58,9 @@ export const env = {
   // sends real OKB-spending stake txs from the pundit wallet on a timer.
   punditAutoStakeEnabled: process.env.PUNDIT_AUTOSTAKE_ENABLED === 'true',
   punditAutoStakeIntervalMs: Number(process.env.PUNDIT_AUTOSTAKE_INTERVAL_MS ?? 1_800_000),
+  // BracketNFT (Plan 11). Empty => the contract is not deployed and the mint surface
+  // honestly shows a `contract-ready` state.
+  bracketNftAddress: required('BRACKET_NFT_ADDRESS'),
   marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
   // X Layer's public RPC caps eth_getLogs at a 100-block range — keep this <= 100.
   marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 90),

@@ -95,6 +95,7 @@ app.get('/', (_req, res) => {
       cupLeaderboard: 'GET /api/cup/leaderboard',
       cupLeagues: 'GET/POST /api/cup/leagues  ·  POST /api/cup/leagues/join  ·  GET /api/cup/leagues/:id/leaderboard',
       cupBracket: 'GET/POST /api/cup/bracket  (save & score a tournament bracket)',
+      cupBracketNft: 'GET /api/cup/bracket-nft?wallet=0x...  (mint a bracket NFT)',
       cupPunditExecutions: 'GET /api/cup/pundit/executions',
       cupPunditXPosts: 'GET /api/cup/pundit/x-posts',
       cupPunditExecute: 'POST /api/cup/pundit/execute  (operator-gated, body {matchId})',

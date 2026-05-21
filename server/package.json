@@ -12,6 +12,7 @@
     "wallet:create": "tsx scripts/create-demo-wallet.ts",
     "deploy:cup-oracle": "tsx scripts/deploy-cup-oracle.ts",
     "deploy:fanpass-sbt": "tsx scripts/deploy-fanpass-sbt.ts",
+    "deploy:bracket-nft": "tsx scripts/deploy-bracket-nft.ts",
     "deploy:parimutuel": "tsx scripts/deploy-parimutuel-market.ts",
     "ensure:markets": "tsx scripts/ensure-markets.ts",
     "seed:cup-oracle": "tsx scripts/seed-cup-oracle.ts",

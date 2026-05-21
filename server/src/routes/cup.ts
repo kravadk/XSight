@@ -14,6 +14,7 @@ import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
 import { globalLeaderboard } from '../services/leaderboardService.js';
 import { createLeague, joinLeague, leaguesForWallet, leagueLeaderboard } from '../services/leagueService.js';
 import { bracketScoreboard, saveBracket } from '../services/bracketService.js';
+import { bracketNftMetadata, readMintedBy, buildBracketMintTx } from '../services/bracketNftContract.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -126,6 +127,19 @@ cupRouter.post('/bracket', (req: Request, res: Response) => {
   const result = saveBracket(body.wallet, body.picks);
   if (!result.ok) return res.status(400).json({ error: result.reason });
   res.json({ bracket: result.value });
+});
+
+cupRouter.get('/bracket-nft', async (req: Request, res: Response) => {
+  const wallet = typeof req.query.wallet === 'string' ? req.query.wallet : '';
+  const metadata = bracketNftMetadata();
+  const mintedTokenId = wallet ? await readMintedBy(wallet) : 0;
+  let mintTx = null;
+  try {
+    mintTx = metadata.address ? buildBracketMintTx() : null;
+  } catch {
+    mintTx = null;
+  }
+  res.json({ metadata, mintedTokenId, mintTx });
 });
 
 cupRouter.get('/overview', async (_req: Request, res: Response) => {
