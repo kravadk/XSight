@@ -22,6 +22,7 @@
     "test:cup-track-proof": "tsx scripts/test-cup-track-proof.ts",
     "test:cup-resolver": "tsx scripts/test-quorum-resolver.ts",
     "test:market": "tsx scripts/test-market-backend.ts",
+    "test:pundit": "tsx scripts/test-pundit.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },

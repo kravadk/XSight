@@ -640,6 +640,29 @@ export interface MarketIndexerStatusDto {
   claims: number;
 }
 
+// === Hermes AI pundit (Plan 5) ===
+export interface PunditPickDto {
+  matchId: string;
+  label: string;
+  home: { code: string; name: string };
+  away: { code: string; name: string };
+  kickoffUtc: string;
+  pick: 'HOME' | 'DRAW' | 'AWAY' | 'PASS';
+  conviction: number;
+  take: string;
+  keyFactors: string[];
+  source: 'hermes-claude' | 'heuristic';
+  generatedAt: string;
+}
+
+export interface PunditProfileDto {
+  name: string;
+  role: string;
+  mode: 'hermes-claude' | 'heuristic';
+  model: string | null;
+  bio: string;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -819,6 +842,9 @@ export const api = {
     }),
   marketClaimTx: (id: string) =>
     request<{ claimTx: UnsignedTxDto }>(`/markets/${encodeURIComponent(id)}/claim-tx`),
+  cupPundit: () => request<{ profile: PunditProfileDto; picks: PunditPickDto[] }>('/cup/pundit'),
+  cupPunditPick: (matchId: string) =>
+    request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
   marketPositions: (wallet: string) =>
     request<{ wallet: string; positions: (MarketPositionDto & { market: MarketViewDto })[] }>(
       `/markets/positions?wallet=${encodeURIComponent(wallet)}`,

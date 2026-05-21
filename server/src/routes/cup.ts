@@ -6,6 +6,7 @@ import { getFanPassSbtEligibility, mintFanPassSbt } from '../services/fanPassSbt
 import { listCupSettlementLog } from '../services/cupSettlementLog.js';
 import { getCupPersistenceHealth } from '../services/cupPersistence.js';
 import { getResolverStatus, resolveCupMatches } from '../services/quorumResolver.js';
+import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/punditService.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -129,6 +130,16 @@ cupRouter.get('/ai-edge', async (req: Request, res: Response) => {
   const edge = await getCupAiEdge(matchId);
   if (!edge) return notFound(res);
   res.json(edge);
+});
+
+cupRouter.get('/pundit', async (_req: Request, res: Response) => {
+  res.json({ profile: getPunditProfile(), picks: await listPunditPicks() });
+});
+
+cupRouter.get('/pundit/:matchId', async (req: Request, res: Response) => {
+  const pick = await getPunditPick(req.params.matchId);
+  if (!pick) return notFound(res);
+  res.json(pick);
 });
 
 cupRouter.get('/fair-odds', async (req: Request, res: Response) => {

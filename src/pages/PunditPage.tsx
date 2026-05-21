@@ -1,22 +1,30 @@
 import { Bot } from 'lucide-react';
-import { api, type MarketViewDto } from '../api/client';
+import { api, type PunditPickDto } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useUiStore } from '../store/uiStore';
 import { MatchupHeader, PageHeader, StatePanel } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 
+const PICK_COLOR: Record<PunditPickDto['pick'], string> = {
+  HOME: 'var(--color-outcome-home)',
+  DRAW: 'var(--color-outcome-draw)',
+  AWAY: 'var(--color-outcome-away)',
+  PASS: 'var(--color-stadium-text-muted)',
+};
+
 export function PunditPage() {
-  const { data, loading, error, reload } = useApi(() => api.markets(), []);
+  const { data, loading, error, reload } = useApi(() => api.cupPundit(), []);
   const openMarket = useUiStore((s) => s.openMarket);
 
-  const upcoming = (data?.markets ?? []).filter((m) => m.matchStatus === 'scheduled').slice(0, 9);
+  const profile = data?.profile;
+  const picks = data?.picks ?? [];
 
   return (
     <div className="mx-auto w-full max-w-5xl">
       <PageHeader
         kicker="Autonomous opponent"
         title="Hermes — AI Pundit"
-        sub="An autonomous agent that reads every fixture, posts a conviction-weighted pick, and stakes its own wallet. Beat it."
+        sub="An autonomous agent that reads every fixture, issues a conviction-weighted pick, and is built to be beaten."
       />
 
       <div className="stadium-card pitch-stripes mb-5 flex items-center gap-4 p-5">
@@ -24,14 +32,14 @@ export function PunditPage() {
           <Bot className="h-8 w-8 text-gold" />
         </div>
         <div className="flex-1">
-          <div className="font-display text-2xl tracking-wide text-stadium-text">HERMES</div>
-          <div className="text-xs text-stadium-text-secondary">
-            Autonomous football pundit · stakes real USDC from its own wallet · posts every pick to X.
-          </div>
+          <div className="font-display text-2xl tracking-wide text-stadium-text">{profile?.name ?? 'HERMES'}</div>
+          <div className="text-xs text-stadium-text-secondary">{profile?.bio ?? 'Autonomous football pundit.'}</div>
         </div>
         <div className="text-right">
-          <div className="text-micro text-stadium-text-muted">Record</div>
-          <div className="font-mono text-sm text-stadium-text">tracks from kickoff</div>
+          <div className="text-micro text-stadium-text-muted">Engine</div>
+          <div className="font-mono text-xs text-stadium-text">
+            {profile?.mode === 'hermes-claude' ? 'Claude' : 'Heuristic'}
+          </div>
         </div>
       </div>
 
@@ -39,46 +47,42 @@ export function PunditPage() {
       <StatePanel
         loading={loading}
         error={error}
-        empty={upcoming.length === 0}
+        empty={picks.length === 0}
         emptyLabel="No upcoming fixtures to read"
         onRetry={reload}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {upcoming.map((m) => (
-            <PunditPick key={m.id} market={m} onOpen={() => openMarket(m.id)} />
+          {picks.map((p) => (
+            <button
+              key={p.matchId}
+              onClick={() => openMarket(p.matchId)}
+              className="stadium-card stadium-card-hover flex flex-col gap-3 p-4 text-left"
+            >
+              <MatchupHeader home={p.home} away={p.away} size="sm" kickoffUtc={p.kickoffUtc} />
+              <div className="flex items-center gap-2">
+                <Bot className="h-3.5 w-3.5 text-gold" />
+                <span className="font-display text-base tracking-wide" style={{ color: PICK_COLOR[p.pick] }}>
+                  {p.pick === 'PASS' ? 'NO PICK' : p.pick}
+                </span>
+                <span className="ml-auto rounded bg-gold-bg px-2 py-0.5 text-[10px] font-bold tabular text-gold">
+                  conv {p.conviction.toFixed(2)}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-stadium-text-secondary">{p.take}</p>
+              <div className="mt-auto border-t border-stadium-line pt-2">
+                <span
+                  className={cn(
+                    'text-[10px] font-bold uppercase tracking-wider',
+                    p.source === 'hermes-claude' ? 'text-pitch' : 'text-stadium-text-muted',
+                  )}
+                >
+                  {p.source === 'hermes-claude' ? '⚡ Claude verdict' : 'Model heuristic'}
+                </span>
+              </div>
+            </button>
           ))}
         </div>
       </StatePanel>
     </div>
-  );
-}
-
-function PunditPick({ market, onOpen }: { market: MarketViewDto; onOpen: () => void }) {
-  const { data: edge, loading } = useApi(() => api.cupAiEdge(market.id), [market.id]);
-
-  return (
-    <button onClick={onOpen} className="stadium-card stadium-card-hover flex flex-col gap-3 p-4 text-left">
-      <span className="truncate text-[11px] font-semibold text-stadium-text-muted">{market.stage}</span>
-      <MatchupHeader home={market.home} away={market.away} size="sm" kickoffUtc={market.kickoffUtc} />
-      <div className="flex items-center justify-between border-t border-stadium-line pt-3">
-        {loading ? (
-          <span className="skeleton h-5 w-24 rounded" />
-        ) : edge ? (
-          <>
-            <span className="flex items-center gap-1.5 text-sm font-bold">
-              <Bot className="h-3.5 w-3.5 text-gold" />
-              <span className={cn(edge.edge === 'NO_TRADE' ? 'text-stadium-text-muted' : 'text-stadium-text')}>
-                {edge.edge === 'NO_TRADE' ? 'No pick' : edge.edge}
-              </span>
-            </span>
-            <span className="rounded bg-gold-bg px-2 py-0.5 text-[10px] font-bold tabular text-gold">
-              conv {edge.confidence.toFixed(2)}
-            </span>
-          </>
-        ) : (
-          <span className="text-xs text-stadium-text-muted">read unavailable</span>
-        )}
-      </div>
-    </button>
   );
 }

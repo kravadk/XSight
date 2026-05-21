@@ -88,6 +88,7 @@ app.get('/', (_req, res) => {
       cupTeamStrength: 'GET /api/cup/team-strength?matchId=<live-match-id>',
       cupSettlementLog: 'GET /api/cup/settlement-log?matchId=<live-match-id>',
       cupResolver: 'GET /api/cup/resolver',
+      cupPundit: 'GET /api/cup/pundit',
       cupProposeResult: 'POST /api/cup/propose-result',
       markets: 'GET /api/markets',
       marketDetail: 'GET /api/markets/:id',
