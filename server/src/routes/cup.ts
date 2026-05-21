@@ -10,6 +10,7 @@ import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/pu
 import { executePunditPick } from '../services/punditExecutor.js';
 import { listPunditExecutions } from '../services/punditExecutionLog.js';
 import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
+import { globalLeaderboard } from '../services/leaderboardService.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -68,6 +69,10 @@ cupRouter.get('/free-picks', async (req: Request, res: Response) => {
   const wallet = typeof req.query.wallet === 'string' ? req.query.wallet : undefined;
   const fixtureId = typeof req.query.matchId === 'string' ? req.query.matchId : undefined;
   res.json({ picks: await getFreePicks({ wallet, fixtureId }) });
+});
+
+cupRouter.get('/leaderboard', async (_req: Request, res: Response) => {
+  res.json(await globalLeaderboard());
 });
 
 cupRouter.get('/overview', async (_req: Request, res: Response) => {
