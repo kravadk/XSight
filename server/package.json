@@ -29,6 +29,8 @@
     "test:free-store": "tsx scripts/test-free-pick-store.ts",
     "test:free-pool": "tsx scripts/test-free-pool-service.ts",
     "test:leaderboard": "tsx scripts/test-leaderboard.ts",
+    "test:league-store": "tsx scripts/test-league-store.ts",
+    "test:league": "tsx scripts/test-league-service.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },
