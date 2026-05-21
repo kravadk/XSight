@@ -21,7 +21,7 @@ opponent and a free-to-play funnel. Full spec: `docs/xcup/DESIGN.md`.
 2. **Oracle Resolution Pipeline** — ✅ DONE
 3. **Market Backend + Indexer** — ✅ DONE
 4. **Frontend (8 screens, World Cup design, real team logos)** — ✅ DONE
-5. AI Pundit (Hermes) + repo / demo / submission deliverables
+5. **AI Pundit (Hermes) + repo / demo / submission deliverables** — ✅ DONE
 
 Mode: build **autonomously**, plan-by-plan — write
 `docs/superpowers/plans/2026-05-21-0N-<name>.md`, then execute it (commit per task),
@@ -88,6 +88,23 @@ Commit: `e52881d` (`feat(ui): Plan 4 …`).
   fixtures with honest pre-deploy states.
 - Plan doc: `docs/superpowers/plans/2026-05-21-04-frontend.md`.
 
+## ✅ DONE — Plan 5 (AI Pundit + deliverables)
+Commits: `feat(pundit): Plan 5 …`, `docs: X Cup README, MIT LICENSE, contract registry`.
+- `services/punditService.ts` — **Hermes**, a Claude-backed pundit: reads a real fixture
+  + the multi-source heuristic edge, returns a conviction-weighted verdict. Honest
+  `heuristic` fallback with no API key. `GET /api/cup/pundit[/:matchId]`.
+- AI Pundit screen wired to the real Hermes service; `test:pundit` dry-run verified
+  (real Claude verdicts).
+- Deliverables: `LICENSE` (MIT), `README.md` (X Cup rewrite), `docs/xcup/CONTRACTS.md`.
+- Plan doc: `docs/superpowers/plans/2026-05-21-05-pundit-deliverables.md`.
+
+## ✅ BUILD COMPLETE
+All 5 plans done. Remaining = **user-gated**: deploy `ParimutuelMarket` + `FanPassSBT`
+to X Layer mainnet (`npm --prefix server run deploy:parimutuel`), verify on the explorer,
+set `PARIMUTUEL_MARKET_ADDRESS` / `PARIMUTUEL_DEPLOY_BLOCK` / `FANPASS_SBT_ADDRESS`, then
+record a demo video + create the submission X account. The app runs end-to-end on real
+data now; deploying flips markets from `contract_not_deployed` to live staking.
+
 ## ⚠ KEY DECISIONS (carry forward)
 - **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet phase.
 - **Stablecoin: USDT + USDC.** `ParimutuelMarket` is token-agnostic; the deploy picks one
@@ -102,7 +119,5 @@ Commit: `e52881d` (`feat(ui): Plan 4 …`).
   money-holding contract). Not run autonomously.
 
 ## ▶ NEXT STEP
-**Plan 5 — AI Pundit + deliverables.** The autonomous Hermes pundit (Claude-backed
-agent that researches fixtures, posts conviction picks, stakes its own wallet) + the
-repo/demo deliverables: README, LICENSE (MIT), `/contracts` addresses, `.env.example`
-completeness, demo video script, X-account posts. References: `DESIGN.md` §13 (Day 4–6).
+Build is complete — see **BUILD COMPLETE** above. The only remaining items are
+user-gated (mainnet deploy + verification, demo video, submission X account).
