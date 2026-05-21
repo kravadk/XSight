@@ -49,7 +49,7 @@ X Layer mainnet (196)  ◀────────────────  Even
 | `contracts/` | `ParimutuelMarket.sol`, `CupOracleV2.sol`, `FanPassSBT.sol` + fork tests |
 | `server/` | Express API — ingestion, quorum resolver, market service + indexer, pundit |
 | `src/` | React + Vite frontend — 8 X Cup screens, World Cup theme |
-| `docs/xcup/` | [`DESIGN.md`](docs/xcup/DESIGN.md) · [`BUILD-STATUS.md`](docs/xcup/BUILD-STATUS.md) · [`CONTRACTS.md`](docs/xcup/CONTRACTS.md) |
+| `docs/xcup/` | [`GUIDE.md`](docs/xcup/GUIDE.md) (fans + developers + FAQ) · [`DESIGN.md`](docs/xcup/DESIGN.md) · [`CONTRACTS.md`](docs/xcup/CONTRACTS.md) · [`BUILD-STATUS.md`](docs/xcup/BUILD-STATUS.md) |
 
 ## Run it locally
 

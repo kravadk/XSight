@@ -106,10 +106,13 @@ All 5 plans done; all three contracts are live on X Layer mainnet (chain 196):
 - `FanPassSBT` — `0x74F75532428A99E613a865C97D1084b7f38241BD`
 Registry: `docs/xcup/CONTRACTS.md`.
 
+Onboarding docs done — `docs/xcup/GUIDE.md` (fan how-to-use · developer integration ·
+FAQ), satisfying the DESIGN §12 documentation deliverable.
+
 Remaining (user steps, no code): verify the contracts on the OKX X Layer explorer
-(single file · solc v0.8.24 · optimizer 200 · MIT), record the demo video, create the
-submission X account. Markets now report `market_not_created` until the operator opens
-them (`POST /api/markets/ensure`).
+(single file · solc **v0.8.35** · optimizer 200 · MIT — see `CONTRACTS.md` / GUIDE),
+record the demo video, create the submission X account, submit the Google Form.
+Markets report `market_not_created` until the operator opens them (`POST /api/markets/ensure`).
 
 ## ⚠ KEY DECISIONS (carry forward)
 - **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet phase.
