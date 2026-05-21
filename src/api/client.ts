@@ -705,6 +705,20 @@ export interface BracketScoreboardDto {
   hermes: { total: number; scored: number; correct: number };
 }
 
+export interface BracketNftDto {
+  metadata: {
+    name: string;
+    status: string;
+    address: string | null;
+    chainId: number;
+    network: string;
+    explorerUrl: string | null;
+    sourcePath: string;
+  };
+  mintedTokenId: number;
+  mintTx: { to: string; data: string; value: string; chainId: number } | null;
+}
+
 export interface XPostDto {
   matchId: string;
   text: string;
@@ -906,6 +920,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ wallet, picks }),
     }),
+  cupBracketNft: (wallet: string) =>
+    request<BracketNftDto>(`/cup/bracket-nft?wallet=${encodeURIComponent(wallet)}`),
   cupLeagues: (wallet: string) =>
     request<{ leagues: LeagueDto[] }>(`/cup/leagues?wallet=${encodeURIComponent(wallet)}`),
   cupLeagueLeaderboard: (id: string) =>

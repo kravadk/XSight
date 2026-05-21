@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Network, Bot } from 'lucide-react';
+import { Network, Bot, Award } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
@@ -10,12 +10,17 @@ import { cn } from '../utils/format';
 type Outcome = 'HOME' | 'DRAW' | 'AWAY';
 
 export function BracketPage() {
-  const { connected, address, connect } = useWalletStore();
+  const { connected, address, connect, sendTx } = useWalletStore();
   const markets = useApi(() => api.markets(), []);
   const saved = useApi(
     () => (connected && address ? api.cupBracket(address) : Promise.resolve(null)),
     [connected, address],
   );
+  const nft = useApi(
+    () => (connected && address ? api.cupBracketNft(address) : Promise.resolve(null)),
+    [connected, address],
+  );
+  const [mintBusy, setMintBusy] = useState(false);
 
   const [picks, setPicks] = useState<Record<string, Outcome>>({});
   const [busy, setBusy] = useState(false);
@@ -31,6 +36,21 @@ export function BracketPage() {
     for (const f of fixtures) (groups[f.stage] ??= []).push(f);
     return groups;
   }, [fixtures]);
+
+  async function mintNft() {
+    const tx = nft.data?.mintTx;
+    if (!tx) return;
+    setMintBusy(true);
+    try {
+      const hash = await sendTx(tx);
+      toast.success(`Bracket NFT mint submitted · ${hash.slice(0, 10)}…`);
+      nft.reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Mint failed');
+    } finally {
+      setMintBusy(false);
+    }
+  }
 
   async function save() {
     if (!address) return;
@@ -67,6 +87,31 @@ export function BracketPage() {
           <Bot className="h-4 w-4" /> Hermes {hermes ? `${hermes.correct}/${hermes.scored}` : '0/0'}
         </span>
       </div>
+
+      {nft.data && (
+        <div className="stadium-card mb-4 flex items-center gap-3 p-4">
+          <Award className="h-5 w-5 text-gold" />
+          {!nft.data.metadata.address ? (
+            <span className="text-xs text-stadium-text-secondary">
+              Bracket NFT mints once the contract is deployed to X Layer.
+            </span>
+          ) : nft.data.mintedTokenId > 0 ? (
+            <span className="text-xs text-stadium-text">
+              <span className="font-bold">Bracket NFT minted</span> · #{nft.data.mintedTokenId}
+            </span>
+          ) : connected && nft.data.mintTx ? (
+            <button
+              onClick={() => void mintNft()}
+              disabled={mintBusy}
+              className="rounded-xl bg-gold px-4 py-1.5 text-sm font-bold text-stadium-base disabled:opacity-50"
+            >
+              {mintBusy ? 'Minting…' : 'Mint bracket NFT'}
+            </button>
+          ) : (
+            <span className="text-xs text-stadium-text-secondary">Connect your wallet to mint your bracket NFT.</span>
+          )}
+        </div>
+      )}
 
       {!connected && (
         <button
