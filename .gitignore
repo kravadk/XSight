@@ -10,3 +10,7 @@ dist-ssr
 *.tsbuildinfo
 # Runtime data — never commit
 data/
+
+# Hardhat build output
+contracts/artifacts-hh/
+contracts/cache-hh/

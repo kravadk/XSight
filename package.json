@@ -12,11 +12,15 @@
     "server:dev": "npm --prefix server run dev",
     "server:build": "npm --prefix server run build",
     "server:typecheck": "npm --prefix server run typecheck",
+    "agentation:mcp": "agentation-mcp server",
+    "agentation:doctor": "agentation-mcp doctor",
     "test:api": "npm --prefix server run test:api",
     "test:api:full": "npm --prefix server run test:api:full",
     "test:health": "node scripts/health-check.mjs",
     "test:activity": "npm --prefix server run activity",
-    "test:all": "npm run test:health && npm run test:api"
+    "test:all": "npm run test:health && npm run test:api",
+    "contracts:compile": "hardhat compile",
+    "contracts:test": "hardhat test contracts/test/ParimutuelMarket.test.cjs"
   },
   "dependencies": {
     "@types/qrcode": "^1.5.6",
@@ -31,10 +35,15 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^18.3.11",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
+    "agentation": "^3.0.2",
+    "agentation-mcp": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "hardhat": "^2.28.6",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.6.3",
     "vite": "^5.4.10"
