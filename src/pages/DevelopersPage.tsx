@@ -4,7 +4,10 @@ import { useApi } from '../hooks/useApi';
 import { PageHeader } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 
-/** The tools the XSight MCP server exposes to Claude-powered agents (POST /mcp, JSON-RPC 2.0). */
+/**
+ * The complete MCP tool catalog the XSight server exposes to Claude-powered agents
+ * (POST /mcp, JSON-RPC 2.0). Mirrors the TOOLS array in server/src/routes/mcp.ts.
+ */
 const MCP_TOOLS = [
   {
     name: 'get_portfolio',
@@ -17,7 +20,8 @@ const MCP_TOOLS = [
   },
   {
     name: 'get_pool_apr',
-    description: 'Get yield pool data on X Layer including APR, TVL, 24h volume, and risk level for LP strategy planning.',
+    description:
+      'Get yield pool data on X Layer including APR, TVL, 24h volume, and risk level for LP strategy planning.',
   },
   {
     name: 'scan_token_security',
@@ -26,7 +30,8 @@ const MCP_TOOLS = [
   },
   {
     name: 'get_economy_snapshot',
-    description: 'Get XSight agentic economy state: x402 revenue, AI costs, gas costs, auto-deploy history, net P&L.',
+    description:
+      'Get XSight agentic economy state: x402 revenue, AI costs, gas costs, auto-deploy history, net P&L.',
   },
   {
     name: 'execute_swap',
@@ -36,6 +41,47 @@ const MCP_TOOLS = [
   {
     name: 'get_cup_fixtures',
     description: 'List CupHub World Cup fixtures with source receipts and X Layer settlement metadata.',
+  },
+  {
+    name: 'get_cup_ai_edge',
+    description:
+      'Get AI-ready fair probabilities, risk, confidence, and source hash for a CupHub match.',
+  },
+  {
+    name: 'get_cup_player_stats',
+    description:
+      'Get live-provider player impact stats when available. Returns empty/unavailable rather than fabricated players.',
+  },
+  {
+    name: 'score_team_strength',
+    description: 'Score home/away team strength and recent form for a CupHub match.',
+  },
+  {
+    name: 'get_cup_sentiment',
+    description: 'Get non-canonical fan/social sentiment signal for a CupHub match.',
+  },
+  {
+    name: 'verify_outcome',
+    description:
+      'Verify a CupHub match result and return API receipts plus current on-chain CupOracle state.',
+  },
+  {
+    name: 'resolve_match',
+    description:
+      'Alias for verify_outcome. Returns CupHub settlement state, proposed/final outcome, source receipts, and on-chain state.',
+  },
+  {
+    name: 'get_cup_settlement_state',
+    description:
+      'Read the current X Layer CupOracle state for a CupHub match without changing chain state.',
+  },
+  {
+    name: 'get_fan_score',
+    description: 'Get FanPass reputation score and reward-gating breakdown for a wallet.',
+  },
+  {
+    name: 'build_cup_action_plan',
+    description: 'Build a builder, agent, or fan action plan for a CupHub match.',
   },
 ] as const;
 
