@@ -1,4 +1,4 @@
-import { Bot } from 'lucide-react';
+import { Bot, Twitter } from 'lucide-react';
 import { api, type PunditPickDto } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useUiStore } from '../store/uiStore';
@@ -14,6 +14,7 @@ const PICK_COLOR: Record<PunditPickDto['pick'], string> = {
 
 export function PunditPage() {
   const { data, loading, error, reload } = useApi(() => api.cupPundit(), []);
+  const xPosts = useApi(() => api.cupPunditXPosts(), []);
   const openMarket = useUiStore((s) => s.openMarket);
 
   const profile = data?.profile;
@@ -83,6 +84,37 @@ export function PunditPage() {
           ))}
         </div>
       </StatePanel>
+      <div className="stadium-card mt-4 p-4">
+        <div className="mb-3 flex items-center gap-2 text-micro text-pitch">
+          <Twitter className="h-3.5 w-3.5" /> Hermes on X
+        </div>
+        {xPosts.data && xPosts.data.posts.filter((p) => p.status === 'posted').length > 0 ? (
+          <div className="flex flex-col gap-2">
+            {xPosts.data.posts
+              .filter((p) => p.status === 'posted')
+              .slice(0, 6)
+              .map((p) => (
+                <div key={p.createdAt} className="rounded-lg border border-stadium-line px-3 py-2">
+                  <p className="whitespace-pre-line text-xs text-stadium-text-secondary">{p.text}</p>
+                  {p.tweetId && (
+                    <a
+                      href={`https://x.com/i/web/status/${p.tweetId}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-1 inline-block text-[10px] font-bold text-pitch hover:underline"
+                    >
+                      view on X ↗
+                    </a>
+                  )}
+                </div>
+              ))}
+          </div>
+        ) : (
+          <div className="text-xs text-stadium-text-muted">
+            No posts yet — Hermes posts here after each verified on-chain stake.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

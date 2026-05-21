@@ -705,6 +705,15 @@ export interface BracketScoreboardDto {
   hermes: { total: number; scored: number; correct: number };
 }
 
+export interface XPostDto {
+  matchId: string;
+  text: string;
+  status: 'posted' | 'skipped' | 'failed';
+  tweetId: string | null;
+  reason: string;
+  createdAt: string;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -887,6 +896,7 @@ export const api = {
   cupPundit: () => request<{ profile: PunditProfileDto; picks: PunditPickDto[] }>('/cup/pundit'),
   cupPunditPick: (matchId: string) =>
     request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
+  cupPunditXPosts: () => request<{ posts: XPostDto[] }>('/cup/pundit/x-posts'),
   cupLeaderboard: () =>
     request<{ rows: LeaderboardRowDto[]; hermes: LeaderboardRowDto | null }>('/cup/leaderboard'),
   cupBracket: (wallet: string) =>
