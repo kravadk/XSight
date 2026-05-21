@@ -12,6 +12,7 @@ import { listPunditExecutions } from '../services/punditExecutionLog.js';
 import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
 import { globalLeaderboard } from '../services/leaderboardService.js';
 import { createLeague, joinLeague, leaguesForWallet, leagueLeaderboard } from '../services/leagueService.js';
+import { bracketScoreboard, saveBracket } from '../services/bracketService.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -108,6 +109,22 @@ cupRouter.get('/leagues/:id/leaderboard', async (req: Request, res: Response) =>
   const result = await leagueLeaderboard(req.params.id);
   if (!result) return notFound(res, 'league not found');
   res.json(result);
+});
+
+cupRouter.get('/bracket', async (req: Request, res: Response) => {
+  const wallet = typeof req.query.wallet === 'string' ? req.query.wallet : '';
+  if (!wallet) return res.status(400).json({ error: 'wallet query param required' });
+  res.json(await bracketScoreboard(wallet));
+});
+
+cupRouter.post('/bracket', (req: Request, res: Response) => {
+  const body = req.body as { wallet?: string; picks?: Record<string, string> };
+  if (!body.wallet || !body.picks || typeof body.picks !== 'object') {
+    return res.status(400).json({ error: 'wallet and picks are required' });
+  }
+  const result = saveBracket(body.wallet, body.picks);
+  if (!result.ok) return res.status(400).json({ error: result.reason });
+  res.json({ bracket: result.value });
 });
 
 cupRouter.get('/overview', async (_req: Request, res: Response) => {
