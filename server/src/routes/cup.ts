@@ -11,6 +11,7 @@ import { executePunditPick } from '../services/punditExecutor.js';
 import { listPunditExecutions } from '../services/punditExecutionLog.js';
 import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
 import { globalLeaderboard } from '../services/leaderboardService.js';
+import { createLeague, joinLeague, leaguesForWallet, leagueLeaderboard } from '../services/leagueService.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -73,6 +74,40 @@ cupRouter.get('/free-picks', async (req: Request, res: Response) => {
 
 cupRouter.get('/leaderboard', async (_req: Request, res: Response) => {
   res.json(await globalLeaderboard());
+});
+
+cupRouter.post('/leagues', (req: Request, res: Response) => {
+  const body = req.body as { name?: string; wallet?: string };
+  if (!body.name || !body.wallet) {
+    return res.status(400).json({ error: 'name and wallet are required' });
+  }
+  const result = createLeague(body.name, body.wallet);
+  if (!result.ok) return res.status(400).json({ error: result.reason });
+  res.json({ league: result.value });
+});
+
+cupRouter.post('/leagues/join', (req: Request, res: Response) => {
+  const body = req.body as { inviteCode?: string; wallet?: string };
+  if (!body.inviteCode || !body.wallet) {
+    return res.status(400).json({ error: 'inviteCode and wallet are required' });
+  }
+  const result = joinLeague(body.inviteCode, body.wallet);
+  if (!result.ok) {
+    return res.status(result.reason === 'league_not_found' ? 404 : 400).json({ error: result.reason });
+  }
+  res.json({ league: result.value });
+});
+
+cupRouter.get('/leagues', (req: Request, res: Response) => {
+  const wallet = typeof req.query.wallet === 'string' ? req.query.wallet : '';
+  if (!wallet) return res.status(400).json({ error: 'wallet query param required' });
+  res.json({ leagues: leaguesForWallet(wallet) });
+});
+
+cupRouter.get('/leagues/:id/leaderboard', async (req: Request, res: Response) => {
+  const result = await leagueLeaderboard(req.params.id);
+  if (!result) return notFound(res, 'league not found');
+  res.json(result);
 });
 
 cupRouter.get('/overview', async (_req: Request, res: Response) => {

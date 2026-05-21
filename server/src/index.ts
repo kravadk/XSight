@@ -91,6 +91,7 @@ app.get('/', (_req, res) => {
       cupPundit: 'GET /api/cup/pundit',
       cupFreePicks: 'GET/POST /api/cup/free-picks  (free-to-play, no wallet money)',
       cupLeaderboard: 'GET /api/cup/leaderboard',
+      cupLeagues: 'GET/POST /api/cup/leagues  ·  POST /api/cup/leagues/join  ·  GET /api/cup/leagues/:id/leaderboard',
       cupPunditExecutions: 'GET /api/cup/pundit/executions',
       cupPunditExecute: 'POST /api/cup/pundit/execute  (operator-gated, body {matchId})',
       cupProposeResult: 'POST /api/cup/propose-result',
