@@ -10,12 +10,14 @@ import { marketRouter } from './routes/market.js';
 import { strategyRouter } from './routes/strategies.js';
 import { mcpRouter } from './routes/mcp.js';
 import { cupRouter } from './routes/cup.js';
+import { marketsRouter } from './routes/markets.js';
 import { startTokenTracker } from './services/tokenTracker.js';
 import { startPoolTracker } from './services/poolTracker.js';
 import { startStrategyEngine } from './services/strategyEngine.js';
 import { startTokenCatalog } from './services/tokenCatalog.js';
 import { startAgentHeartbeat } from './services/agentHeartbeat.js';
 import { startQuorumResolver } from './services/cupScheduler.js';
+import { startMarketIndexer } from './services/marketIndexer.js';
 
 const app = express();
 
@@ -36,6 +38,7 @@ app.use('/api/economy', economyRouter); // spec-aliased shim, see routes/economy
 app.use('/api/market', marketRouter);
 app.use('/api/strategies', strategyRouter);
 app.use('/api/cup', cupRouter);
+app.use('/api/markets', marketsRouter);
 app.use('/api/v1', analysisRouter);
 app.use('/mcp', mcpRouter);
 
@@ -46,6 +49,7 @@ startPoolTracker();
 startStrategyEngine();
 startAgentHeartbeat(); // autonomous micro-swaps every 8 min for on-chain activity
 startQuorumResolver(); // autonomous CupOracleV2 resolution (off unless CUP_RESOLVER_ENABLED=true)
+void startMarketIndexer(); // ParimutuelMarket event indexer (idle until PARIMUTUEL_MARKET_ADDRESS set)
 
 app.get('/', (_req, res) => {
   res.json({
@@ -85,6 +89,11 @@ app.get('/', (_req, res) => {
       cupSettlementLog: 'GET /api/cup/settlement-log?matchId=<live-match-id>',
       cupResolver: 'GET /api/cup/resolver',
       cupProposeResult: 'POST /api/cup/propose-result',
+      markets: 'GET /api/markets',
+      marketDetail: 'GET /api/markets/:id',
+      marketPosition: 'GET /api/markets/:id/position?wallet=0x...',
+      marketIndexer: 'GET /api/markets/indexer',
+      marketStakeTx: 'POST /api/markets/:id/stake-tx',
       mcp: 'POST /mcp  (MCP JSON-RPC 2.0)',
       mcpDiscover: 'GET /mcp  (capability discovery)',
       x402Spec: 'GET /api/v1/x402-spec',

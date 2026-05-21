@@ -35,6 +35,13 @@ export const env = {
   // OKB-spending registerMatch/proposeResult/finalizeResult txs on CupOracleV2.
   cupResolverEnabled: process.env.CUP_RESOLVER_ENABLED === 'true',
   cupResolverIntervalMs: Number(process.env.CUP_RESOLVER_INTERVAL_MS ?? 300000),
+  // ParimutuelMarket (Plan 3). Empty market address => contract not deployed yet:
+  // the market service + indexer idle and the API returns honest not-deployed states.
+  parimutuelMarketAddress: required('PARIMUTUEL_MARKET_ADDRESS'),
+  parimutuelTokenAddress: required('PARIMUTUEL_TOKEN_ADDRESS'),
+  parimutuelDeployBlock: Number(process.env.PARIMUTUEL_DEPLOY_BLOCK ?? 0),
+  marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
+  marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 2000),
   databaseUrl: required('DATABASE_URL'),
   cupDemoMode: process.env.CUP_DEMO_MODE === 'true' && (process.env.NODE_ENV ?? 'development') !== 'production',
   footballDataApiKey: required('FOOTBALL_DATA_API_KEY'),
