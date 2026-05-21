@@ -26,6 +26,8 @@
     "test:pundit": "tsx scripts/test-pundit.ts",
     "test:pundit-guard": "tsx scripts/test-pundit-guard.ts",
     "test:pundit-exec": "tsx scripts/test-pundit-executor.ts",
+    "test:free-store": "tsx scripts/test-free-pick-store.ts",
+    "test:free-pool": "tsx scripts/test-free-pool-service.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },
