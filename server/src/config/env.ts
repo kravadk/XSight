@@ -40,6 +40,14 @@ export const env = {
   parimutuelMarketAddress: required('PARIMUTUEL_MARKET_ADDRESS'),
   parimutuelTokenAddress: required('PARIMUTUEL_TOKEN_ADDRESS'),
   parimutuelDeployBlock: Number(process.env.PARIMUTUEL_DEPLOY_BLOCK ?? 0),
+  // AI pundit wallet (DESIGN §2.1 Flow D, §8) — its OWN key, separate from the
+  // operator signer above, so the operator that creates and settles markets never
+  // also stakes in them. Empty key => the executor honestly reports
+  // `pundit_wallet_not_configured` and stakes nothing.
+  punditPrivateKey: required('PUNDIT_PRIVATE_KEY'),
+  punditWalletAddress: required('PUNDIT_WALLET_ADDRESS'),
+  // Stake size per pundit pick, in human token units of the settlement token.
+  punditStakeAmount: process.env.PUNDIT_STAKE_AMOUNT ?? '0.5',
   marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
   // X Layer's public RPC caps eth_getLogs at a 100-block range — keep this <= 100.
   marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 90),
@@ -63,4 +71,5 @@ export const isConfigured = {
     env.okxProjectId.length > 0,
   x402: () => env.x402PayoutAddress.length > 0,
   signer: () => env.deployerPrivateKey.length > 0 && env.agenticWalletAddress.length > 0,
+  pundit: () => env.punditPrivateKey.length > 0 && env.punditWalletAddress.length > 0,
 };

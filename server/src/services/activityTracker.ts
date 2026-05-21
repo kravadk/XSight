@@ -29,7 +29,8 @@ export type ActivityKind =
   | 'cup.fixture'
   | 'cup.result'
   | 'cup.edge'
-  | 'cup.fanScore';
+  | 'cup.fanScore'
+  | 'cup.punditStake';
 
 interface CounterState {
   total: number;

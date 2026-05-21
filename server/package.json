@@ -24,6 +24,8 @@
     "test:cup-resolver": "tsx scripts/test-quorum-resolver.ts",
     "test:market": "tsx scripts/test-market-backend.ts",
     "test:pundit": "tsx scripts/test-pundit.ts",
+    "test:pundit-guard": "tsx scripts/test-pundit-guard.ts",
+    "test:pundit-exec": "tsx scripts/test-pundit-executor.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },
