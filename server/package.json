@@ -31,6 +31,7 @@
     "test:leaderboard": "tsx scripts/test-leaderboard.ts",
     "test:league-store": "tsx scripts/test-league-store.ts",
     "test:league": "tsx scripts/test-league-service.ts",
+    "test:bracket": "tsx scripts/test-bracket.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },
