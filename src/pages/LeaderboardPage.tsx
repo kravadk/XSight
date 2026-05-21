@@ -2,21 +2,31 @@ import { Crown, Bot, User } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
-import { PageHeader } from '../components/cup/CupKit';
+import { PageHeader, StatePanel } from '../components/cup/CupKit';
+import { cn } from '../utils/format';
+
+function shortWallet(w: string): string {
+  return w.length > 12 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w;
+}
+function pct(n: number): string {
+  return `${Math.round(n * 100)}%`;
+}
 
 export function LeaderboardPage() {
-  const { connected, address, short } = useWalletStore();
-  const fan = useApi(
-    () => (connected && address ? api.cupFanScore(address) : Promise.resolve(null)),
-    [connected, address],
-  );
+  const { connected, address } = useWalletStore();
+  const { data, loading, error, reload } = useApi(() => api.cupLeaderboard(), []);
+
+  const rows = data?.rows ?? [];
+  const hermes = data?.hermes ?? null;
+  const you =
+    connected && address ? rows.find((r) => r.wallet.toLowerCase() === address.toLowerCase()) ?? null : null;
 
   return (
     <div className="mx-auto w-full max-w-3xl">
       <PageHeader
         kicker="Beat the bots"
         title="Leaderboard"
-        sub="Global ranking by pick accuracy and settled P&L — populated from on-chain results."
+        sub="Global ranking by free-pool pick accuracy — you against every fan and the AI pundit."
       />
 
       <div className="stadium-card pitch-stripes mb-4 p-5">
@@ -29,11 +39,13 @@ export function LeaderboardPage() {
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-pitch-bg">
                 <User className="h-4 w-4 text-pitch" />
               </div>
-              <span className="text-sm font-bold text-stadium-text">{connected ? short : 'You'}</span>
+              <span className="text-sm font-bold text-stadium-text">
+                {you ? `#${you.rank}` : connected ? 'You' : 'Connect wallet'}
+              </span>
             </div>
-            <div className="font-display text-3xl text-pitch">{fan.data ? fan.data.score : '—'}</div>
+            <div className="font-display text-3xl text-pitch">{you ? pct(you.accuracy) : '—'}</div>
             <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">
-              {connected ? 'FanPass score' : 'connect wallet'}
+              {you ? `${you.correct}/${you.picks} correct · ${you.points} pts` : 'no scored picks yet'}
             </div>
           </div>
           <div className="rounded-xl border border-gold-border bg-gold-bg p-4">
@@ -41,22 +53,54 @@ export function LeaderboardPage() {
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-stadium-base">
                 <Bot className="h-4 w-4 text-gold" />
               </div>
-              <span className="text-sm font-bold text-stadium-text">Hermes</span>
+              <span className="text-sm font-bold text-stadium-text">
+                Hermes{hermes ? ` · #${hermes.rank}` : ''}
+              </span>
             </div>
-            <div className="font-display text-3xl text-gold">AI</div>
-            <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">autonomous pundit</div>
+            <div className="font-display text-3xl text-gold">{hermes ? pct(hermes.accuracy) : 'AI'}</div>
+            <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">
+              {hermes ? `${hermes.correct}/${hermes.picks} correct · ${hermes.points} pts` : 'autonomous pundit'}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="stadium-card flex flex-col items-center gap-2 p-12 text-center">
-        <Crown className="h-7 w-7 text-gold" />
-        <div className="text-sm font-semibold text-stadium-text">Global ranking opens at the first settlement</div>
-        <div className="max-w-md text-xs text-stadium-text-secondary">
-          Ranks are computed from real settled markets — accuracy and pro-rata P&L. The board fills the moment the
-          oracle finalizes its first World Cup result.
+      <StatePanel
+        loading={loading}
+        error={error}
+        empty={rows.length === 0}
+        emptyLabel="Global ranking opens at the first settlement"
+        onRetry={reload}
+      >
+        <div className="stadium-card divide-y divide-stadium-line">
+          {rows.map((r) => (
+            <div
+              key={r.wallet}
+              className={cn(
+                'flex items-center gap-3 p-3.5',
+                you && r.wallet === you.wallet && 'bg-pitch-bg',
+              )}
+            >
+              <span className="font-display w-8 text-center text-lg text-stadium-text-muted">{r.rank}</span>
+              <div className="flex items-center gap-2">
+                {r.isHermes ? (
+                  <Bot className="h-4 w-4 text-gold" />
+                ) : (
+                  <User className="h-4 w-4 text-stadium-text-muted" />
+                )}
+                <span className="font-mono text-xs text-stadium-text">
+                  {r.isHermes ? 'Hermes' : shortWallet(r.wallet)}
+                </span>
+              </div>
+              <span className="ml-auto font-mono text-sm font-bold text-pitch">{pct(r.accuracy)}</span>
+              <span className="w-20 text-right font-mono text-xs text-stadium-text-secondary">
+                {r.correct}/{r.picks}
+              </span>
+              <span className="w-16 text-right font-mono text-xs font-bold text-gold">{r.points} pts</span>
+            </div>
+          ))}
         </div>
-      </div>
+      </StatePanel>
     </div>
   );
 }

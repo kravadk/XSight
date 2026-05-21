@@ -674,6 +674,16 @@ export interface FreePickDto {
   scoredAt: string | null;
 }
 
+export interface LeaderboardRowDto {
+  rank: number;
+  wallet: string;
+  isHermes: boolean;
+  picks: number;
+  correct: number;
+  accuracy: number;
+  points: number;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -856,6 +866,8 @@ export const api = {
   cupPundit: () => request<{ profile: PunditProfileDto; picks: PunditPickDto[] }>('/cup/pundit'),
   cupPunditPick: (matchId: string) =>
     request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
+  cupLeaderboard: () =>
+    request<{ rows: LeaderboardRowDto[]; hermes: LeaderboardRowDto | null }>('/cup/leaderboard'),
   freePicks: (filter: { wallet?: string; matchId?: string }) => {
     const qs = new URLSearchParams();
     if (filter.wallet) qs.set('wallet', filter.wallet);
