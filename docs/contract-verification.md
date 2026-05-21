@@ -21,9 +21,9 @@ The exact deployed addresses are in `server/.env` (never commit that file). `Bra
 
 Every contract was (or will be) compiled by the `server/scripts/deploy-*.ts` scripts with **identical** settings — the explorer must be given the same:
 
-- **Compiler version:** Solidity `0.8.24`
+- **Compiler version:** the **`solc` npm package** version the `deploy-*.ts` scripts compile with — `package.json` pins `solc` at `^0.8.35`, so it resolves to a `0.8.35.x` release. Run `npm ls solc` for the exact version and select **that** in the explorer. Do **not** use the contracts' `^0.8.24` source pragma — the deployed bytecode is whatever `solc` actually resolved to, not the pragma floor.
 - **Optimizer:** enabled, **200 runs**
-- **EVM version:** the solc-`0.8.24` default — the deploy scripts pass no explicit `evmVersion`, so do **not** override it in the explorer; pick the default.
+- **EVM version:** the deploy scripts pass no explicit `evmVersion`, so the resolved solc release's default applies — do **not** override it in the explorer; pick the default.
 - **License:** MIT (`// SPDX-License-Identifier: MIT` is in each file)
 - **No imports / no flattening:** each contract is a single self-contained file (`BracketNFT.sol` declares one helper `interface` in the same file — submit the whole file).
 
@@ -54,6 +54,8 @@ For `ParimutuelMarket` encode `['address','address','address','address','uint16'
 > Tip: the explorer can often read the constructor args straight from the deployment transaction's input data — check the contract's creation tx first; you may not need to encode anything by hand.
 
 ## 5. Method B — `hardhat verify` (scriptable, needs an OKLink API key)
+
+> ⚠️ **Compiler-version caveat.** `hardhat.config.cjs` pins `solidity.version` to `0.8.24`, but the deployed contracts were compiled by the `solc`-npm-based `deploy-*.ts` scripts (`solc ^0.8.35`). For `hardhat verify` to reproduce the on-chain bytecode you must first set `hardhat.config.cjs`'s `solidity.version` to the exact `solc` package version (`npm ls solc`) — otherwise verification fails on a bytecode mismatch. If in doubt, use **Method A**.
 
 `hardhat.config.cjs` already has `@nomicfoundation/hardhat-toolbox` (which bundles `hardhat-verify`). To use it for X Layer (chain 196), add an `etherscan` block with a `customChains` entry, because X Layer is not a built-in Hardhat network:
 
