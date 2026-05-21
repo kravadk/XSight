@@ -180,7 +180,9 @@ export async function executePunditPick(matchId: string): Promise<PunditExecutio
       amount: amountWei.toString(),
     };
     const guard = verifyStakeReceipt(intent, receipt);
-    recordActivity('cup.punditStake', `${pick.label} ${pick.pick}`);
+    // Only a guard-verified stake counts as pundit activity — an unverified tx must
+    // not signal success anywhere, including the activity feed.
+    if (guard.verified) recordActivity('cup.punditStake', `${pick.label} ${pick.pick}`);
 
     const execution = result({
       ...enriched,
