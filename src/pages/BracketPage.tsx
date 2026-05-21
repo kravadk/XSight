@@ -1,59 +1,131 @@
-import { Network, Lock } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Network, Bot } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
-import { PageHeader } from '../components/cup/CupKit';
+import { useWalletStore } from '../store/walletStore';
+import { toast } from '../store/toastStore';
+import { PageHeader, StatePanel } from '../components/cup/CupKit';
+import { cn } from '../utils/format';
 
-const ROUNDS = [
-  { name: 'Round of 16', slots: 8 },
-  { name: 'Quarter-finals', slots: 4 },
-  { name: 'Semi-finals', slots: 2 },
-  { name: 'Final', slots: 1 },
-];
+type Outcome = 'HOME' | 'DRAW' | 'AWAY';
 
 export function BracketPage() {
-  const { data } = useApi(() => api.markets(), []);
-  const fixtureCount = data?.markets.length ?? 0;
+  const { connected, address, connect } = useWalletStore();
+  const markets = useApi(() => api.markets(), []);
+  const saved = useApi(
+    () => (connected && address ? api.cupBracket(address) : Promise.resolve(null)),
+    [connected, address],
+  );
+
+  const [picks, setPicks] = useState<Record<string, Outcome>>({});
+  const [busy, setBusy] = useState(false);
+
+  // Hydrate the local pick sheet from the saved bracket once it loads.
+  useEffect(() => {
+    if (saved.data?.bracket) setPicks(saved.data.bracket.picks);
+  }, [saved.data]);
+
+  const fixtures = markets.data?.markets ?? [];
+  const byStage = useMemo(() => {
+    const groups: Record<string, typeof fixtures> = {};
+    for (const f of fixtures) (groups[f.stage] ??= []).push(f);
+    return groups;
+  }, [fixtures]);
+
+  async function save() {
+    if (!address) return;
+    setBusy(true);
+    try {
+      await api.saveBracket(address, picks);
+      toast.success('Bracket saved');
+      saved.reload();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Save failed');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const you = saved.data?.you;
+  const hermes = saved.data?.hermes;
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
+    <div className="mx-auto w-full max-w-3xl">
       <PageHeader
-        kicker="Knockout stage"
-        title="World Cup Bracket"
-        sub="Pick the knockout path end to end. Scored automatically against oracle-finalized results."
+        kicker="Call the whole tournament"
+        title="Bracket"
+        sub="Pick every fixture, save your bracket, and see how you score against Hermes."
       />
 
-      <div className="stadium-card mb-4 flex items-center gap-3 p-4">
-        <Lock className="h-5 w-5 shrink-0 text-gold" />
-        <div className="text-xs text-stadium-text-secondary">
-          The bracket unlocks when the group stage finishes — {fixtureCount} fixtures are already tracked live. Until
-          then the knockout slots stay empty (no fabricated teams).
-        </div>
+      <div className="stadium-card mb-4 flex items-center gap-4 p-4">
+        <Network className="h-5 w-5 text-pitch" />
+        <span className="text-sm font-bold text-stadium-text">
+          You {you ? `${you.correct}/${you.scored}` : '0/0'}
+        </span>
+        <span className="text-xs text-stadium-text-muted">scored correct</span>
+        <span className="ml-auto flex items-center gap-1.5 text-sm font-bold text-gold">
+          <Bot className="h-4 w-4" /> Hermes {hermes ? `${hermes.correct}/${hermes.scored}` : '0/0'}
+        </span>
       </div>
 
-      <div className="stadium-card pitch-stripes overflow-x-auto p-5">
-        <div className="flex min-w-[640px] gap-4">
-          {ROUNDS.map((round) => (
-            <div key={round.name} className="flex flex-1 flex-col">
-              <div className="mb-3 text-center text-micro text-pitch">{round.name}</div>
-              <div className="flex flex-1 flex-col justify-around gap-2">
-                {Array.from({ length: round.slots }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="flex h-12 items-center justify-center rounded-lg border border-dashed border-stadium-line-strong bg-stadium-base text-[10px] uppercase tracking-wider text-stadium-text-muted"
-                  >
-                    {round.name === 'Final' ? '🏆 Champion' : 'TBD'}
+      {!connected && (
+        <button
+          onClick={() => void connect()}
+          className="mb-4 w-full rounded-xl bg-pitch py-2.5 text-sm font-bold text-stadium-base"
+        >
+          Connect wallet to save your bracket
+        </button>
+      )}
+
+      <StatePanel
+        loading={markets.loading}
+        error={markets.error}
+        empty={fixtures.length === 0}
+        emptyLabel="No fixtures available yet"
+        onRetry={markets.reload}
+      >
+        <div className="flex flex-col gap-4">
+          {Object.entries(byStage).map(([stage, list]) => (
+            <div key={stage} className="stadium-card p-4">
+              <div className="mb-2 text-micro text-pitch">{stage}</div>
+              <div className="flex flex-col gap-2">
+                {list.map((f) => (
+                  <div key={f.id} className="flex items-center gap-2">
+                    <span className="w-28 shrink-0 truncate text-xs font-semibold text-stadium-text">
+                      {f.home.code} v {f.away.code}
+                    </span>
+                    <div className="ml-auto flex gap-1">
+                      {(['HOME', 'DRAW', 'AWAY'] as Outcome[]).map((o) => (
+                        <button
+                          key={o}
+                          onClick={() => setPicks((p) => ({ ...p, [f.id]: o }))}
+                          className={cn(
+                            'rounded-lg border px-2.5 py-1 text-[10px] font-bold',
+                            picks[f.id] === o
+                              ? 'border-pitch bg-pitch-bg text-stadium-text'
+                              : 'border-stadium-line text-stadium-text-secondary hover:border-stadium-line-strong',
+                          )}
+                        >
+                          {o === 'HOME' ? f.home.code : o === 'AWAY' ? f.away.code : 'DRAW'}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
           ))}
+          {connected && (
+            <button
+              onClick={() => void save()}
+              disabled={busy || Object.keys(picks).length === 0}
+              className="rounded-xl bg-gold py-2.5 text-sm font-bold text-stadium-base disabled:opacity-50"
+            >
+              {busy ? 'Saving…' : 'Save bracket'}
+            </button>
+          )}
         </div>
-      </div>
-
-      <div className="mt-4 flex items-center gap-2 text-xs text-stadium-text-muted">
-        <Network className="h-3.5 w-3.5" />
-        Bracket picks are off-chain; a completed bracket can be minted as an evolving NFT (stretch).
-      </div>
+      </StatePanel>
     </div>
   );
 }

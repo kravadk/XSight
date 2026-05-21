@@ -693,6 +693,18 @@ export interface LeagueDto {
   createdAt: string;
 }
 
+export interface BracketDto {
+  wallet: string;
+  picks: Record<string, 'HOME' | 'DRAW' | 'AWAY'>;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface BracketScoreboardDto {
+  bracket: BracketDto | null;
+  you: { total: number; scored: number; correct: number };
+  hermes: { total: number; scored: number; correct: number };
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -877,6 +889,13 @@ export const api = {
     request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
   cupLeaderboard: () =>
     request<{ rows: LeaderboardRowDto[]; hermes: LeaderboardRowDto | null }>('/cup/leaderboard'),
+  cupBracket: (wallet: string) =>
+    request<BracketScoreboardDto>(`/cup/bracket?wallet=${encodeURIComponent(wallet)}`),
+  saveBracket: (wallet: string, picks: Record<string, 'HOME' | 'DRAW' | 'AWAY'>) =>
+    request<{ bracket: BracketDto }>('/cup/bracket', {
+      method: 'POST',
+      body: JSON.stringify({ wallet, picks }),
+    }),
   cupLeagues: (wallet: string) =>
     request<{ leagues: LeagueDto[] }>(`/cup/leagues?wallet=${encodeURIComponent(wallet)}`),
   cupLeagueLeaderboard: (id: string) =>
