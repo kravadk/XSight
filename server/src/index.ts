@@ -89,6 +89,7 @@ app.get('/', (_req, res) => {
       cupSettlementLog: 'GET /api/cup/settlement-log?matchId=<live-match-id>',
       cupResolver: 'GET /api/cup/resolver',
       cupPundit: 'GET /api/cup/pundit',
+      cupFreePicks: 'GET/POST /api/cup/free-picks  (free-to-play, no wallet money)',
       cupPunditExecutions: 'GET /api/cup/pundit/executions',
       cupPunditExecute: 'POST /api/cup/pundit/execute  (operator-gated, body {matchId})',
       cupProposeResult: 'POST /api/cup/propose-result',

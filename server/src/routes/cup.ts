@@ -9,6 +9,7 @@ import { getResolverStatus, resolveCupMatches } from '../services/quorumResolver
 import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/punditService.js';
 import { executePunditPick } from '../services/punditExecutor.js';
 import { listPunditExecutions } from '../services/punditExecutionLog.js';
+import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -50,6 +51,24 @@ function requireCupWrite(req: Request, res: Response): boolean {
   });
   return false;
 }
+
+cupRouter.post('/free-picks', async (req: Request, res: Response) => {
+  const body = req.body as { fixtureId?: string; wallet?: string; outcome?: string };
+  if (!body.fixtureId || !body.wallet || !body.outcome) {
+    return res.status(400).json({ error: 'fixtureId, wallet and outcome are required' });
+  }
+  const result = await recordFreePick(body.fixtureId, body.wallet, body.outcome);
+  if (!result.ok) {
+    return res.status(result.reason === 'fixture_not_found' ? 404 : 400).json({ error: result.reason });
+  }
+  res.json({ pick: result.pick });
+});
+
+cupRouter.get('/free-picks', async (req: Request, res: Response) => {
+  const wallet = typeof req.query.wallet === 'string' ? req.query.wallet : undefined;
+  const fixtureId = typeof req.query.matchId === 'string' ? req.query.matchId : undefined;
+  res.json({ picks: await getFreePicks({ wallet, fixtureId }) });
+});
 
 cupRouter.get('/overview', async (_req: Request, res: Response) => {
   res.json({ ...(await cupOverview()), contract: cupOracleMetadata() });
