@@ -20,7 +20,7 @@ opponent and a free-to-play funnel. Full spec: `docs/xcup/DESIGN.md`.
 1. **Smart Contracts** — ✅ DONE
 2. **Oracle Resolution Pipeline** — ✅ DONE
 3. **Market Backend + Indexer** — ✅ DONE
-4. Frontend (8 screens, World Cup design, **real team logos**)
+4. **Frontend (8 screens, World Cup design, real team logos)** — ✅ DONE
 5. AI Pundit (Hermes) + repo / demo / submission deliverables
 
 Mode: build **autonomously**, plan-by-plan — write
@@ -74,6 +74,20 @@ Commits: `cc13871` (keccak match-id fix), `8167e3a` (market backend).
   as markets with honest `contract_not_deployed` state, zero txs.
 - Plan doc: `docs/superpowers/plans/2026-05-21-03-market-backend.md`.
 
+## ✅ DONE — Plan 4 (Frontend — 8 X Cup screens)
+Commit: `e52881d` (`feat(ui): Plan 4 …`).
+- Dark stadium / night-match theme — floodlit-pitch green + champion gold, Anton
+  display font (`src/index.css`).
+- X Cup navigation (Predict / Compete / Intel); real OKX Wallet connect — EIP-1193,
+  X Layer 196 network guard, `sendTx` (`walletStore`).
+- 8 screens, all on real backend data: Markets feed, Market detail (approve→stake),
+  My Bets (claim), Bracket, Leaderboard, AI Pundit, FanPass, Developers.
+- Real team flags via a FIFA→ISO map; typed market API client + `useApi` hook.
+- Backend: `GET /api/markets/positions?wallet=` for My Bets.
+- Verified: `tsc` clean, `vite build` clean, Markets renders 104 real World Cup
+  fixtures with honest pre-deploy states.
+- Plan doc: `docs/superpowers/plans/2026-05-21-04-frontend.md`.
+
 ## ⚠ KEY DECISIONS (carry forward)
 - **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet phase.
 - **Stablecoin: USDT + USDC.** `ParimutuelMarket` is token-agnostic; the deploy picks one
@@ -88,9 +102,7 @@ Commits: `cc13871` (keccak match-id fix), `8167e3a` (market backend).
   money-holding contract). Not run autonomously.
 
 ## ▶ NEXT STEP
-**Plan 4 — Frontend** (`docs/superpowers/plans/2026-05-21-04-frontend.md`). Rework the
-React app from the legacy XSight trading-copilot UI into the X Cup prediction market: 8
-screens (DESIGN §5) — Markets, Market detail, My Bets, Bracket, Leaderboard, AI Pundit,
-FanPass, Developers — with a World Cup visual theme, **real team logos/flags**, OKX Wallet
-connect, and the approve/stake/claim flow. Every screen binds to the real backend
-(`/api/markets`, `/api/cup/*`) — no mock data. Backend is fully ready (Plans 1–3).
+**Plan 5 — AI Pundit + deliverables.** The autonomous Hermes pundit (Claude-backed
+agent that researches fixtures, posts conviction picks, stakes its own wallet) + the
+repo/demo deliverables: README, LICENSE (MIT), `/contracts` addresses, `.env.example`
+completeness, demo video script, X-account posts. References: `DESIGN.md` §13 (Day 4–6).
