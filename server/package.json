@@ -20,6 +20,7 @@
     "test:cup-adapters": "tsx scripts/test-cup-adapters.ts",
     "test:cup-real-core": "tsx scripts/test-cup-real-core.ts",
     "test:cup-track-proof": "tsx scripts/test-cup-track-proof.ts",
+    "test:cup-resolver": "tsx scripts/test-quorum-resolver.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },

@@ -9,11 +9,13 @@ import { economyRouter } from './routes/economy.js';
 import { marketRouter } from './routes/market.js';
 import { strategyRouter } from './routes/strategies.js';
 import { mcpRouter } from './routes/mcp.js';
+import { cupRouter } from './routes/cup.js';
 import { startTokenTracker } from './services/tokenTracker.js';
 import { startPoolTracker } from './services/poolTracker.js';
 import { startStrategyEngine } from './services/strategyEngine.js';
 import { startTokenCatalog } from './services/tokenCatalog.js';
 import { startAgentHeartbeat } from './services/agentHeartbeat.js';
+import { startQuorumResolver } from './services/cupScheduler.js';
 
 const app = express();
 
@@ -33,6 +35,7 @@ app.use('/api/status', statusRouter);
 app.use('/api/economy', economyRouter); // spec-aliased shim, see routes/economy.ts
 app.use('/api/market', marketRouter);
 app.use('/api/strategies', strategyRouter);
+app.use('/api/cup', cupRouter);
 app.use('/api/v1', analysisRouter);
 app.use('/mcp', mcpRouter);
 
@@ -42,6 +45,7 @@ startTokenTracker();
 startPoolTracker();
 startStrategyEngine();
 startAgentHeartbeat(); // autonomous micro-swaps every 8 min for on-chain activity
+startQuorumResolver(); // autonomous CupOracleV2 resolution (off unless CUP_RESOLVER_ENABLED=true)
 
 app.get('/', (_req, res) => {
   res.json({
@@ -72,6 +76,15 @@ app.get('/', (_req, res) => {
       strategiesList: 'GET /api/strategies',
       strategiesCreate: 'POST /api/strategies',
       strategiesFires: 'GET /api/strategies/fires',
+      cupOverview: 'GET /api/cup/overview',
+      cupFixtures: 'GET /api/cup/fixtures',
+      cupAiEdge: 'GET /api/cup/ai-edge?matchId=<live-match-id>',
+      cupPlayerStats: 'GET /api/cup/player-stats?matchId=<live-match-id>',
+      cupSentiment: 'GET /api/cup/sentiment?matchId=<live-match-id>',
+      cupTeamStrength: 'GET /api/cup/team-strength?matchId=<live-match-id>',
+      cupSettlementLog: 'GET /api/cup/settlement-log?matchId=<live-match-id>',
+      cupResolver: 'GET /api/cup/resolver',
+      cupProposeResult: 'POST /api/cup/propose-result',
       mcp: 'POST /mcp  (MCP JSON-RPC 2.0)',
       mcpDiscover: 'GET /mcp  (capability discovery)',
       x402Spec: 'GET /api/v1/x402-spec',
@@ -80,6 +93,11 @@ app.get('/', (_req, res) => {
         'GET /api/v1/token-analysis?token=0x...  (0.05 USDT)',
         'GET /api/v1/trading-signals  (0.10 USDT)',
         'GET /api/v1/portfolio-advice?wallet=0x...  (0.05 USDT)',
+        'GET /api/v1/cup/ai-edge?matchId=<live-match-id>  (0.03 USDT)',
+        'GET /api/v1/cup/player-stats?matchId=<live-match-id>  (0.02 USDT)',
+        'GET /api/v1/cup/sentiment?matchId=<live-match-id>  (0.02 USDT)',
+        'GET /api/v1/cup/team-strength?matchId=<live-match-id>  (0.02 USDT)',
+        'GET /api/v1/cup/fan-score?wallet=0x...  (0.01 USDT)',
       ],
     },
   });
