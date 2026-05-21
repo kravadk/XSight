@@ -9,20 +9,34 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "activity": "tsx scripts/generate-activity.ts",
+    "wallet:create": "tsx scripts/create-demo-wallet.ts",
+    "deploy:cup-oracle": "tsx scripts/deploy-cup-oracle.ts",
+    "deploy:fanpass-sbt": "tsx scripts/deploy-fanpass-sbt.ts",
+    "deploy:parimutuel": "tsx scripts/deploy-parimutuel-market.ts",
+    "seed:cup-oracle": "tsx scripts/seed-cup-oracle.ts",
+    "test:cup-auth": "tsx scripts/test-cup-write-auth.ts",
+    "test:cup-log": "tsx scripts/test-cup-settlement-log.ts",
+    "test:cup-data": "tsx scripts/test-cup-data.ts",
+    "test:cup-adapters": "tsx scripts/test-cup-adapters.ts",
+    "test:cup-real-core": "tsx scripts/test-cup-real-core.ts",
+    "test:cup-track-proof": "tsx scripts/test-cup-track-proof.ts",
     "test:api": "tsx scripts/test-api.ts",
     "test:api:full": "tsx scripts/test-api.ts --execute-swap"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
+    "@types/pg": "^8.20.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "ethers": "^6.16.0",
-    "express": "^4.21.1"
+    "express": "^4.21.1",
+    "pg": "^8.21.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^22.7.4",
+    "solc": "^0.8.35",
     "tsx": "^4.19.1",
     "typescript": "^5.6.3"
   }
