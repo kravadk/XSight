@@ -18,6 +18,7 @@ import { startTokenCatalog } from './services/tokenCatalog.js';
 import { startAgentHeartbeat } from './services/agentHeartbeat.js';
 import { startQuorumResolver } from './services/cupScheduler.js';
 import { startMarketIndexer } from './services/marketIndexer.js';
+import { startPunditAutoStake } from './services/punditScheduler.js';
 
 const app = express();
 
@@ -50,6 +51,7 @@ startStrategyEngine();
 startAgentHeartbeat(); // autonomous micro-swaps every 8 min for on-chain activity
 startQuorumResolver(); // autonomous CupOracleV2 resolution (off unless CUP_RESOLVER_ENABLED=true)
 void startMarketIndexer(); // ParimutuelMarket event indexer (idle until PARIMUTUEL_MARKET_ADDRESS set)
+startPunditAutoStake(); // autonomous pundit loop (off unless PUNDIT_AUTOSTAKE_ENABLED=true)
 
 app.get('/', (_req, res) => {
   res.json({
@@ -94,6 +96,7 @@ app.get('/', (_req, res) => {
       cupLeagues: 'GET/POST /api/cup/leagues  ·  POST /api/cup/leagues/join  ·  GET /api/cup/leagues/:id/leaderboard',
       cupBracket: 'GET/POST /api/cup/bracket  (save & score a tournament bracket)',
       cupPunditExecutions: 'GET /api/cup/pundit/executions',
+      cupPunditXPosts: 'GET /api/cup/pundit/x-posts',
       cupPunditExecute: 'POST /api/cup/pundit/execute  (operator-gated, body {matchId})',
       cupProposeResult: 'POST /api/cup/propose-result',
       markets: 'GET /api/markets',

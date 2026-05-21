@@ -9,6 +9,7 @@ import { getResolverStatus, resolveCupMatches } from '../services/quorumResolver
 import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/punditService.js';
 import { executePunditPick } from '../services/punditExecutor.js';
 import { listPunditExecutions } from '../services/punditExecutionLog.js';
+import { listXPosts } from '../services/xPostLog.js';
 import { recordFreePick, getFreePicks } from '../services/freePoolService.js';
 import { globalLeaderboard } from '../services/leaderboardService.js';
 import { createLeague, joinLeague, leaguesForWallet, leagueLeaderboard } from '../services/leagueService.js';
@@ -212,6 +213,10 @@ cupRouter.get('/ai-edge', async (req: Request, res: Response) => {
 
 cupRouter.get('/pundit', async (_req: Request, res: Response) => {
   res.json({ profile: getPunditProfile(), picks: await listPunditPicks() });
+});
+
+cupRouter.get('/pundit/x-posts', (_req: Request, res: Response) => {
+  res.json({ posts: listXPosts() });
 });
 
 cupRouter.get('/pundit/executions', (req: Request, res: Response) => {
