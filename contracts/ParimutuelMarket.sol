@@ -35,7 +35,10 @@ contract ParimutuelMarket {
     address public operator;
     address public treasury;
     uint16 public feeBps;
-    address public immutable usdc;
+    /// @notice The ERC20 the market settles in — USDT or USDC on X Layer. Token-agnostic
+    ///         on purpose: handles both standard (bool-returning) and non-standard
+    ///         (void-returning, e.g. USDT) ERC20s via the low-level helpers below.
+    address public immutable token;
     ICupOracle public immutable oracle;
 
     uint256 private _entered;
@@ -81,12 +84,12 @@ contract ParimutuelMarket {
         _entered = 0;
     }
 
-    constructor(address usdc_, address oracle_, address operator_, address treasury_, uint16 feeBps_) {
-        require(usdc_ != address(0) && oracle_ != address(0), "zero addr");
+    constructor(address token_, address oracle_, address operator_, address treasury_, uint16 feeBps_) {
+        require(token_ != address(0) && oracle_ != address(0), "zero addr");
         require(operator_ != address(0) && treasury_ != address(0), "zero addr");
         require(feeBps_ <= MAX_FEE_BPS, "fee too high");
         owner = msg.sender;
-        usdc = usdc_;
+        token = token_;
         oracle = ICupOracle(oracle_);
         operator = operator_;
         treasury = treasury_;
@@ -138,7 +141,7 @@ contract ParimutuelMarket {
         require(block.timestamp < m.closeTime, "closed");
         require(outcome >= OUTCOME_HOME && outcome <= OUTCOME_AWAY, "bad outcome");
         require(amount > 0, "zero amount");
-        _pullUSDC(msg.sender, amount);
+        _pullToken(msg.sender, amount);
         m.pool[outcome] += amount;
         m.totalPool += amount;
         _stake[marketId][msg.sender][outcome] += amount;
@@ -163,7 +166,7 @@ contract ParimutuelMarket {
         } else {
             uint256 fee = (m.totalPool * feeBps) / 10000;
             m.payoutPool = m.totalPool - fee;
-            if (fee > 0) _pushUSDC(treasury, fee);
+            if (fee > 0) _pushToken(treasury, fee);
         }
         emit Settled(marketId, fo, m.totalPool, m.payoutPool, m.refundMode);
     }
@@ -195,7 +198,7 @@ contract ParimutuelMarket {
             if (won > 0) payout = (won * m.payoutPool) / m.pool[m.winningOutcome];
         }
         require(payout > 0, "nothing to claim");
-        _pushUSDC(msg.sender, payout);
+        _pushToken(msg.sender, payout);
         emit Claimed(marketId, msg.sender, payout);
     }
 
@@ -242,15 +245,15 @@ contract ParimutuelMarket {
         return (s[1], s[2], s[3]);
     }
 
-    // ---- internal USDC transfer (handles standard + non-standard ERC20) ----
-    function _pullUSDC(address from, uint256 amount) private {
+    // ---- internal token transfer (handles standard + non-standard ERC20 like USDT) ----
+    function _pullToken(address from, uint256 amount) private {
         (bool ok, bytes memory data) =
-            usdc.call(abi.encodeWithSelector(0x23b872dd, from, address(this), amount)); // transferFrom
-        require(ok && (data.length == 0 || abi.decode(data, (bool))), "usdc transferFrom failed");
+            token.call(abi.encodeWithSelector(0x23b872dd, from, address(this), amount)); // transferFrom
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), "token transferFrom failed");
     }
 
-    function _pushUSDC(address to, uint256 amount) private {
-        (bool ok, bytes memory data) = usdc.call(abi.encodeWithSelector(0xa9059cbb, to, amount)); // transfer
-        require(ok && (data.length == 0 || abi.decode(data, (bool))), "usdc transfer failed");
+    function _pushToken(address to, uint256 amount) private {
+        (bool ok, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, amount)); // transfer
+        require(ok && (data.length == 0 || abi.decode(data, (bool))), "token transfer failed");
     }
 }

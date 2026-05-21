@@ -26,7 +26,15 @@ module.exports = {
     cache: "./contracts/cache-hh",
   },
   networks: {
-    hardhat: FORK ? { forking: { url: RPC } } : {},
+    // X Layer (chain 196) is not in Hardhat's built-in hardfork registry, so a fork
+    // must be told which hardfork the chain runs — otherwise executing calls against
+    // the forked block fails with "No known hardfork ... in chain with id 196".
+    hardhat: FORK
+      ? {
+          forking: { url: RPC },
+          chains: { 196: { hardforkHistory: { cancun: 0 } } },
+        }
+      : {},
     xlayer: { url: RPC, chainId: 196, accounts: KEY ? [KEY] : [] },
   },
 };

@@ -1,177 +1,355 @@
+/**
+ * ParimutuelMarket — real-chain test suite (forked X Layer mainnet, chain 196).
+ *
+ * NO MOCKS. Every dependency is the real deployed thing:
+ *   - CupOracleV2 at 0xE4dFef03… — the live settlement oracle, driven by impersonating
+ *     its real owner (registerMatch → proposeResult → finalizeResult).
+ *   - USDT (0x1E4a5963…) and USDC (0x74b7F163…) — the real X Layer stablecoins. The full
+ *     stake → settle → claim lifecycle is exercised against both.
+ *
+ * Test accounts are funded by writing the real token's `balanceOf` storage slot on the
+ * fork (Foundry-style `deal` — the slot is discovered by probing, not hard-coded), then
+ * every transfer runs through the token's real bytecode.
+ *
+ * The single crafted contract is `contracts/test/exploit/ReentrancyAttacker.sol`, an
+ * exploit harness — see that file's header for why a re-entrancy test cannot use a real
+ * token.
+ *
+ * Run: `npm run contracts:test` (sets FORK=1; needs X_LAYER_RPC_URL or the public RPC).
+ * If the process is not forked, the whole suite skips rather than failing.
+ */
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 
-const id = (s) => ethers.encodeBytes32String(s);
+// --- real X Layer mainnet addresses (chain 196) ---
+const ORACLE = "0xE4dFef03E107225f2239CFfF955a378A9a8158Be"; // deployed CupOracleV2
+const TOKENS = {
+  USDT: "0x1E4a5963aBFD975d8c9021ce480b42188849D41d",
+  USDC: "0x74b7F16337b8972027F6196A17a631aC6dE26d22",
+};
+
+const ORACLE_ABI = [
+  "function owner() view returns (address)",
+  "function challengeWindow() view returns (uint64)",
+  "function registerMatch(bytes32,bytes32,bytes32,bytes32,string)",
+  "function proposeResult(bytes32,uint8,bytes32,string,uint8)",
+  "function finalizeResult(bytes32)",
+];
+const ERC20_ABI = [
+  "function balanceOf(address) view returns (uint256)",
+  "function symbol() view returns (string)",
+  "function decimals() view returns (uint8)",
+  "function approve(address,uint256) returns (bool)",
+];
+
 const HOME = 1, DRAW = 2, AWAY = 3;
-const FINALIZED = 3, PROPOSED = 1;
-const USDC = (n) => BigInt(n) * 1_000_000n; // 6 decimals
+const UNIT = 1_000_000n; // USDT and USDC are both 6-decimal on X Layer
+const amt = (n) => BigInt(n) * UNIT;
+const coder = ethers.AbiCoder.defaultAbiCoder();
 
-async function now() {
+let challengeWindow; // read once from the real oracle
+let WARP;            // seconds to advance past both market close and the challenge window
+
+async function isForked() {
+  return (await ethers.provider.getCode(ORACLE)) !== "0x";
+}
+
+async function nowTs() {
   return BigInt((await ethers.provider.getBlock("latest")).timestamp);
 }
 
-async function warpPastClose() {
-  await ethers.provider.send("evm_increaseTime", [3601]);
-  await ethers.provider.send("evm_mine", []);
+async function warp(seconds) {
+  await network.provider.send("evm_increaseTime", [seconds]);
+  await network.provider.send("evm_mine", []);
 }
 
-async function deploy(feeBps = 0) {
-  const [owner, operator, treasury, alice, bob, carol] = await ethers.getSigners();
-  const usdc = await (await ethers.getContractFactory("MockUSDC")).deploy();
-  const oracle = await (await ethers.getContractFactory("MockOracle")).deploy();
-  const market = await (await ethers.getContractFactory("ParimutuelMarket")).deploy(
-    await usdc.getAddress(),
-    await oracle.getAddress(),
-    operator.address,
-    treasury.address,
-    feeBps,
-  );
-  for (const u of [alice, bob, carol]) {
-    await usdc.mint(u.address, USDC(1000));
-    await usdc.connect(u).approve(await market.getAddress(), USDC(1000));
+async function impersonate(addr) {
+  await network.provider.send("hardhat_impersonateAccount", [addr]);
+  await network.provider.send("hardhat_setBalance", [addr, "0x3635c9adc5dea00000"]); // 1000 OKB
+  return ethers.getSigner(addr);
+}
+
+// --- Foundry-style `deal`: locate the ERC20 `balanceOf` storage slot, then write it. ---
+const slotCache = {};
+async function balanceSlot(tokenAddr) {
+  if (slotCache[tokenAddr] !== undefined) return slotCache[tokenAddr];
+  const erc20 = new ethers.Contract(tokenAddr, ERC20_ABI, ethers.provider);
+  const probe = "0x0000000000000000000000000000000000001337";
+  const sentinel = 7_777_777n;
+  const slots = [];
+  for (let i = 0n; i < 40n; i++) slots.push(i); // plain Solidity `mapping(address=>uint256)`
+  // OpenZeppelin ERC-7201 namespaced ERC20 storage (balances mapping is the first field).
+  const ozBase =
+    BigInt(
+      ethers.keccak256(
+        coder.encode(["uint256"], [
+          BigInt(ethers.keccak256(ethers.toUtf8Bytes("openzeppelin.storage.ERC20"))) - 1n,
+        ]),
+      ),
+    ) & ~0xffn;
+  slots.push(ozBase);
+  for (const s of slots) {
+    const key = ethers.keccak256(coder.encode(["address", "uint256"], [probe, s]));
+    const prev = await ethers.provider.getStorage(tokenAddr, key);
+    await network.provider.send("hardhat_setStorageAt", [tokenAddr, key, ethers.toBeHex(sentinel, 32)]);
+    let hit = false;
+    try {
+      hit = (await erc20.balanceOf(probe)) === sentinel;
+    } catch {
+      hit = false;
+    }
+    await network.provider.send("hardhat_setStorageAt", [tokenAddr, key, prev]);
+    if (hit) {
+      slotCache[tokenAddr] = s;
+      return s;
+    }
   }
-  return { owner, operator, treasury, alice, bob, carol, usdc, oracle, market };
+  throw new Error(`balanceOf storage slot not found for ${tokenAddr}`);
 }
 
-async function openMarket(market, operator, mId = "m1", matchId = "x1") {
-  const close = (await now()) + 3600n;
-  await market.connect(operator).createMarket(id(mId), id(matchId), close);
-  return { mId: id(mId), matchId: id(matchId), close };
+async function deal(tokenAddr, account, amount) {
+  const s = await balanceSlot(tokenAddr);
+  const key = ethers.keccak256(coder.encode(["address", "uint256"], [account, s]));
+  await network.provider.send("hardhat_setStorageAt", [tokenAddr, key, ethers.toBeHex(amount, 32)]);
 }
 
-describe("ParimutuelMarket", () => {
-  it("createMarket: only operator", async () => {
-    const { market, alice } = await deploy();
-    const close = (await now()) + 3600n;
-    await expect(market.connect(alice).createMarket(id("m1"), id("x1"), close))
-      .to.be.revertedWith("not operator");
+// --- real CupOracleV2 helpers (driven by the impersonated real owner) ---
+const randomId = () => ethers.hexlify(ethers.randomBytes(32));
+
+async function registerAndPropose(ownerSigner, outcome) {
+  const oracle = new ethers.Contract(ORACLE, ORACLE_ABI, ownerSigner);
+  const matchId = randomId();
+  const h = ethers.keccak256(ethers.toUtf8Bytes(`xsight-fork-evidence-${matchId}`));
+  await (await oracle.registerMatch(matchId, h, h, h, "ipfs://xsight/fork-test")).wait();
+  // proposeResult is permissionless; sourceCount must be >= 2 (quorum gate).
+  await (await oracle.proposeResult(matchId, outcome, h, "ipfs://xsight/fork-test", 3)).wait();
+  return matchId;
+}
+
+async function finalizeOracle(ownerSigner, matchId) {
+  const oracle = new ethers.Contract(ORACLE, ORACLE_ABI, ownerSigner);
+  await (await oracle.finalizeResult(matchId)).wait();
+}
+
+async function deployMarket(tokenAddr, feeBps, operator, treasury) {
+  const Factory = await ethers.getContractFactory("ParimutuelMarket");
+  const market = await Factory.deploy(tokenAddr, ORACLE, operator.address, treasury.address, feeBps);
+  await market.waitForDeployment();
+  return market;
+}
+
+async function openMarket(tokenAddr, feeBps, matchId) {
+  const [deployer, operator, treasury, alice, bob, carol] = await ethers.getSigners();
+  const market = await deployMarket(tokenAddr, feeBps, operator, treasury);
+  const marketId = randomId();
+  const mid = matchId || randomId();
+  const closeTime = (await nowTs()) + 3600n;
+  await (await market.connect(operator).createMarket(marketId, mid, closeTime)).wait();
+  return { market, marketId, matchId: mid, closeTime, deployer, operator, treasury, alice, bob, carol };
+}
+
+// deal `amount` of the real token to `signer` and approve the market to pull it.
+async function fund(tokenAddr, market, signer, amount) {
+  await deal(tokenAddr, signer.address, amount);
+  const erc20 = new ethers.Contract(tokenAddr, ERC20_ABI, signer);
+  await (await erc20.approve(await market.getAddress(), amount)).wait();
+}
+
+const tokenAt = (tokenAddr) => new ethers.Contract(tokenAddr, ERC20_ABI, ethers.provider);
+
+describe("ParimutuelMarket — forked X Layer mainnet", function () {
+  this.timeout(240000);
+
+  let oracleOwner;
+
+  before(async function () {
+    if (!(await isForked())) {
+      // eslint-disable-next-line no-console
+      console.warn("    [skip] not forked — run with FORK=1 (npm run contracts:test) to exercise the real chain");
+      this.skip();
+    }
+    // X Layer (chain 196) is not in EDR's hardfork registry, so EVM execution *at* the
+    // historical fork block fails. Mining one local block moves all subsequent execution
+    // onto locally-produced blocks, which use the network's configured hardfork.
+    await network.provider.send("hardhat_mine", ["0x1"]);
+    const oracle = new ethers.Contract(ORACLE, ORACLE_ABI, ethers.provider);
+    challengeWindow = Number(await oracle.challengeWindow());
+    WARP = Math.max(3601, challengeWindow + 30);
+    oracleOwner = await impersonate(await oracle.owner());
   });
 
-  it("createMarket: reverts on past closeTime and on duplicate", async () => {
-    const { market, operator } = await deploy();
-    const past = (await now()) - 1n;
-    await expect(market.connect(operator).createMarket(id("m1"), id("x1"), past))
-      .to.be.revertedWith("close in past");
-    await openMarket(market, operator);
-    const close = (await now()) + 3600n;
-    await expect(market.connect(operator).createMarket(id("m1"), id("x1"), close))
-      .to.be.revertedWith("market exists");
-  });
+  for (const [sym, tokenAddr] of Object.entries(TOKENS)) {
+    describe(`settled in real ${sym}`, function () {
+      it(`uses the real ${sym} contract (6-decimal ERC20 on the fork)`, async () => {
+        const tk = tokenAt(tokenAddr);
+        expect(await tk.symbol()).to.equal(sym);
+        expect(await tk.decimals()).to.equal(6n);
+      });
 
-  it("stake: updates pools and stakeOf", async () => {
-    const { market, operator, alice } = await deploy();
-    const { mId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(25));
-    const m = await market.getMarket(mId);
-    expect(m.totalPool).to.equal(USDC(25));
-    expect(m.poolHome).to.equal(USDC(25));
-    const s = await market.stakeOf(mId, alice.address);
-    expect(s.home).to.equal(USDC(25));
-  });
+      it("createMarket: only the operator can open a market", async () => {
+        const [deployer, operator, treasury, alice] = await ethers.getSigners();
+        const market = await deployMarket(tokenAddr, 0, operator, treasury);
+        const close = (await nowTs()) + 3600n;
+        await expect(
+          market.connect(alice).createMarket(randomId(), randomId(), close),
+        ).to.be.revertedWith("not operator");
+      });
 
-  it("stake: reverts after close, bad outcome, zero amount", async () => {
-    const { market, operator, alice } = await deploy();
-    const { mId } = await openMarket(market, operator);
-    await expect(market.connect(alice).stake(mId, 0, USDC(5))).to.be.revertedWith("bad outcome");
-    await expect(market.connect(alice).stake(mId, HOME, 0)).to.be.revertedWith("zero amount");
-    await warpPastClose();
-    await expect(market.connect(alice).stake(mId, HOME, USDC(5))).to.be.revertedWith("closed");
-  });
+      it("createMarket: reverts on a past closeTime and on a duplicate id", async () => {
+        const [deployer, operator, treasury] = await ethers.getSigners();
+        const market = await deployMarket(tokenAddr, 0, operator, treasury);
+        const past = (await nowTs()) - 1n;
+        await expect(
+          market.connect(operator).createMarket(randomId(), randomId(), past),
+        ).to.be.revertedWith("close in past");
+        const marketId = randomId();
+        const close = (await nowTs()) + 3600n;
+        await market.connect(operator).createMarket(marketId, randomId(), close);
+        await expect(
+          market.connect(operator).createMarket(marketId, randomId(), close),
+        ).to.be.revertedWith("market exists");
+      });
 
-  it("settle: reverts before close and when oracle not finalized", async () => {
-    const { market, operator, oracle } = await deploy();
-    const { mId, matchId } = await openMarket(market, operator);
-    await expect(market.settle(mId)).to.be.revertedWith("not closed");
-    await warpPastClose();
-    await oracle.setMatch(matchId, PROPOSED, HOME);
-    await expect(market.settle(mId)).to.be.revertedWith("oracle not finalized");
-  });
+      it("stake: pulls real tokens and updates the pools", async () => {
+        const { market, marketId, alice } = await openMarket(tokenAddr, 0);
+        await fund(tokenAddr, market, alice, amt(25));
+        await market.connect(alice).stake(marketId, HOME, amt(25));
 
-  it("claim: winner pro-rata split, loser gets nothing", async () => {
-    const { market, operator, oracle, alice, bob, carol, usdc } = await deploy();
-    const { mId, matchId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(30)); // winner
-    await market.connect(bob).stake(mId, HOME, USDC(10));   // winner
-    await market.connect(carol).stake(mId, AWAY, USDC(60)); // loser -> total pool 100
-    await warpPastClose();
-    await oracle.setMatch(matchId, FINALIZED, HOME);
-    await market.settle(mId);
-    const aliceBefore = await usdc.balanceOf(alice.address);
-    await market.connect(alice).claim(mId);
-    expect(await usdc.balanceOf(alice.address)).to.equal(aliceBefore + USDC(75)); // 30/40 * 100
-    await market.connect(bob).claim(mId);
-    expect(await usdc.balanceOf(bob.address)).to.equal(USDC(990) + USDC(25));     // 10/40 * 100
-    await expect(market.connect(carol).claim(mId)).to.be.revertedWith("nothing to claim");
-  });
+        const m = await market.getMarket(marketId);
+        expect(m.totalPool).to.equal(amt(25));
+        expect(m.poolHome).to.equal(amt(25));
+        const s = await market.stakeOf(marketId, alice.address);
+        expect(s.home).to.equal(amt(25));
+        // the real token actually moved into the contract
+        expect(await tokenAt(tokenAddr).balanceOf(await market.getAddress())).to.equal(amt(25));
+      });
 
-  it("claim: no winners -> everyone refunded", async () => {
-    const { market, operator, oracle, alice, bob, usdc } = await deploy();
-    const { mId, matchId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(20));
-    await market.connect(bob).stake(mId, DRAW, USDC(20));
-    await warpPastClose();
-    await oracle.setMatch(matchId, FINALIZED, AWAY); // nobody staked AWAY
-    await market.settle(mId);
-    await market.connect(alice).claim(mId);
-    await market.connect(bob).claim(mId);
-    expect(await usdc.balanceOf(alice.address)).to.equal(USDC(1000));
-    expect(await usdc.balanceOf(bob.address)).to.equal(USDC(1000));
-  });
+      it("stake: reverts on bad outcome, zero amount, and after close", async () => {
+        const { market, marketId, alice } = await openMarket(tokenAddr, 0);
+        await expect(market.connect(alice).stake(marketId, 0, amt(5))).to.be.revertedWith("bad outcome");
+        await expect(market.connect(alice).stake(marketId, HOME, 0)).to.be.revertedWith("zero amount");
+        await warp(3601);
+        await expect(market.connect(alice).stake(marketId, HOME, amt(5))).to.be.revertedWith("closed");
+      });
 
-  it("voidMarket: operator voids -> refunds", async () => {
-    const { market, operator, alice, usdc } = await deploy();
-    const { mId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(40));
-    await market.connect(operator).voidMarket(mId);
-    await market.connect(alice).claim(mId);
-    expect(await usdc.balanceOf(alice.address)).to.equal(USDC(1000));
-  });
+      it("settle: reverts before close and while the real oracle is not finalized", async () => {
+        // before close
+        const a = await openMarket(tokenAddr, 0);
+        await expect(a.market.settle(a.marketId)).to.be.revertedWith("not closed");
 
-  it("claim: double claim reverts", async () => {
-    const { market, operator, oracle, alice } = await deploy();
-    const { mId, matchId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(10));
-    await warpPastClose();
-    await oracle.setMatch(matchId, FINALIZED, HOME);
-    await market.settle(mId);
-    await market.connect(alice).claim(mId);
-    await expect(market.connect(alice).claim(mId)).to.be.revertedWith("claimed");
-  });
+        // closed, but the oracle has only a proposed (not finalized) result
+        const matchId = await registerAndPropose(oracleOwner, HOME);
+        const b = await openMarket(tokenAddr, 0, matchId);
+        await warp(WARP);
+        await expect(b.market.settle(b.marketId)).to.be.revertedWith("oracle not finalized");
+      });
 
-  it("fee: feeBps routes fee to treasury, winner gets payoutPool share", async () => {
-    const { market, operator, treasury, oracle, alice, usdc } = await deploy(200); // 2%
-    const { mId, matchId } = await openMarket(market, operator);
-    await market.connect(alice).stake(mId, HOME, USDC(100));
-    await warpPastClose();
-    await oracle.setMatch(matchId, FINALIZED, HOME);
-    await market.settle(mId);
-    expect(await usdc.balanceOf(treasury.address)).to.equal(USDC(2)); // 2% of 100
-    await market.connect(alice).claim(mId);
-    expect(await usdc.balanceOf(alice.address)).to.equal(USDC(900) + USDC(98)); // staked 100 of 1000, won payoutPool 98
-  });
+      it("claim: winners split the pool pro-rata, the loser gets nothing", async () => {
+        const matchId = await registerAndPropose(oracleOwner, HOME);
+        const { market, marketId, alice, bob, carol } = await openMarket(tokenAddr, 0, matchId);
+        await fund(tokenAddr, market, alice, amt(30)); // winner
+        await fund(tokenAddr, market, bob, amt(10));   // winner
+        await fund(tokenAddr, market, carol, amt(60)); // loser -> total pool 100
+        await market.connect(alice).stake(marketId, HOME, amt(30));
+        await market.connect(bob).stake(marketId, HOME, amt(10));
+        await market.connect(carol).stake(marketId, AWAY, amt(60));
 
-  it("reentrancy: malicious token cannot re-enter claim", async () => {
-    const [owner, operator, treasury, alice] = await ethers.getSigners();
-    const token = await (await ethers.getContractFactory("ReentrantToken")).deploy();
-    const oracle = await (await ethers.getContractFactory("MockOracle")).deploy();
-    const market = await (await ethers.getContractFactory("ParimutuelMarket")).deploy(
-      await token.getAddress(),
-      await oracle.getAddress(),
-      operator.address,
-      treasury.address,
-      0,
-    );
-    await token.mint(alice.address, USDC(50));
-    await token.connect(alice).approve(await market.getAddress(), USDC(50));
-    const close = (await now()) + 3600n;
-    await market.connect(operator).createMarket(id("m1"), id("x1"), close);
-    await market.connect(alice).stake(id("m1"), HOME, USDC(50));
-    await warpPastClose();
-    await oracle.setMatch(id("x1"), FINALIZED, HOME);
-    await market.settle(id("m1"));
-    await token.arm(await market.getAddress(), id("m1"));
-    // The re-entrant claim is blocked (nonReentrant + the CEI `claimed` flag), which makes
-    // the malicious token's transfer fail, so the whole outer claim reverts — funds stay safe.
-    await expect(market.connect(alice).claim(id("m1"))).to.be.reverted;
+        await warp(WARP);
+        await finalizeOracle(oracleOwner, matchId);
+        await market.settle(marketId);
+
+        const tk = tokenAt(tokenAddr);
+        await market.connect(alice).claim(marketId);
+        expect(await tk.balanceOf(alice.address)).to.equal(amt(75)); // 30/40 * 100
+        await market.connect(bob).claim(marketId);
+        expect(await tk.balanceOf(bob.address)).to.equal(amt(25));   // 10/40 * 100
+        await expect(market.connect(carol).claim(marketId)).to.be.revertedWith("nothing to claim");
+      });
+
+      it("claim: a result nobody backed refunds every staker", async () => {
+        const matchId = await registerAndPropose(oracleOwner, AWAY);
+        const { market, marketId, alice, bob } = await openMarket(tokenAddr, 0, matchId);
+        await fund(tokenAddr, market, alice, amt(20));
+        await fund(tokenAddr, market, bob, amt(20));
+        await market.connect(alice).stake(marketId, HOME, amt(20));
+        await market.connect(bob).stake(marketId, DRAW, amt(20)); // nobody staked AWAY
+
+        await warp(WARP);
+        await finalizeOracle(oracleOwner, matchId);
+        await market.settle(marketId);
+
+        const tk = tokenAt(tokenAddr);
+        await market.connect(alice).claim(marketId);
+        await market.connect(bob).claim(marketId);
+        expect(await tk.balanceOf(alice.address)).to.equal(amt(20));
+        expect(await tk.balanceOf(bob.address)).to.equal(amt(20));
+      });
+
+      it("voidMarket: the operator can void an abandoned market into refund mode", async () => {
+        const { market, marketId, operator, alice } = await openMarket(tokenAddr, 0);
+        await fund(tokenAddr, market, alice, amt(40));
+        await market.connect(alice).stake(marketId, HOME, amt(40));
+        await market.connect(operator).voidMarket(marketId);
+        await market.connect(alice).claim(marketId);
+        expect(await tokenAt(tokenAddr).balanceOf(alice.address)).to.equal(amt(40));
+      });
+
+      it("claim: a second claim by the same staker reverts", async () => {
+        const matchId = await registerAndPropose(oracleOwner, HOME);
+        const { market, marketId, alice } = await openMarket(tokenAddr, 0, matchId);
+        await fund(tokenAddr, market, alice, amt(10));
+        await market.connect(alice).stake(marketId, HOME, amt(10));
+        await warp(WARP);
+        await finalizeOracle(oracleOwner, matchId);
+        await market.settle(marketId);
+        await market.connect(alice).claim(marketId);
+        await expect(market.connect(alice).claim(marketId)).to.be.revertedWith("claimed");
+      });
+
+      it("fee: feeBps routes the protocol fee to the treasury", async () => {
+        const matchId = await registerAndPropose(oracleOwner, HOME);
+        const { market, marketId, treasury, alice } = await openMarket(tokenAddr, 200, matchId); // 2%
+        await fund(tokenAddr, market, alice, amt(100));
+        await market.connect(alice).stake(marketId, HOME, amt(100));
+
+        await warp(WARP);
+        await finalizeOracle(oracleOwner, matchId);
+        const tk = tokenAt(tokenAddr);
+        const treasuryBefore = await tk.balanceOf(treasury.address);
+        await market.settle(marketId);
+        expect((await tk.balanceOf(treasury.address)) - treasuryBefore).to.equal(amt(2));
+
+        await market.connect(alice).claim(marketId);
+        expect(await tk.balanceOf(alice.address)).to.equal(amt(98)); // payoutPool, sole winner
+      });
+    });
+  }
+
+  describe("re-entrancy (exploit harness)", function () {
+    it("a malicious settlement token cannot re-enter claim()", async () => {
+      const [deployer, operator, treasury, alice] = await ethers.getSigners();
+      const attacker = await (await ethers.getContractFactory("ReentrancyAttacker")).deploy();
+      await attacker.waitForDeployment();
+
+      const matchId = await registerAndPropose(oracleOwner, HOME);
+      const market = await deployMarket(await attacker.getAddress(), 0, operator, treasury);
+      const marketId = randomId();
+      const close = (await nowTs()) + 3600n;
+      await market.connect(operator).createMarket(marketId, matchId, close);
+
+      await attacker.mint(alice.address, amt(50));
+      await attacker.connect(alice).approve(await market.getAddress(), amt(50));
+      await market.connect(alice).stake(marketId, HOME, amt(50));
+
+      await warp(WARP);
+      await finalizeOracle(oracleOwner, matchId);
+      await market.settle(marketId);
+
+      // arm the exploit: claim()'s token payout will re-enter claim().
+      await attacker.arm(await market.getAddress(), marketId);
+      // nonReentrant + the CEI `claimed` flag block the re-entry; the malicious transfer
+      // then fails, so the whole outer claim reverts and no double payout escapes.
+      await expect(market.connect(alice).claim(marketId)).to.be.reverted;
+    });
   });
 });
