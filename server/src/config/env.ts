@@ -41,7 +41,8 @@ export const env = {
   parimutuelTokenAddress: required('PARIMUTUEL_TOKEN_ADDRESS'),
   parimutuelDeployBlock: Number(process.env.PARIMUTUEL_DEPLOY_BLOCK ?? 0),
   marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
-  marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 2000),
+  // X Layer's public RPC caps eth_getLogs at a 100-block range — keep this <= 100.
+  marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 90),
   databaseUrl: required('DATABASE_URL'),
   cupDemoMode: process.env.CUP_DEMO_MODE === 'true' && (process.env.NODE_ENV ?? 'development') !== 'production',
   footballDataApiKey: required('FOOTBALL_DATA_API_KEY'),

@@ -191,7 +191,8 @@ export async function pollOnce(): Promise<number> {
     const provider = getProvider();
     const head = await provider.getBlockNumber();
     let from = state.lastBlock + 1;
-    const range = env.marketIndexerRange > 0 ? env.marketIndexerRange : 2000;
+    // X Layer public RPC rejects eth_getLogs spans > 100 blocks — clamp to be safe.
+    const range = Math.min(env.marketIndexerRange > 0 ? env.marketIndexerRange : 90, 100);
     while (from <= head) {
       const to = Math.min(from + range - 1, head);
       const logs = await provider.getLogs({ address: meta.address, fromBlock: from, toBlock: to });

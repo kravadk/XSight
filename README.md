@@ -83,8 +83,8 @@ real USDT + USDC contracts, no mocks. Mainnet deploy + verification are user-gat
 | Contract | Status |
 |---|---|
 | `CupOracleV2` | Deployed — `0xE4dFef03E107225f2239CFfF955a378A9a8158Be` (X Layer 196) |
-| `ParimutuelMarket` | Compiled + fork-tested; mainnet deploy is user-gated |
-| `FanPassSBT` | Compiled; mainnet deploy is user-gated |
+| `ParimutuelMarket` | Deployed — `0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7` (settles in USDT) |
+| `FanPassSBT` | Deployed — `0x74F75532428A99E613a865C97D1084b7f38241BD` |
 
 Full registry + explorer links: [`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
 

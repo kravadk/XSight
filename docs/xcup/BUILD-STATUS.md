@@ -98,12 +98,18 @@ Commits: `feat(pundit): Plan 5 …`, `docs: X Cup README, MIT LICENSE, contract 
 - Deliverables: `LICENSE` (MIT), `README.md` (X Cup rewrite), `docs/xcup/CONTRACTS.md`.
 - Plan doc: `docs/superpowers/plans/2026-05-21-05-pundit-deliverables.md`.
 
-## ✅ BUILD COMPLETE
-All 5 plans done. Remaining = **user-gated**: deploy `ParimutuelMarket` + `FanPassSBT`
-to X Layer mainnet (`npm --prefix server run deploy:parimutuel`), verify on the explorer,
-set `PARIMUTUEL_MARKET_ADDRESS` / `PARIMUTUEL_DEPLOY_BLOCK` / `FANPASS_SBT_ADDRESS`, then
-record a demo video + create the submission X account. The app runs end-to-end on real
-data now; deploying flips markets from `contract_not_deployed` to live staking.
+## ✅ BUILD COMPLETE — contracts deployed
+All 5 plans done; all three contracts are live on X Layer mainnet (chain 196):
+- `CupOracleV2` — `0xE4dFef03E107225f2239CFfF955a378A9a8158Be`
+- `ParimutuelMarket` — `0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7` (settles in USDT,
+  deploy block 60609636) — `server/.env` set; the event indexer is live and caught up.
+- `FanPassSBT` — `0x74F75532428A99E613a865C97D1084b7f38241BD`
+Registry: `docs/xcup/CONTRACTS.md`.
+
+Remaining (user steps, no code): verify the contracts on the OKX X Layer explorer
+(single file · solc v0.8.24 · optimizer 200 · MIT), record the demo video, create the
+submission X account. Markets now report `market_not_created` until the operator opens
+them (`POST /api/markets/ensure`).
 
 ## ⚠ KEY DECISIONS (carry forward)
 - **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet phase.

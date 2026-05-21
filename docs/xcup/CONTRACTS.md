@@ -3,21 +3,16 @@
 All contracts target **X Layer mainnet (chain 196)**. Explorer:
 `https://www.okx.com/web3/explorer/xlayer`.
 
-## Deployed
+## Deployed — X Layer mainnet
 
 | Contract | Address | Purpose |
 |---|---|---|
 | `CupOracleV2` | [`0xE4dFef03E107225f2239CFfF955a378A9a8158Be`](https://www.okx.com/web3/explorer/xlayer/address/0xE4dFef03E107225f2239CFfF955a378A9a8158Be) | Optimistic multi-source settlement oracle — `registerMatch` → `proposeResult` → challenge window → `finalizeResult`. Source: `contracts/CupOracleV2.sol`. |
+| `ParimutuelMarket` | [`0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7`](https://www.okx.com/web3/explorer/xlayer/address/0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7) | Pari-mutuel pool — holds USDT, settles pro-rata off `CupOracleV2`. Settles in **USDT**; oracle `0xE4dFef03…`; operator/treasury `0x82736f84…`; fee 0 bps. Deploy block `60609636`, tx `0x05815fc4…630ba8`. Source: `contracts/ParimutuelMarket.sol`. |
+| `FanPassSBT` | [`0x74F75532428A99E613a865C97D1084b7f38241BD`](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD) | Soulbound fan-reputation badge. Source: `contracts/FanPassSBT.sol`. |
 
-## Pending deploy (user-gated — real OKB gas, live money-holding contract)
-
-| Contract | Source | Deploy |
-|---|---|---|
-| `ParimutuelMarket` | `contracts/ParimutuelMarket.sol` | `npm --prefix server run deploy:parimutuel` — then verify on the X Layer explorer, set `PARIMUTUEL_MARKET_ADDRESS` + `PARIMUTUEL_DEPLOY_BLOCK`. |
-| `FanPassSBT` | `contracts/FanPassSBT.sol` | `npm --prefix server run deploy:fanpass-sbt` — then set `FANPASS_SBT_ADDRESS`. |
-
-`ParimutuelMarket` is **token-agnostic** — it settles in whichever X Layer stablecoin
-`PARIMUTUEL_TOKEN_ADDRESS` points at.
+`ParimutuelMarket` is **token-agnostic** — the deployed instance settles in USDT
+(`PARIMUTUEL_TOKEN_ADDRESS`).
 
 ## X Layer stablecoin registry
 
