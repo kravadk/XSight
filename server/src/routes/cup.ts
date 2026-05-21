@@ -7,6 +7,8 @@ import { listCupSettlementLog } from '../services/cupSettlementLog.js';
 import { getCupPersistenceHealth } from '../services/cupPersistence.js';
 import { getResolverStatus, resolveCupMatches } from '../services/quorumResolver.js';
 import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/punditService.js';
+import { executePunditPick } from '../services/punditExecutor.js';
+import { listPunditExecutions } from '../services/punditExecutionLog.js';
 import { env } from '../config/env.js';
 import {
   challengeCupOracleResult,
@@ -134,6 +136,25 @@ cupRouter.get('/ai-edge', async (req: Request, res: Response) => {
 
 cupRouter.get('/pundit', async (_req: Request, res: Response) => {
   res.json({ profile: getPunditProfile(), picks: await listPunditPicks() });
+});
+
+cupRouter.get('/pundit/executions', (req: Request, res: Response) => {
+  const matchId = req.query.matchId ? String(req.query.matchId) : undefined;
+  res.json({ executions: listPunditExecutions(matchId) });
+});
+
+cupRouter.post('/pundit/execute', async (req: Request, res: Response) => {
+  if (!requireCupWrite(req, res)) return;
+  const body = req.body as { matchId?: string };
+  if (!body.matchId) return res.status(400).json({ error: 'matchId required' });
+  try {
+    res.json(await executePunditPick(body.matchId));
+  } catch (err) {
+    res.status(400).json({
+      error: 'pundit execution failed',
+      detail: err instanceof Error ? err.message : String(err),
+    });
+  }
 });
 
 cupRouter.get('/pundit/:matchId', async (req: Request, res: Response) => {
