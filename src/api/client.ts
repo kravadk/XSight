@@ -684,6 +684,15 @@ export interface LeaderboardRowDto {
   points: number;
 }
 
+export interface LeagueDto {
+  id: string;
+  name: string;
+  ownerWallet: string;
+  inviteCode: string;
+  members: string[];
+  createdAt: string;
+}
+
 export class ApiError extends Error {
   status: number;
   detail?: string;
@@ -868,6 +877,22 @@ export const api = {
     request<PunditPickDto>(`/cup/pundit/${encodeURIComponent(matchId)}`),
   cupLeaderboard: () =>
     request<{ rows: LeaderboardRowDto[]; hermes: LeaderboardRowDto | null }>('/cup/leaderboard'),
+  cupLeagues: (wallet: string) =>
+    request<{ leagues: LeagueDto[] }>(`/cup/leagues?wallet=${encodeURIComponent(wallet)}`),
+  cupLeagueLeaderboard: (id: string) =>
+    request<{ league: LeagueDto; rows: LeaderboardRowDto[] }>(
+      `/cup/leagues/${encodeURIComponent(id)}/leaderboard`,
+    ),
+  createLeague: (name: string, wallet: string) =>
+    request<{ league: LeagueDto }>('/cup/leagues', {
+      method: 'POST',
+      body: JSON.stringify({ name, wallet }),
+    }),
+  joinLeague: (inviteCode: string, wallet: string) =>
+    request<{ league: LeagueDto }>('/cup/leagues/join', {
+      method: 'POST',
+      body: JSON.stringify({ inviteCode, wallet }),
+    }),
   freePicks: (filter: { wallet?: string; matchId?: string }) => {
     const qs = new URLSearchParams();
     if (filter.wallet) qs.set('wallet', filter.wallet);
