@@ -7,7 +7,8 @@
  * (`status: 'staked'`) may ever be reported as a success.
  *
  * NO MOCKS: without PARIMUTUEL_MARKET_ADDRESS or the pundit wallet it returns an
- * honest non-executed status and stakes nothing.
+ * honest non-executed status and stakes nothing. On-chain failures during a real
+ * staking attempt are caught and surface as `status: 'execution_error'`.
  */
 import { Contract, formatUnits, isAddress, parseUnits } from 'ethers';
 import { env } from '../config/env.js';
@@ -33,10 +34,12 @@ export type PunditExecutionStatus =
   | 'no_pick'
   | 'passed'
   | 'market_not_open'
+  | 'token_not_configured'
   | 'already_staked'
   | 'insufficient_balance'
   | 'staked'
-  | 'stake_unverified';
+  | 'stake_unverified'
+  | 'execution_error';
 
 export interface PunditExecution {
   matchId: string;
@@ -119,70 +122,87 @@ export async function executePunditPick(matchId: string): Promise<PunditExecutio
     return result({ ...enriched, outcome, status: 'market_not_open', reason: 'market_closed' });
   }
 
-  const signer = getPunditSigner();
-  const punditAddress = await signer.getAddress();
+  // Everything past here touches the chain (signer derivation, token reads, approve,
+  // stake). Any revert / RPC failure is caught and surfaced as `execution_error` —
+  // the caller always receives a structured PunditExecution, never a thrown error.
+  try {
+    const signer = getPunditSigner();
+    const punditAddress = await signer.getAddress();
 
-  // Idempotency: one stake per market. Never let the pundit double-bet a fixture.
-  const existing = await readStakeOf(marketId, punditAddress);
-  if (existing && BigInt(existing.home) + BigInt(existing.draw) + BigInt(existing.away) > 0n) {
-    return result({ ...enriched, outcome, status: 'already_staked', reason: 'pundit already has a position' });
-  }
+    // Idempotency: one stake per market. Never let the pundit double-bet a fixture.
+    const existing = await readStakeOf(marketId, punditAddress);
+    if (existing && BigInt(existing.home) + BigInt(existing.draw) + BigInt(existing.away) > 0n) {
+      return result({ ...enriched, outcome, status: 'already_staked', reason: 'pundit already has a position' });
+    }
 
-  const tokenAddress = await readSettlementToken();
-  if (!tokenAddress || !isAddress(tokenAddress)) {
-    return result({ ...enriched, outcome, status: 'market_not_open', reason: 'settlement_token_unknown' });
-  }
-  const token = new Contract(tokenAddress, ERC20_ABI, signer);
-  const decimals = Number(await token.decimals());
-  const symbol = String(await token.symbol());
-  const amountWei = parseUnits(env.punditStakeAmount, decimals);
-  const amountDisplay = `${env.punditStakeAmount} ${symbol}`;
+    const tokenAddress = await readSettlementToken();
+    if (!tokenAddress || !isAddress(tokenAddress)) {
+      return result({ ...enriched, outcome, status: 'token_not_configured', reason: 'settlement token unknown' });
+    }
+    const token = new Contract(tokenAddress, ERC20_ABI, signer);
+    const decimals = Number(await token.decimals());
+    const symbol = String(await token.symbol());
+    const amountWei = parseUnits(env.punditStakeAmount, decimals);
+    const amountDisplay = `${env.punditStakeAmount} ${symbol}`;
 
-  const balance: bigint = await token.balanceOf(punditAddress);
-  if (balance < amountWei) {
-    return result({
+    const balance: bigint = await token.balanceOf(punditAddress);
+    if (balance < amountWei) {
+      return result({
+        ...enriched,
+        outcome,
+        amountDisplay,
+        status: 'insufficient_balance',
+        reason: `pundit wallet holds ${formatUnits(balance, decimals)} ${symbol}, needs ${env.punditStakeAmount}`,
+      });
+    }
+
+    const marketAddress = parimutuelMetadata().address as string;
+    const allowance: bigint = await token.allowance(punditAddress, marketAddress);
+    if (allowance < amountWei) {
+      const approveTx = await token.approve(marketAddress, amountWei);
+      const approveReceipt = await approveTx.wait();
+      if (!approveReceipt || approveReceipt.status !== 1) {
+        throw new Error('token approval transaction reverted');
+      }
+    }
+
+    const marketWrite = new Contract(marketAddress, PARIMUTUEL_ABI, signer);
+    const stakeTx = await marketWrite.stake(marketId, outcome, amountWei);
+    const receipt = await stakeTx.wait();
+    const txHash = String(receipt?.hash ?? stakeTx.hash);
+    const explorerUrl = `${X_LAYER.explorer}/tx/${txHash}`;
+
+    const intent: StakeIntent = {
+      marketAddress,
+      marketId,
+      staker: punditAddress,
+      outcome,
+      amount: amountWei.toString(),
+    };
+    const guard = verifyStakeReceipt(intent, receipt);
+    recordActivity('cup.punditStake', `${pick.label} ${pick.pick}`);
+
+    const execution = result({
       ...enriched,
       outcome,
+      amount: amountWei.toString(),
       amountDisplay,
-      status: 'insufficient_balance',
-      reason: `pundit wallet holds ${formatUnits(balance, decimals)} ${symbol}, needs ${env.punditStakeAmount}`,
+      txHash,
+      explorerUrl,
+      verified: guard.verified,
+      status: guard.verified ? 'staked' : 'stake_unverified',
+      reason: guard.reason,
     });
+    recordPunditExecution(execution);
+    return execution;
+  } catch (err) {
+    const execution = result({
+      ...enriched,
+      outcome,
+      status: 'execution_error',
+      reason: err instanceof Error ? err.message : String(err),
+    });
+    recordPunditExecution(execution);
+    return execution;
   }
-
-  const marketAddress = parimutuelMetadata().address as string;
-  const allowance: bigint = await token.allowance(punditAddress, marketAddress);
-  if (allowance < amountWei) {
-    const approveTx = await token.approve(marketAddress, amountWei);
-    await approveTx.wait();
-  }
-
-  const marketWrite = new Contract(marketAddress, PARIMUTUEL_ABI, signer);
-  const stakeTx = await marketWrite.stake(marketId, outcome, amountWei);
-  const receipt = await stakeTx.wait();
-  const txHash = String(receipt?.hash ?? stakeTx.hash);
-  const explorerUrl = `${X_LAYER.explorer}/tx/${txHash}`;
-
-  const intent: StakeIntent = {
-    marketAddress,
-    marketId,
-    staker: punditAddress,
-    outcome,
-    amount: amountWei.toString(),
-  };
-  const guard = verifyStakeReceipt(intent, receipt);
-  recordActivity('cup.punditStake', `${pick.label} ${pick.pick}`);
-
-  const execution = result({
-    ...enriched,
-    outcome,
-    amount: amountWei.toString(),
-    amountDisplay,
-    txHash,
-    explorerUrl,
-    verified: guard.verified,
-    status: guard.verified ? 'staked' : 'stake_unverified',
-    reason: guard.reason,
-  });
-  recordPunditExecution(execution);
-  return execution;
 }

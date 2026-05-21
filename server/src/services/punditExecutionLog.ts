@@ -2,6 +2,9 @@
  * Append-only, capped JSON log of pundit on-chain stake executions. Mirrors
  * `cupSettlementLog.ts`. This is the record the AI Pundit tab renders and a future
  * X-poster reads — every entry carries the completion-guard verdict (`verified`).
+ *
+ * Unlike `cupSettlementLog.ts`, the pundit log has no database layer, so it writes to
+ * disk in every environment (including production) — that is intentional.
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
