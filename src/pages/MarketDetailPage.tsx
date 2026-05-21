@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Bot, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Wallet } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useUiStore } from '../store/uiStore';
@@ -8,6 +8,7 @@ import { toast } from '../store/toastStore';
 import { MatchupHeader, MarketStatusBadge, StatePanel, toBaseUnits, formatPool } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 import { FreePickPanel } from '../components/cup/FreePickPanel';
+import { PunditReadCard } from '../components/cup/PunditReadCard';
 
 const OUTCOMES = [
   { id: 1, label: 'Home', color: 'var(--color-outcome-home)' },
@@ -93,22 +94,7 @@ export function MarketDetailPage() {
             </div>
 
             {/* AI pundit read */}
-            {data.aiEdge && (
-              <div className="stadium-card p-4">
-                <div className="mb-2 flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-gold" />
-                  <span className="text-sm font-bold text-stadium-text">Hermes — AI Pundit read</span>
-                  <span className="ml-auto rounded bg-gold-bg px-2 py-0.5 text-[10px] font-bold text-gold">
-                    {data.aiEdge.edge} · conv {data.aiEdge.confidence.toFixed(2)}
-                  </span>
-                </div>
-                <ul className="space-y-1 text-xs text-stadium-text-secondary">
-                  {data.aiEdge.rationale.slice(0, 3).map((r, i) => (
-                    <li key={i}>· {r}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
+            <PunditReadCard matchId={matchId} />
 
             {/* outcome buckets */}
             <div className="grid grid-cols-3 gap-2">
