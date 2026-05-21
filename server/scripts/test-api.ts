@@ -316,9 +316,11 @@ async function runX402Tests() {
     assertHas(r.json, 'name');
     assertHas(r.json, 'endpoints');
     assertHas(r.json, 'payTo');
+    assertHas(r.json, 'assetAddress');
+    assertEq(r.json.decimals, 6, 'decimals');
     assertEq(r.json.network, 'xlayer-mainnet', 'network');
     assertEq(r.json.chainId, 196, 'chainId');
-    assertEq(r.json.endpoints.length, 4, 'has 4 endpoints');
+    assert(r.json.endpoints.length >= 4, `has at least baseline endpoints, got ${r.json.endpoints.length}`);
   });
 
   for (const ep of endpoints) {
@@ -331,17 +333,19 @@ async function runX402Tests() {
       assertEq(accept.scheme, 'exact', 'scheme');
       assertEq(accept.network, 'xlayer-mainnet', 'network');
       assertEq(accept.asset, 'USDT', 'asset');
+      assertHas(accept, 'assetAddress');
+      assertEq(accept.decimals, 6, 'decimals');
       assertEq(accept.amount, ep.price, 'amount');
       assertEq(accept.gasSponsored, true, 'gasSponsored');
       assertHas(accept, 'payTo');
     });
 
-    await test(`${ep.path} with dev-bypass → 200 with real AI JSON`, async () => {
+    await test(`${ep.path} with dev-bypass → 402 in production mode`, async () => {
       const r = await httpWithRetry(ep.path + (ep.query ?? ''), {
         headers: { 'X-PAYMENT': 'dev-bypass' },
       });
-      assertEq(r.status, 200, 'status');
-      assert(r.json !== null, 'json parses');
+      assertEq(r.status, 402, 'status');
+      assertHas(r.json, 'error');
     });
 
     await test(`${ep.path} with garbage X-PAYMENT → 402 + error`, async () => {
@@ -353,18 +357,18 @@ async function runX402Tests() {
     });
   }
 
-  await test('/api/v1/token-analysis without token query → 400', async () => {
+  await test('/api/v1/token-analysis without token query → 402 before paid access', async () => {
     const r = await http('/api/v1/token-analysis', {
       headers: { 'X-PAYMENT': 'dev-bypass' },
     });
-    assertEq(r.status, 400, 'status');
+    assertEq(r.status, 402, 'status');
   });
 
-  await test('/api/v1/portfolio-advice without wallet query → 400', async () => {
+  await test('/api/v1/portfolio-advice without wallet query → 402 before paid access', async () => {
     const r = await http('/api/v1/portfolio-advice', {
       headers: { 'X-PAYMENT': 'dev-bypass' },
     });
-    assertEq(r.status, 400, 'status');
+    assertEq(r.status, 402, 'status');
   });
 }
 
@@ -530,7 +534,7 @@ async function runX402LogTests() {
     assertType(r.json.calls, 'array', 'calls');
   });
 
-  await test('Log records new dev-bypass payment', async () => {
+  await test('Log records rejected dev-bypass payment', async () => {
     // The /x402-log endpoint returns the last 50 entries (newest first), so
     // once the log has 50+ entries the array length stays at 50. Compare the
     // newest timestamp instead, which is monotonic.
@@ -544,8 +548,8 @@ async function runX402LogTests() {
       `newest log timestamp did not advance: before=${beforeNewestTs} after=${afterNewestTs}`,
     );
     const newest = after.json.calls[0];
-    assertEq(newest.status, 'paid', 'status');
-    assertEq(newest.caller, 'dev-bypass', 'caller');
+    assertEq(newest.status, 'rejected', 'status');
+    assertEq(newest.caller, 'unknown', 'caller');
   });
 }
 

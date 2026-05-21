@@ -25,7 +25,11 @@ export type ActivityKind =
   | 'ai.chat'
   | 'ai.analytics'
   | 'economy.deploy'
-  | 'heartbeat.swap';
+  | 'heartbeat.swap'
+  | 'cup.fixture'
+  | 'cup.result'
+  | 'cup.edge'
+  | 'cup.fanScore';
 
 interface CounterState {
   total: number;

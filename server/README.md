@@ -47,4 +47,4 @@ The server requires all four credential blocks (Anthropic, OKX API key/secret/pa
 | GET  | `/api/v1/trading-signals`    | **x402 0.10 USDT** | buy/sell signals with confidence |
 | GET  | `/api/v1/portfolio-advice`   | **x402 0.05 USDT** | rebalancing recommendations |
 
-In development mode the `X-PAYMENT: dev-bypass` header skips on-chain verification for the x402 routes; in production only base64-encoded payment proofs whose `payTo`, `amount`, `network`, and `asset` match the configured payout address are accepted.
+In development mode the `X-PAYMENT: dev-bypass` header skips on-chain verification for the x402 routes. In production, the proof must include a real X Layer `txHash`; the server verifies the ERC20 `Transfer` log against `X402_ASSET_ADDRESS`, `X402_PAYOUT_ADDRESS`, amount, asset, and network.

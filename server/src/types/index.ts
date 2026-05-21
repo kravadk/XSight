@@ -89,6 +89,8 @@ export interface X402PaymentInstruction {
   scheme: 'exact';
   network: string;
   asset: string;
+  assetAddress: string;
+  decimals: number;
   amount: string;
   payTo: string;
   description: string;

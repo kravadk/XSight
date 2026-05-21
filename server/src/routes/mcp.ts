@@ -18,6 +18,9 @@ import { snapshot } from '../services/economyLoop.js';
 import { triggerAutoDeploy } from '../services/autoDeploy.js';
 import { env } from '../config/env.js';
 import { getAddress } from 'ethers';
+import { buildCupActionPlan, getCupAiEdge, getCupPlayerStats, getCupResult, getCupSentiment, listCupMatches, scoreCupTeamStrength } from '../services/cupData.js';
+import { getFanScore } from '../services/cupReputation.js';
+import { readCupOracleMatch } from '../services/cupOracleContract.js';
 
 export const mcpRouter = Router();
 
@@ -107,6 +110,115 @@ const TOOLS = [
         },
       },
       required: ['from', 'to'],
+    },
+  },
+  {
+    name: 'get_cup_fixtures',
+    description: 'List CupHub World Cup fixtures with source receipts and X Layer settlement metadata.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: 'get_cup_ai_edge',
+    description: 'Get AI-ready fair probabilities, risk, confidence, and source hash for a CupHub match.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub live match id, e.g. espn-760415' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'get_cup_player_stats',
+    description: 'Get live-provider player impact stats when available. Returns empty/unavailable rather than fabricated players.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'score_team_strength',
+    description: 'Score home/away team strength and recent form for a CupHub match.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'get_cup_sentiment',
+    description: 'Get non-canonical fan/social sentiment signal for a CupHub match.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'verify_outcome',
+    description: 'Verify a CupHub match result and return API receipts plus current on-chain CupOracle state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'resolve_match',
+    description: 'Alias for verify_outcome. Returns CupHub settlement state, proposed/final outcome, source receipts, and on-chain state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'get_cup_settlement_state',
+    description: 'Read the current X Layer CupOracle state for a CupHub match without changing chain state.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+      },
+      required: ['matchId'],
+    },
+  },
+  {
+    name: 'get_fan_score',
+    description: 'Get FanPass reputation score and reward-gating breakdown for a wallet.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        wallet: { type: 'string', description: 'Wallet address to score' },
+      },
+      required: ['wallet'],
+    },
+  },
+  {
+    name: 'build_cup_action_plan',
+    description: 'Build a builder, agent, or fan action plan for a CupHub match.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        matchId: { type: 'string', description: 'CupHub match id' },
+        mode: { type: 'string', enum: ['builder', 'agent', 'fan'] },
+      },
+      required: ['matchId'],
     },
   },
 ];
@@ -236,6 +348,70 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<un
           ? `https://www.okx.com/web3/explorer/xlayer/tx/${result.txHash}`
           : undefined,
       };
+    }
+
+    case 'get_cup_fixtures': {
+      return {
+        network: 'X Layer Mainnet',
+        chainId: 196,
+        fixtures: await listCupMatches(),
+      };
+    }
+
+    case 'get_cup_ai_edge': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      return (await getCupAiEdge(matchId)) ?? { error: 'match not found', matchId };
+    }
+
+    case 'get_cup_player_stats': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      return (await getCupPlayerStats(matchId)) ?? { error: 'match not found', matchId };
+    }
+
+    case 'score_team_strength': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      return (await scoreCupTeamStrength(matchId)) ?? { error: 'match not found', matchId };
+    }
+
+    case 'get_cup_sentiment': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      return (await getCupSentiment(matchId)) ?? { error: 'match not found', matchId };
+    }
+
+    case 'verify_outcome':
+    case 'resolve_match': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      const result = await getCupResult(matchId);
+      if (!result) return { error: 'match not found', matchId };
+      return {
+        ...result,
+        onchain: await readCupOracleMatch(matchId),
+      };
+    }
+
+    case 'get_cup_settlement_state': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      if (!matchId) return { error: 'matchId required' };
+      return await readCupOracleMatch(matchId);
+    }
+
+    case 'get_fan_score': {
+      const wallet = typeof args['wallet'] === 'string' ? args['wallet'] : '';
+      if (!wallet) return { error: 'wallet required' };
+      return (await getFanScore(wallet)) ?? { error: 'invalid wallet', wallet };
+    }
+
+    case 'build_cup_action_plan': {
+      const matchId = typeof args['matchId'] === 'string' ? args['matchId'] : '';
+      const rawMode = typeof args['mode'] === 'string' ? args['mode'] : 'builder';
+      const mode = rawMode === 'agent' || rawMode === 'fan' ? rawMode : 'builder';
+      if (!matchId) return { error: 'matchId required' };
+      return (await buildCupActionPlan(matchId, mode)) ?? { error: 'match not found', matchId };
     }
 
     default:

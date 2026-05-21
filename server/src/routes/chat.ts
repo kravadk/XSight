@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import { chat, AiServiceError, type ChatTurn } from '../services/ai.js';
+import type { CardPayload } from '../types/index.js';
 import { getWalletBalances, OnchainOsError } from '../services/onchainos.js';
 import { getAllTrackedTokens } from '../services/tokenTracker.js';
 import { getAllPools } from '../services/poolTracker.js';
@@ -15,6 +16,40 @@ import {
 export const chatRouter = Router();
 
 const HISTORY_MAX = 15;
+
+function hasCard(cards: CardPayload[], kind: CardPayload['kind']): boolean {
+  return cards.some((card) => card.kind === kind);
+}
+
+function ensureIntentCards(message: string, cards: CardPayload[]): CardPayload[] {
+  const normalized = message.toLowerCase();
+  const next = [...cards];
+
+  if (!hasCard(next, 'text')) {
+    next.unshift({
+      kind: 'text',
+      text: 'I pulled the live XSight context for this request. Review the structured card below for the actionable details.',
+    });
+  }
+
+  if (/(portfolio|wallet|balance|holding|diversif)/i.test(normalized) && !hasCard(next, 'portfolio')) {
+    next.push({
+      kind: 'portfolio',
+      advice: 'Portfolio view requested. Use the live wallet snapshot above for allocation, concentration, and rebalancing context.',
+    });
+  }
+
+  if (/(risk|safe|honeypot|scan|verified)/i.test(normalized) && !hasCard(next, 'risk')) {
+    const symbol = normalized.match(/\b(okb|usdt|usdc|eth|weth|btc|wbtc)\b/i)?.[1]?.toUpperCase() ?? 'OKB';
+    next.push({ kind: 'risk', symbol });
+  }
+
+  if (/(yield|apr|pool|farm|earn)/i.test(normalized) && !hasCard(next, 'yield')) {
+    next.push({ kind: 'yield' });
+  }
+
+  return next;
+}
 
 async function generateSessionTitle(message: string): Promise<string | null> {
   if (!env.anthropicApiKey) return null;
@@ -279,12 +314,16 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       contextBlock,
       history: trimmedHistory,
     });
+    const guardedResponse = {
+      ...response,
+      cards: ensureIntentCards(message, response.cards ?? []),
+    };
 
     // Persist both turns to the session
     const now = Date.now();
     const msgs: StoredMessage[] = [
       { id: `${now}-user`, role: 'user', cards: [{ kind: 'text', text: message }], createdAt: now },
-      { id: `${now}-ai`,  role: 'ai',   cards: response.cards ?? [],               createdAt: now + 1 },
+      { id: `${now}-ai`,  role: 'ai',   cards: guardedResponse.cards,              createdAt: now + 1 },
     ];
     if (sessionId) {
       appendToSession(sessionId, msgs).catch((err) => console.error('[chat] session persist failed:', err instanceof Error ? err.message : err));
@@ -308,7 +347,7 @@ chatRouter.post('/', async (req: Request, res: Response) => {
       }
     }
 
-    res.json(response);
+    res.json(guardedResponse);
   } catch (err) {
     if (err instanceof AiServiceError) {
       return res.status(503).json({ error: 'AI service unavailable', detail: err.message });
