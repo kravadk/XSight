@@ -11,13 +11,13 @@ interface Props {
 
 export function EmptyState({ icon, title, description, action, secondary, className }: Props) {
   return (
-    <div className={`flex flex-col items-center justify-center py-12 px-6 text-center ${className ?? ''}`}>
+    <div className={`flex flex-col items-center justify-center rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#0D0D0D] px-6 py-10 text-center ${className ?? ''}`}>
       <div className="w-14 h-14 rounded-2xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] flex items-center justify-center mb-4 text-[#A3A3A3]">
         {icon}
       </div>
       <h3 className="text-base font-bold text-[#F5F5F5] mb-1">{title}</h3>
       {description && (
-        <p className="text-sm text-[#A3A3A3] max-w-sm leading-relaxed mb-5">{description}</p>
+        <p className="text-sm text-[#D1D5DB] max-w-sm leading-relaxed mb-5">{description}</p>
       )}
       {(action || secondary) && (
         <div className="flex gap-2">

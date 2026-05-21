@@ -26,7 +26,7 @@ export function CodeBlock({ code, language = 'bash', className }: Props) {
   return (
     <div
       className={cn(
-        'relative group bg-[#070707] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden',
+        'relative group min-w-0 max-w-full bg-[#070707] border border-[rgba(255,255,255,0.06)] rounded-xl overflow-hidden',
         className,
       )}
     >
@@ -54,8 +54,8 @@ export function CodeBlock({ code, language = 'bash', className }: Props) {
           )}
         </button>
       </div>
-      <pre className="px-3 py-3 overflow-auto text-[11px] font-mono text-[#A3A3A3] whitespace-pre leading-relaxed">
-        <code className={`language-${language}`}>{code}</code>
+      <pre className="max-w-full px-3 py-3 overflow-x-auto text-[11px] font-mono text-[#A3A3A3] whitespace-pre-wrap break-words leading-relaxed">
+        <code className={`language-${language} break-words`}>{code}</code>
       </pre>
     </div>
   );

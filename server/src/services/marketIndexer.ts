@@ -266,6 +266,14 @@ export function listIndexedMarkets(): IndexedMarket[] {
   return [...state.markets.values()];
 }
 
+/** bytes32 marketIds the wallet has staked in (from indexed Staked events). */
+export function marketIdsForWallet(wallet: string): string[] {
+  const lc = wallet.toLowerCase();
+  const ids = new Set<string>();
+  for (const s of state.stakes) if (s.wallet.toLowerCase() === lc) ids.add(s.marketId);
+  return [...ids];
+}
+
 export function getIndexerStatus() {
   const meta = parimutuelMetadata();
   return {

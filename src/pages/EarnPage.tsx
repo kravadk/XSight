@@ -12,6 +12,8 @@ import { AnimatedNumber } from '../components/common/AnimatedNumber';
 import { StrategiesPanel } from '../components/earn/StrategiesPanel';
 import { EarnLoopDiagram } from '../components/earn/EarnLoopDiagram';
 import { HeartbeatCard } from '../components/earn/HeartbeatCard';
+import { StateBlock } from '../components/common/StateBlock';
+import { ActionButton } from '../components/common/ActionButton';
 
 export function EarnPage() {
   const economy = useApiStore((s) => s.economy);
@@ -148,13 +150,13 @@ export function EarnPage() {
               <h1 className="text-lg font-bold text-[#F5F5F5]">Auto-Yield Loop</h1>
               <span
                 className={cn(
-                  'text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded',
+                  'text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border',
                   autoCompound
-                    ? 'bg-[rgba(34,197,94,0.1)] text-[#22C55E]'
-                    : 'bg-[rgba(255,255,255,0.06)] text-[#666]',
+                    ? 'bg-[rgba(34,197,94,0.1)] text-[#22C55E] border-[rgba(34,197,94,0.22)]'
+                    : 'bg-[rgba(255,255,255,0.06)] text-[#D1D5DB] border-[rgba(255,255,255,0.10)]',
                 )}
               >
-                {autoCompound ? '● armed' : '○ disabled'}
+                {autoCompound ? 'armed' : 'disabled'}
               </span>
             </div>
             <div className="text-xs text-[#A3A3A3]">
@@ -174,25 +176,25 @@ export function EarnPage() {
         {/* 4-column status strip — compact, no animation */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-[rgba(255,255,255,0.06)]">
           <div>
-            <div className="text-[10px] text-[#666] uppercase tracking-wider">x402 revenue</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">x402 revenue</div>
             <div className="text-base font-extrabold text-[#BFFF00] tabular">
               <AnimatedNumber value={totalRevenue} prefix="$" decimals={4} />
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-[#666] uppercase tracking-wider">USDT idle</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">USDT idle</div>
             <div className="text-base font-extrabold text-[#F5F5F5] tabular">
               <AnimatedNumber value={usdtBalance} decimals={4} />
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-[#666] uppercase tracking-wider">deploys</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">deploys</div>
             <div className="text-base font-extrabold text-[#F5F5F5] tabular">
               {economy?.deployCount ?? 0}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-[#666] uppercase tracking-wider">net profit</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">net profit</div>
             <div className={cn('text-base font-extrabold tabular', netProfit >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]')}>
               <AnimatedNumber value={netProfit} prefix="$" decimals={4} />
             </div>
@@ -207,23 +209,23 @@ export function EarnPage() {
             <Sliders className="w-4 h-4 text-[#BFFF00]" />
             <h3 className="text-sm font-bold text-[#F5F5F5]">Manual deploy</h3>
           </div>
-          <span className="text-[10px] text-[#666] uppercase tracking-wider">
+          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">
             converts surplus USDT into OKB on-chain
           </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] rounded-lg p-3">
-            <div className="text-[10px] text-[#666] uppercase tracking-wider mb-1">USDT balance</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider mb-1">USDT balance</div>
             <div className="text-base font-extrabold text-[#F5F5F5] tabular">{usdtBalance.toFixed(4)}</div>
           </div>
           <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] rounded-lg p-3">
-            <div className="text-[10px] text-[#666] uppercase tracking-wider mb-1">Threshold</div>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider mb-1">Threshold</div>
             <div className="text-base font-extrabold text-[#F5F5F5] tabular">{numericThreshold.toFixed(4)}</div>
           </div>
           <div className="bg-[#1A1A1A] border border-[rgba(255,255,255,0.04)] rounded-lg p-3">
-            <div className="text-[10px] text-[#666] uppercase tracking-wider mb-1">Surplus available</div>
-            <div className={cn('text-base font-extrabold tabular', canDeploy ? 'text-[#BFFF00]' : 'text-[#666]')}>
+            <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider mb-1">Surplus available</div>
+            <div className={cn('text-base font-extrabold tabular', canDeploy ? 'text-[#BFFF00]' : 'text-[#9CA3AF]')}>
               {surplus.toFixed(4)}
             </div>
           </div>
@@ -264,12 +266,12 @@ export function EarnPage() {
         </div>
 
         <div className="bg-[rgba(191,255,0,0.04)] border border-[rgba(191,255,0,0.15)] rounded-lg p-3 mb-4 text-xs">
-          <div className="text-[10px] text-[#666] uppercase tracking-wider mb-1">You will deploy</div>
+          <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider mb-1">You will deploy</div>
           <div className="flex items-center justify-between">
             <span className="font-bold text-[#F5F5F5] tabular">
               {canDeploy ? deployAmount.toFixed(4) : '0.0000'} USDT
             </span>
-            <span className="text-[#666]">→ swap to OKB via OnchainOS DEX</span>
+            <span className="text-[#9CA3AF]">→ swap to OKB via OnchainOS DEX</span>
           </div>
         </div>
 
@@ -282,7 +284,7 @@ export function EarnPage() {
           {deploying ? 'Deploying on-chain...' : canDeploy ? `Execute deploy (${deployAmount.toFixed(4)} USDT)` : 'Surplus too small'}
         </button>
         {!canDeploy && (
-          <p className="text-[10px] text-[#666] text-center mt-2">
+          <p className="text-[10px] text-[#9CA3AF] text-center mt-2">
             Deposit USDT or wait for x402 revenue to exceed the {numericThreshold.toFixed(4)} USDT threshold.
           </p>
         )}
@@ -299,7 +301,7 @@ export function EarnPage() {
               <div className="text-[11px] text-[#A3A3A3]">USDT → OKB cumulative</div>
             </div>
             <div className="text-right">
-              <div className="text-[10px] text-[#666] uppercase tracking-wider">Est APR</div>
+              <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">Est APR</div>
               <div className="text-xl font-extrabold text-[#BFFF00] tabular">
                 {lpActive ? `${aprEstimate.toFixed(1)}%` : '—'}
               </div>
@@ -344,7 +346,7 @@ export function EarnPage() {
             <div className="flex justify-between items-center p-3 bg-[#1A1A1A] rounded-lg border border-[rgba(255,255,255,0.04)]">
               <div>
                 <div className="text-xs font-bold text-[#F5F5F5]">Auto-compound</div>
-                <div className="text-[10px] text-[#666]">Reinvest accumulated x402 fees</div>
+                <div className="text-[10px] text-[#9CA3AF]">Reinvest accumulated x402 fees</div>
               </div>
               <Toggle checked={autoCompound} onChange={setAutoCompound} ariaLabel="Auto-compound" />
             </div>
@@ -353,7 +355,7 @@ export function EarnPage() {
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <div className="text-xs font-bold text-[#F5F5F5]">Trigger threshold</div>
-                  <div className="text-[10px] text-[#666]">Min USDT in wallet before auto-fire</div>
+                  <div className="text-[10px] text-[#9CA3AF]">Min USDT in wallet before auto-fire</div>
                 </div>
                 <div className="flex items-center gap-1">
                   <input
@@ -364,7 +366,7 @@ export function EarnPage() {
                     onChange={(e) => setThreshold(e.target.value)}
                     className="w-20 h-7 px-2 text-xs font-mono text-[#F5F5F5] bg-[#0A0A0A] rounded border border-[rgba(255,255,255,0.1)] tabular text-right focus:outline-none focus:border-[rgba(191,255,0,0.3)]"
                   />
-                  <span className="text-[10px] text-[#666]">USDT</span>
+                  <span className="text-[10px] text-[#9CA3AF]">USDT</span>
                 </div>
               </div>
               {/* Quick presets */}
@@ -404,13 +406,17 @@ export function EarnPage() {
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-[#F5F5F5] flex items-center gap-2">
             On-chain deploy history
-            <span className="text-[10px] text-[#666] uppercase tracking-wider">{deploys.length} events</span>
+            <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">{deploys.length} events</span>
           </h3>
         </div>
         {deploys.length === 0 ? (
-          <div className="text-[11px] text-[#666] py-4 text-center">
-            No deploys executed yet. Trigger one above or wait for auto-deploy to fire.
-          </div>
+          <StateBlock
+            compact
+            kind="empty"
+            title="No deploys executed yet"
+            body="Manual deploys and auto-deploy transactions will appear here with scan links after the first on-chain execution."
+            action={<ActionButton tone="secondary" onClick={refreshAll} loading={refreshing}>Refresh history</ActionButton>}
+          />
         ) : (
           <div className="flex flex-col gap-2">
             {deploys.slice(0, 10).map((d, i) => (
@@ -422,7 +428,7 @@ export function EarnPage() {
                   <span className="font-mono text-[#F5F5F5] tabular truncate">
                     {d.fromAmountUsdt.toFixed(4)} USDT → {d.toAmountOkb.toFixed(8)} OKB
                   </span>
-                  <span className="text-[10px] text-[#666]">{new Date(d.timestamp).toLocaleString()}</span>
+                  <span className="text-[10px] text-[#9CA3AF]">{new Date(d.timestamp).toLocaleString()}</span>
                 </div>
                 <a
                   href={d.explorerUrl}
@@ -469,8 +475,9 @@ function Row({ label, value, accent }: { label: string; value: string; accent?: 
 function Cell({ label, value, color }: { label: string; value: string; color: string }) {
   return (
     <div>
-      <div className="text-[10px] text-[#666] uppercase tracking-wider">{label}</div>
+      <div className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">{label}</div>
       <div className={cn('text-base font-extrabold tabular', color)}>{value}</div>
     </div>
   );
 }
+

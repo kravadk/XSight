@@ -1,56 +1,84 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  /* Anton — stadium scoreboard / jersey-number energy, used for big display moments */
+  --font-display: "Anton", "Plus Jakarta Sans", sans-serif;
 
-  /* Surfaces — three-tier elevation */
-  --color-xsight-bg-base: #0A0A0A;
-  --color-xsight-bg-sidebar: #0A0A0A;
-  --color-xsight-bg-content: #0E0E0E;
-  --color-xsight-bg-elevated: #121212;
-  --color-xsight-bg-card: #161616;
-  --color-xsight-bg-card-inner: #1C1C1C;
-  --color-xsight-bg-card-hover: #1F1F1F;
+  /* === X Cup — dark stadium / night match ===================================== */
+  /* Surfaces: a floodlit pitch at night — near-black with a faint green cast. */
+  --color-stadium-base: #080B08;
+  --color-stadium-sidebar: #070907;
+  --color-stadium-content: #0B0F0B;
+  --color-stadium-elevated: #11160F;
+  --color-stadium-card: #131A12;
+  --color-stadium-card-hover: #18211633;
+  --color-stadium-line: rgba(233, 245, 230, 0.07);
+  --color-stadium-line-strong: rgba(233, 245, 230, 0.13);
 
-  /* Borders — hairline scale */
-  --color-xsight-border-hairline: rgba(255, 255, 255, 0.04);
-  --color-xsight-border-card: rgba(255, 255, 255, 0.06);
-  --color-xsight-border-card-hover: rgba(190, 255, 0, 0.15);
-  --color-xsight-border-divider: rgba(255, 255, 255, 0.06);
-  --color-xsight-border-input: rgba(255, 255, 255, 0.08);
-  --color-xsight-border-input-focus: rgba(190, 255, 0, 0.3);
-  --color-xsight-border-strong: rgba(255, 255, 255, 0.12);
+  /* Pitch green — the floodlit grass, the primary action colour. */
+  --color-pitch: #34C172;
+  --color-pitch-bright: #4FE08C;
+  --color-pitch-deep: #1C7A47;
+  --color-pitch-bg: rgba(52, 193, 114, 0.10);
+  --color-pitch-border: rgba(52, 193, 114, 0.28);
 
-  /* Text */
-  --color-xsight-text-primary: #F5F5F5;
-  --color-xsight-text-secondary: #A3A3A3;
-  --color-xsight-text-muted: #666666;
-  --color-xsight-text-disabled: #444444;
+  /* Champion gold — trophies, winners, accents. */
+  --color-gold: #E7B84F;
+  --color-gold-bright: #F6CE6E;
+  --color-gold-bg: rgba(231, 184, 79, 0.10);
+  --color-gold-border: rgba(231, 184, 79, 0.30);
 
-  /* Brand */
-  --color-xsight-lime: #BFFF00;
-  --color-xsight-lime-hover: #D4FF33;
-  --color-xsight-lime-bg: rgba(191, 255, 0, 0.08);
-  --color-xsight-lime-border: rgba(191, 255, 0, 0.20);
-  --color-xsight-lime-muted: rgba(191, 255, 0, 0.5);
+  /* Text on the stadium. */
+  --color-stadium-text: #EFF4EC;
+  --color-stadium-text-secondary: #9DA89C;
+  --color-stadium-text-muted: #616B5F;
 
-  /* Categorical (consistent across donut, bullets, badges) */
-  --color-xsight-cat-1: #BFFF00;
-  --color-xsight-cat-2: #A78BFA;
-  --color-xsight-cat-3: #22C55E;
-  --color-xsight-cat-4: #F59E0B;
-  --color-xsight-cat-5: #38BDF8;
-  --color-xsight-cat-6: #EC4899;
+  /* Outcomes — Home / Draw / Away. */
+  --color-outcome-home: #34C172;
+  --color-outcome-draw: #E7B84F;
+  --color-outcome-away: #4AA8E0;
+  --color-outcome-win: #4FE08C;
+  --color-outcome-loss: #E0584A;
 
-  /* Semantic */
-  --color-xsight-purple: #A78BFA;
-  --color-xsight-purple-bg: rgba(167, 139, 250, 0.08);
-  --color-xsight-green: #22C55E;
-  --color-xsight-red: #EF4444;
-  --color-xsight-red-bg: rgba(239, 68, 68, 0.08);
-  --color-xsight-warning: #F59E0B;
+  /* === Legacy XSight tokens (kept so retired trading pages still compile) ====== */
+  --color-xsight-bg-base: #080B08;
+  --color-xsight-bg-sidebar: #070907;
+  --color-xsight-bg-content: #0B0F0B;
+  --color-xsight-bg-elevated: #11160F;
+  --color-xsight-bg-card: #131A12;
+  --color-xsight-bg-card-inner: #18211A;
+  --color-xsight-bg-card-hover: #1A2419;
+  --color-xsight-border-hairline: rgba(233, 245, 230, 0.04);
+  --color-xsight-border-card: rgba(233, 245, 230, 0.07);
+  --color-xsight-border-card-hover: rgba(52, 193, 114, 0.22);
+  --color-xsight-border-divider: rgba(233, 245, 230, 0.07);
+  --color-xsight-border-input: rgba(233, 245, 230, 0.09);
+  --color-xsight-border-input-focus: rgba(52, 193, 114, 0.34);
+  --color-xsight-border-strong: rgba(233, 245, 230, 0.14);
+  --color-xsight-text-primary: #EFF4EC;
+  --color-xsight-text-secondary: #9DA89C;
+  --color-xsight-text-muted: #616B5F;
+  --color-xsight-text-disabled: #3F463E;
+  --color-xsight-lime: #34C172;
+  --color-xsight-lime-hover: #4FE08C;
+  --color-xsight-lime-bg: rgba(52, 193, 114, 0.10);
+  --color-xsight-lime-border: rgba(52, 193, 114, 0.22);
+  --color-xsight-lime-muted: rgba(52, 193, 114, 0.5);
+  --color-xsight-cat-1: #34C172;
+  --color-xsight-cat-2: #E7B84F;
+  --color-xsight-cat-3: #4AA8E0;
+  --color-xsight-cat-4: #F6CE6E;
+  --color-xsight-cat-5: #4FE08C;
+  --color-xsight-cat-6: #E0584A;
+  --color-xsight-purple: #E7B84F;
+  --color-xsight-purple-bg: rgba(231, 184, 79, 0.10);
+  --color-xsight-green: #34C172;
+  --color-xsight-red: #E0584A;
+  --color-xsight-red-bg: rgba(224, 88, 74, 0.10);
+  --color-xsight-warning: #E7B84F;
 }
 
 @layer base {
@@ -58,9 +86,35 @@
     font-feature-settings: "ss01";
   }
   body {
-    @apply bg-[#0E0E0E] text-[#F5F5F5] font-sans antialiased;
+    @apply text-[#EFF4EC] font-sans antialiased;
+    background-color: #080B08;
+    /* a floodlit stadium at night: a glow bleeding from the top of the frame,
+       a deep pitch-green wash below, over a near-black base. */
+    background-image:
+      radial-gradient(120% 60% at 50% -10%, rgba(52, 193, 114, 0.14) 0%, transparent 60%),
+      radial-gradient(80% 50% at 85% 0%, rgba(231, 184, 79, 0.07) 0%, transparent 55%),
+      radial-gradient(140% 90% at 50% 120%, rgba(28, 122, 71, 0.12) 0%, transparent 60%);
+    background-attachment: fixed;
   }
-  /* Numeric content uses tabular figures so digits don't jitter */
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid rgba(52, 193, 114, 0.7);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: rgba(231, 184, 79, 0.3);
+    color: #EFF4EC;
+  }
   .num,
   [data-num],
   code,
@@ -72,11 +126,30 @@
 }
 
 @layer utilities {
-  .glow-lime {
-    box-shadow: 0 0 20px rgba(191, 255, 0, 0.12);
+  /* Display type — Anton, the scoreboard voice. */
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: 0.01em;
   }
-  .glow-lime-strong {
-    box-shadow: 0 0 32px rgba(191, 255, 0, 0.25);
+  /* Floodlight glows. */
+  .glow-pitch {
+    box-shadow: 0 0 24px rgba(52, 193, 114, 0.16);
+  }
+  .glow-pitch-strong {
+    box-shadow: 0 0 40px rgba(52, 193, 114, 0.32);
+  }
+  .glow-gold {
+    box-shadow: 0 0 28px rgba(231, 184, 79, 0.26);
+  }
+  /* Faint mowed-pitch stripes — atmosphere behind hero blocks. */
+  .pitch-stripes {
+    background-image: repeating-linear-gradient(
+      115deg,
+      rgba(52, 193, 114, 0.05) 0px,
+      rgba(52, 193, 114, 0.05) 38px,
+      transparent 38px,
+      transparent 76px
+    );
   }
   .tabular {
     font-variant-numeric: tabular-nums;
@@ -89,11 +162,9 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-
-  /* Global styled scrollbar */
   * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(255,255,255,0.08) transparent;
+    scrollbar-color: rgba(233, 245, 230, 0.09) transparent;
   }
   *::-webkit-scrollbar {
     width: 4px;
@@ -103,43 +174,77 @@
     background: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.08);
+    background: rgba(233, 245, 230, 0.09);
     border-radius: 99px;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.15);
+    background: rgba(52, 193, 114, 0.35);
   }
   .text-micro {
     font-size: 10px;
     line-height: 12px;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
   }
   .text-mega {
-    font-size: clamp(28px, 4vw, 40px);
-    line-height: 1;
-    font-weight: 800;
-    letter-spacing: -0.02em;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4.4vw, 46px);
+    line-height: 0.96;
+    letter-spacing: 0.01em;
     font-variant-numeric: tabular-nums;
+  }
+  /* Stadium card — the standard surface. */
+  .xs-card,
+  .stadium-card {
+    border: 1px solid rgba(233, 245, 230, 0.08);
+    background: linear-gradient(180deg, #141B12 0%, #0F140E 100%);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  }
+  .xs-card-hover,
+  .stadium-card-hover {
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .xs-card-hover:hover,
+  .stadium-card-hover:hover {
+    transform: translateY(-2px);
+    border-color: rgba(52, 193, 114, 0.3);
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(52, 193, 114, 0.06);
+  }
+  .xs-muted {
+    color: #C3CCC0;
+  }
+  .xs-tertiary {
+    color: #9DA89C;
   }
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.04) 0%,
-      rgba(255, 255, 255, 0.08) 50%,
-      rgba(255, 255, 255, 0.04) 100%
+      rgba(233, 245, 230, 0.04) 0%,
+      rgba(52, 193, 114, 0.12) 50%,
+      rgba(233, 245, 230, 0.04) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 1.6s ease-in-out infinite;
     border-radius: 6px;
   }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
   @keyframes shimmer {
-    0% {
-      background-position: 200% 0;
-    }
-    100% {
-      background-position: -200% 0;
-    }
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
   }
 }

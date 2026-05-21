@@ -5,6 +5,9 @@ import { RecentCallsTable } from '../components/api/RecentCallsTable';
 import { EndpointCard } from '../components/api/EndpointCard';
 import { PricingCalculator } from '../components/api/PricingCalculator';
 import { AnimatedNumber } from '../components/common/AnimatedNumber';
+import { AppCard, MetricTile } from '../components/common/AppCard';
+import { InlineAlert } from '../components/common/InlineAlert';
+import { StatusPill } from '../components/common/StatusPill';
 
 const BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : '/api/v1';
 
@@ -60,21 +63,19 @@ export function ApiPage() {
   return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto w-full pb-10">
       {/* Compact header — replaces the 4 huge stat cards + ActivityCard */}
-      <div className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-4 md:p-5">
+      <AppCard>
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <h1 className="text-lg font-bold text-[#F5F5F5]">x402 API</h1>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[rgba(34,197,94,0.1)] text-[#22C55E]">
-                ⚡ Zero-gas USDT
-              </span>
+              <StatusPill tone="green">USDT paid API</StatusPill>
             </div>
             <div className="flex items-center gap-2 bg-[#0A0A0A] border border-[rgba(255,255,255,0.08)] rounded-lg px-2.5 py-1.5 w-fit max-w-full">
-              <Terminal className="w-3.5 h-3.5 text-[#666] shrink-0" />
-              <code className="text-[11px] font-mono text-[#A3A3A3] truncate">{BASE_URL}</code>
+              <Terminal className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
+              <code className="text-[11px] font-mono text-[#D1D5DB] truncate">{BASE_URL}</code>
               <button
                 onClick={() => copy(BASE_URL, 'Base URL')}
-                className="text-[#666] hover:text-[#F5F5F5] shrink-0"
+                className="text-[#9CA3AF] hover:text-[#F5F5F5] shrink-0"
                 title="Copy base URL"
               >
                 <Copy className="w-3 h-3" />
@@ -90,41 +91,22 @@ export function ApiPage() {
               </a>
             </div>
           </div>
-
-          {/* Inline KPI strip — 3 numbers, no decoration */}
-          <div className="flex items-center gap-5 md:gap-7">
-            <div>
-              <div className="text-[10px] text-[#666] uppercase tracking-wider">Revenue</div>
-              <div className="text-xl font-extrabold text-[#BFFF00] tabular">
-                <AnimatedNumber value={totalEarned} prefix="$" decimals={2} />
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-[#666] uppercase tracking-wider">Calls 24h</div>
-              <div className="text-xl font-extrabold text-[#F5F5F5] tabular">
-                <AnimatedNumber value={callsToday} decimals={0} />
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-[#666] uppercase tracking-wider">Endpoints</div>
-              <div className="text-xl font-extrabold text-[#F5F5F5] tabular">{ENDPOINTS.length}</div>
-            </div>
+          <div className="grid grid-cols-3 gap-3">
+            <MetricTile label="Revenue" value={<AnimatedNumber value={totalEarned} prefix="$" decimals={2} />} tone="lime" />
+            <MetricTile label="Calls 24h" value={<AnimatedNumber value={callsToday} decimals={0} />} />
+            <MetricTile label="Endpoints" value={ENDPOINTS.length} />
           </div>
         </div>
-      </div>
+      </AppCard>
 
-      {error && (
-        <div className="text-xs text-[#EF4444] bg-[rgba(239,68,68,0.06)] border border-[rgba(239,68,68,0.2)] rounded-xl px-4 py-2">
-          Backend error: {error}
-        </div>
-      )}
+      {error && <InlineAlert tone="error" title="Backend error" body={error} />}
 
       {/* Endpoint workbench */}
       <div>
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <h2 className="text-sm font-bold text-[#F5F5F5]">Endpoint workbench</h2>
-          <span className="text-[10px] text-[#666] uppercase tracking-wider">
-            edit params · pick a language · send a real request
+          <span className="text-[10px] text-[#9CA3AF] uppercase tracking-wider">
+            edit params / pick a language / test payment gate
           </span>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -138,17 +120,20 @@ export function ApiPage() {
 
       <RecentCallsTable />
 
-      <div className="text-center text-[10px] text-[#666]">
-        {recentCalls.length} call(s) in memory · log holds the last 50 events ·{' '}
+      <div className="text-center text-[10px] text-[#9CA3AF]">
+        {recentCalls.length} call(s) in memory / log holds the last 50 events /{' '}
         <a
           href="/api/status/x402-log"
           target="_blank"
           rel="noreferrer"
           className="text-[#BFFF00] hover:text-[#D4FF33]"
         >
-          raw JSON ↗
+          raw JSON
         </a>
       </div>
     </div>
   );
 }
+
+
+

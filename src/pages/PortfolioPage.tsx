@@ -8,10 +8,9 @@ import { PortfolioActionsBar } from '../components/portfolio/PortfolioActionsBar
 import { Allocation } from '../components/portfolio/Allocation';
 import { CompoundAdvantage } from '../components/portfolio/CompoundAdvantage';
 import { PortfolioHistoryChart } from '../components/portfolio/PortfolioHistoryChart';
-import { cn } from '../utils/format';
 import { useWalletStore } from '../store/walletStore';
 import { useUiStore } from '../store/uiStore';
-import { toast } from '../store/toastStore';
+import { SegmentedTabs } from '../components/common/SegmentedTabs';
 
 type Sub = 'overview' | 'holdings' | 'history' | 'yield';
 
@@ -42,7 +41,7 @@ export function PortfolioPage() {
           </p>
         </div>
         <button
-          onClick={() => toast.info('WalletConnect is not supported in this build')}
+          onClick={() => window.dispatchEvent(new CustomEvent('xsight:open-wallet'))}
           className="h-12 px-8 rounded-xl bg-[#BFFF00] text-[#0A0A0A] font-bold text-sm hover:bg-[#D4FF33] transition-colors"
         >
           Connect Wallet
@@ -57,22 +56,7 @@ export function PortfolioPage() {
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          {subs.map((s) => (
-            <button
-              key={s.id}
-              onClick={() => setSub(s.id)}
-              className={cn(
-                'px-4 py-1.5 text-xs font-semibold rounded-full transition-colors',
-                sub === s.id
-                  ? 'bg-[#BFFF00] text-[#0A0A0A]'
-                  : 'text-[#A3A3A3] hover:text-[#F5F5F5] bg-[rgba(255,255,255,0.04)]',
-              )}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedTabs value={sub} items={subs} onChange={setSub} />
         <PortfolioActionsBar />
       </div>
 

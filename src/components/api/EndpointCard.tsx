@@ -3,6 +3,9 @@ import { ArrowRight, Copy, Check } from 'lucide-react';
 import { TerminalLog, type LogLine } from '../common/TerminalLog';
 import { toast } from '../../store/toastStore';
 import { cn } from '../../utils/format';
+import { InlineAlert } from '../common/InlineAlert';
+import { StatusPill } from '../common/StatusPill';
+import { X402PayAndCall } from './X402PayAndCall';
 
 type Lang = 'curl' | 'fetch' | 'python';
 
@@ -34,12 +37,12 @@ function buildQuery(params: ParamSpec[], values: Record<string, string>): string
 
 function snippet(lang: Lang, method: string, fullUrl: string): string {
   if (lang === 'curl') {
-    return `curl -X ${method} "${fullUrl}" \\\n  -H "X-PAYMENT: dev-bypass"`;
+    return `curl -X ${method} "${fullUrl}" \\\n  -H "X-PAYMENT: <verified-xlayer-payment-proof>"`;
   }
   if (lang === 'fetch') {
     return `const res = await fetch("${fullUrl}", {
   method: "${method}",
-  headers: { "X-PAYMENT": "dev-bypass" },
+  headers: { "X-PAYMENT": paymentProof },
 });
 const data = await res.json();
 console.log(data);`;
@@ -48,7 +51,7 @@ console.log(data);`;
 
 resp = requests.${method.toLowerCase()}(
     "${fullUrl}",
-    headers={"X-PAYMENT": "dev-bypass"},
+    headers={"X-PAYMENT": payment_proof},
 )
 print(resp.json())`;
 }
@@ -64,7 +67,12 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
   const [log, setLog] = useState<LogLine[] | null>(null);
 
   const fullUrl = useMemo(() => `${BASE_URL}${path}${buildQuery(params, values)}`, [path, params, values]);
+  const relativePath = useMemo(() => `${path}${buildQuery(params, values)}`, [path, params, values]);
   const code = useMemo(() => snippet(lang, method, fullUrl), [lang, method, fullUrl]);
+  const paymentRequired = log?.some((line) => line.text.includes('< 402')) ?? false;
+  const supportsWalletPayment =
+    method === 'GET' &&
+    ['/cup/ai-edge', '/cup/fair-odds', '/cup/settlement-check', '/cup/fan-score'].includes(path);
 
   const copy = (txt: string) => {
     void navigator.clipboard.writeText(txt).then(
@@ -111,7 +119,7 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
     setRunning(true);
     const lines: LogLine[] = [
       { ts: Date.now(), prefix: '$', text: `${method} ${path}${buildQuery(params, values)}`, level: 'cmd' },
-      { ts: Date.now(), text: '> X-PAYMENT: dev-bypass', level: 'info' },
+      { ts: Date.now(), text: '> X-PAYMENT: dev-bypass (development-only)', level: 'info' },
     ];
     setLog([...lines]);
     try {
@@ -149,18 +157,11 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
   };
 
   return (
-    <div className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-5 hover:border-[rgba(255,255,255,0.1)] transition-colors flex flex-col gap-4">
+    <div className="flex h-full flex-col gap-4 rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#151515] p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[rgba(191,255,0,0.18)] md:p-5">
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              'text-[10px] font-bold px-1.5 py-0.5 rounded',
-              method === 'GET' ? 'bg-[rgba(59,130,246,0.1)] text-blue-400' : 'bg-[rgba(34,197,94,0.1)] text-green-400',
-            )}
-          >
-            {method}
-          </span>
-          <code className="text-sm font-mono text-[#F5F5F5]">{path}</code>
+          <StatusPill tone={method === 'GET' ? 'blue' : 'green'}>{method}</StatusPill>
+          <code className="break-all text-sm font-mono text-[#F5F5F5]">{path}</code>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[#BFFF00] font-mono text-xs tabular">${price.toFixed(2)}/call</span>
@@ -168,13 +169,18 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
         </div>
       </div>
 
-      <p className="text-xs text-[#A3A3A3]">{description}</p>
+      <p className="text-xs leading-relaxed text-[#D1D5DB]">{description}</p>
+      <InlineAlert
+        tone="info"
+        title="Production payment required"
+        body="Snippets use a verified X Layer payment proof. The in-card Send request uses dev-bypass only while running this local development build."
+      />
 
       {params.length > 0 && (
         <div className="grid grid-cols-1 gap-2">
           {params.map((p) => (
             <div key={p.name} className="flex items-center gap-2">
-              <label className="text-[10px] uppercase tracking-wider text-[#666] w-16 shrink-0">
+              <label className="text-[10px] uppercase tracking-wider text-[#9CA3AF] w-16 shrink-0">
                 {p.label}
               </label>
               <input
@@ -200,7 +206,7 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
                   'px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider transition-colors',
                   lang === l
                     ? 'text-[#BFFF00] border-b border-[#BFFF00]'
-                    : 'text-[#666] hover:text-[#A3A3A3]',
+                    : 'text-[#9CA3AF] hover:text-[#D1D5DB]',
                 )}
               >
                 {l}
@@ -209,7 +215,9 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
           </div>
           <button
             onClick={() => copy(code)}
-            className="flex items-center gap-1 text-[10px] text-[#666] hover:text-[#F5F5F5] py-1.5"
+            title="Copy snippet"
+            aria-label="Copy snippet"
+            className="flex items-center gap-1 text-[10px] text-[#9CA3AF] hover:text-[#F5F5F5] py-1.5"
           >
             {copied ? (
               <>
@@ -222,7 +230,7 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
             )}
           </button>
         </div>
-        <pre className="px-3 py-2.5 text-[10px] font-mono text-[#A3A3A3] whitespace-pre overflow-x-auto leading-relaxed">
+        <pre className="max-h-40 overflow-auto px-3 py-2.5 text-[10px] font-mono text-[#D1D5DB] whitespace-pre leading-relaxed">
           <code>{code}</code>
         </pre>
       </div>
@@ -231,10 +239,10 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
         <button
           onClick={probe402}
           disabled={probing || running}
-          title="Send without payment — shows the 402 Payment Required gate"
+          title="Send without payment - shows the 402 Payment Required gate"
           className="h-9 px-3 flex items-center gap-1.5 text-[11px] font-bold text-[#EF4444] bg-[rgba(239,68,68,0.08)] hover:bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.2)] rounded-lg transition-colors disabled:opacity-50 shrink-0"
         >
-          {probing ? '…' : '402 gate'}
+          {probing ? '...' : '402 gate'}
         </button>
         <button
           onClick={run}
@@ -244,15 +252,33 @@ export function EndpointCard({ method, path, price, description, params = [] }: 
           {running ? 'Calling...' : 'Send request'} <ArrowRight className="w-3 h-3" />
         </button>
         <button
-          onClick={() => copy(`curl -X ${method} "${fullUrl}" -H "X-PAYMENT: dev-bypass"`)}
+          onClick={() => copy(`curl -X ${method} "${fullUrl}" -H "X-PAYMENT: <verified-xlayer-payment-proof>"`)}
           className="h-9 px-3 flex items-center gap-1 text-xs font-bold text-[#A3A3A3] hover:text-[#F5F5F5] bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] rounded-lg transition-colors"
         >
           <Copy className="w-3 h-3" /> curl
         </button>
       </div>
 
+      {supportsWalletPayment && (
+        <X402PayAndCall
+          compact
+          fullPath={relativePath}
+          title="Pay & call with wallet"
+          description="Send the USDT payment from your connected wallet, then retry this endpoint with a verified X-PAYMENT header."
+        />
+      )}
+
       {log && (
-        <TerminalLog lines={log} maxHeight={260} />
+        <div className="space-y-3">
+          {paymentRequired && (
+            <InlineAlert
+              tone="warning"
+              title="402 Payment Required"
+              body="The endpoint is locked until a valid payment proof is provided. Use a real X Layer tx or facilitator receipt in production."
+            />
+          )}
+          <TerminalLog lines={log} maxHeight={220} />
+        </div>
       )}
     </div>
   );

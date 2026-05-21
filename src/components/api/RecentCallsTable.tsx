@@ -5,6 +5,8 @@ import { cn } from '../../utils/format';
 import { EmptyState } from '../common/EmptyState';
 import { downloadCSV } from '../../utils/csv';
 import { toast } from '../../store/toastStore';
+import { AppCard } from '../common/AppCard';
+import { StatusPill } from '../common/StatusPill';
 
 type StatusFilter = 'all' | 'paid' | 'rejected';
 
@@ -51,7 +53,7 @@ export function RecentCallsTable() {
   );
 
   return (
-    <div className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-5">
+    <AppCard>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="text-sm font-bold text-[#F5F5F5]">x402 call log</h3>
         <div className="flex items-center gap-2 flex-wrap">
@@ -76,7 +78,7 @@ export function RecentCallsTable() {
             ))}
           </div>
           <div className="relative">
-            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-[#666]" />
+            <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
             <input
               type="text"
               value={search}
@@ -109,7 +111,7 @@ export function RecentCallsTable() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-left text-[#666] uppercase tracking-wider text-[10px]">
+              <tr className="text-left text-[#9CA3AF] uppercase tracking-wider text-[10px]">
                 <th className="py-2 pr-3">Time</th>
                 <th className="py-2 pr-3">Endpoint</th>
                 <th className="py-2 pr-3">Caller</th>
@@ -124,35 +126,27 @@ export function RecentCallsTable() {
                     {new Date(c.timestamp).toLocaleTimeString()}
                   </td>
                   <td className="py-2 pr-3 text-[#F5F5F5] font-mono">{c.endpoint}</td>
-                  <td className="py-2 pr-3 text-[#666] font-mono">
+                  <td className="py-2 pr-3 text-[#A3A3A3] font-mono">
                     {c.caller.length > 10 ? `${c.caller.slice(0, 6)}...${c.caller.slice(-4)}` : c.caller}
                   </td>
                   <td className="py-2 pr-3 font-mono text-[#A3A3A3] tabular text-right">
                     {c.amount} {c.asset}
                   </td>
                   <td className="py-2">
-                    <span
-                      className={cn(
-                        'px-2 py-0.5 text-[10px] font-bold rounded',
-                        c.status === 'paid'
-                          ? 'bg-[rgba(34,197,94,0.1)] text-[#22C55E]'
-                          : 'bg-[rgba(239,68,68,0.1)] text-[#EF4444]',
-                      )}
-                    >
-                      {c.status}
-                    </span>
+                    <StatusPill tone={c.status === 'paid' ? 'green' : 'red'}>{c.status}</StatusPill>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {filtered.length > 50 && (
-            <div className="text-center text-[10px] text-[#666] mt-2">
-              showing 50 of {filtered.length} · export CSV for full list
+            <div className="text-center text-[10px] text-[#9CA3AF] mt-2">
+              showing 50 of {filtered.length} / export CSV for full list
             </div>
           )}
         </div>
       )}
-    </div>
+    </AppCard>
   );
 }
+

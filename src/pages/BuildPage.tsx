@@ -8,11 +8,11 @@ const BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/
 const SNIPPETS: { id: string; title: string; lang: string; code: string }[] = [
   {
     id: 'curl',
-    title: '1. Quick test (curl + dev bypass)',
+    title: '1. Production x402 call',
     lang: 'bash',
     code: `curl -X GET "${BASE_URL}/market-summary" \\
   -H "Content-Type: application/json" \\
-  -H "X-PAYMENT: dev-bypass"`,
+  -H "X-PAYMENT: <verified-xlayer-payment-txhash-or-facilitator-receipt>"`,
   },
   {
     id: 'fetch',
@@ -22,7 +22,7 @@ const SNIPPETS: { id: string; title: string; lang: string; code: string }[] = [
   method: "GET",
   headers: {
     "Content-Type": "application/json",
-    "X-PAYMENT": "dev-bypass", // dev only — remove in prod, send signed receipt instead
+    "X-PAYMENT": paymentProof, // verified X Layer payment proof
   },
 });
 const data = await res.json();
@@ -55,12 +55,13 @@ const signals = await res.json();`,
     id: 'python',
     title: '4. Python (requests)',
     lang: 'python',
-    code: `import requests
+    code: `import os
+import requests
 
 resp = requests.get(
     "${BASE_URL}/portfolio-advice",
     params={"address": "0xYOUR_ADDRESS"},
-    headers={"X-PAYMENT": "dev-bypass"},
+    headers={"X-PAYMENT": os.environ["X402_PAYMENT_PROOF"]},
 )
 print(resp.json()["advice"])`,
   },
@@ -82,6 +83,11 @@ app.post("/xsight-webhook", express.json(), (req, res) => {
 ];
 
 const CONTRACTS: { name: string; address: string; description: string }[] = [
+  {
+    name: 'CupOracleV2',
+    address: '0xE4dFef03E107225f2239CFfF955a378A9a8158Be',
+    description: 'Optimistic World Cup settlement oracle deployed on X Layer',
+  },
   {
     name: 'OnchainOS Router',
     address: '0x000000000000000000000000000000000000DEAD',
@@ -112,12 +118,12 @@ export function BuildPage() {
       {/* Hero */}
       <div className="bg-[rgba(191,255,0,0.04)] rounded-2xl border border-[rgba(191,255,0,0.15)] p-6 border-l-[3px] border-l-[#BFFF00]">
         <h1 className="text-2xl font-bold text-[#F5F5F5] mb-2">Build with XSight</h1>
-        <p className="text-[#A3A3A3] text-sm mb-4 max-w-2xl">
+        <p className="text-[#D1D5DB] text-sm mb-4 max-w-2xl">
           Integrate XSight's AI trading primitives into your app via the x402 paid API. Below are
           drop-in code examples and the live endpoint reference.
         </p>
         <div className="flex items-center gap-2 bg-[#0A0A0A] border border-[rgba(255,255,255,0.08)] rounded-lg px-3 py-2 w-fit">
-          <Terminal className="w-4 h-4 text-[#666]" />
+          <Terminal className="w-4 h-4 text-[#9CA3AF]" />
           <code className="text-xs font-mono text-[#A3A3A3]">{BASE_URL}</code>
         </div>
       </div>
@@ -129,10 +135,10 @@ export function BuildPage() {
             <Database className="w-4 h-4 text-[#BFFF00]" />
             Endpoint Reference
           </h2>
-          <div className="bg-[#161616] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-hidden">
+          <div className="bg-[#161616] border border-[rgba(255,255,255,0.06)] rounded-2xl overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="bg-[#0A0A0A]">
-                <tr className="text-left text-[#666]">
+                <tr className="text-left text-[#9CA3AF]">
                   <th className="px-4 py-2 text-micro">Method</th>
                   <th className="px-4 py-2 text-micro">Path</th>
                   <th className="px-4 py-2 text-micro">Price</th>
@@ -151,7 +157,7 @@ export function BuildPage() {
                         {ep.method}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-[#F5F5F5]">{ep.path}</td>
+                    <td className="px-4 py-3 font-mono text-[#F5F5F5] break-all min-w-[180px]">{ep.path}</td>
                     <td className="px-4 py-3 font-mono text-[#BFFF00] tabular">
                       ${ep.price.toFixed(2)}
                     </td>
@@ -174,7 +180,7 @@ export function BuildPage() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="text-xs font-bold text-[#F5F5F5]">{c.name}</div>
-                  <div className="text-[10px] text-[#666]">{c.description}</div>
+                  <div className="text-[10px] text-[#D1D5DB]">{c.description}</div>
                   <div className="text-[10px] font-mono text-[#A3A3A3] truncate mt-0.5">
                     {c.address}
                   </div>
@@ -182,16 +188,18 @@ export function BuildPage() {
                 <div className="flex items-center gap-1 shrink-0">
                   <button
                     onClick={() => copyAddr(c.address)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[rgba(255,255,255,0.06)] text-[#666] hover:text-[#F5F5F5]"
+                    aria-label={`Copy ${c.name} address`}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:text-[#F5F5F5]"
                     title="Copy address"
                   >
                     <Copy className="w-3 h-3" />
                   </button>
                   <a
-                    href={`https://www.oklink.com/xlayer/address/${c.address}`}
+                    href={`https://www.okx.com/web3/explorer/xlayer/address/${c.address}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[rgba(255,255,255,0.06)] text-[#666] hover:text-[#F5F5F5]"
+                    aria-label={`Open ${c.name} in explorer`}
+                    className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[rgba(255,255,255,0.06)] text-[#9CA3AF] hover:text-[#F5F5F5]"
                     title="Open explorer"
                   >
                     <ExternalLink className="w-3 h-3" />
@@ -221,3 +229,4 @@ export function BuildPage() {
     </div>
   );
 }
+

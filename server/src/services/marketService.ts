@@ -9,7 +9,7 @@
 import { getCupAiEdge, getCupFeed, getCupMatch, type CupMatch } from './cupData.js';
 import { readCupOracleMatch } from './cupOracleContract.js';
 import { deriveMarketId, encodeMatchId } from '../utils/cupIds.js';
-import { getIndexedMarket } from './marketIndexer.js';
+import { getIndexedMarket, marketIdsForWallet } from './marketIndexer.js';
 import {
   createMarketTx,
   hasClaimed,
@@ -211,6 +211,25 @@ export async function getPosition(cupMatchId: string, wallet: string): Promise<M
 
 export async function getWalletAllowance(wallet: string): Promise<string | null> {
   return readAllowance(wallet);
+}
+
+/** Every market the wallet holds a position in — joins indexed stakes back to fixtures. */
+export async function listWalletPositions(
+  wallet: string,
+): Promise<Array<MarketPosition & { market: MarketView }>> {
+  if (!parimutuelMetadata().address) return [];
+  const staked = new Set(marketIdsForWallet(wallet));
+  if (staked.size === 0) return [];
+  const feed = await getCupFeed();
+  const out: Array<MarketPosition & { market: MarketView }> = [];
+  for (const match of feed.fixtures) {
+    if (!staked.has(deriveMarketId(match.id))) continue;
+    const position = await getPosition(match.id, wallet);
+    if (position && position.status !== 'no_position' && position.status !== 'contract_not_deployed') {
+      out.push({ ...position, market: buildMarketView(match) });
+    }
+  }
+  return out;
 }
 
 /**

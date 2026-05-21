@@ -12,6 +12,7 @@ import {
   getPosition,
   getWalletAllowance,
   listMarkets,
+  listWalletPositions,
   settleMarket,
 } from '../services/marketService.js';
 import { getIndexerStatus } from '../services/marketIndexer.js';
@@ -49,6 +50,12 @@ marketsRouter.get('/allowance', async (req: Request, res: Response) => {
   const wallet = String(req.query.wallet ?? '');
   if (!wallet) return res.status(400).json({ error: 'wallet query param required' });
   res.json({ wallet, allowance: await getWalletAllowance(wallet) });
+});
+
+marketsRouter.get('/positions', async (req: Request, res: Response) => {
+  const wallet = String(req.query.wallet ?? '');
+  if (!wallet) return res.status(400).json({ error: 'wallet query param required' });
+  res.json({ wallet, positions: await listWalletPositions(wallet) });
 });
 
 marketsRouter.get('/:id', async (req: Request, res: Response) => {

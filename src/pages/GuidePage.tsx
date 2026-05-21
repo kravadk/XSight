@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Zap, Shield, Lock, Code, HelpCircle, Coins, MessageSquare, ChevronRight } from 'lucide-react';
 import { GUIDE_SECTIONS, type GuideArticle } from '../config/guideContent';
 import { cn } from '../utils/format';
+import { StateBlock } from '../components/common/StateBlock';
+import { ActionButton } from '../components/common/ActionButton';
 
 const ICON_MAP = {
   zap: Zap,
@@ -75,17 +77,28 @@ export function GuidePage() {
         <aside className="lg:w-64 lg:shrink-0">
           <div className="sticky top-20 flex flex-col gap-4">
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#666]" />
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#9CA3AF]" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search docs..."
-                className="w-full h-9 pl-9 pr-3 bg-[#161616] border border-[rgba(255,255,255,0.06)] rounded-lg text-xs text-[#F5F5F5] placeholder-[#666] focus:outline-none focus:border-[rgba(191,255,0,0.3)]"
+                className="w-full h-9 pl-9 pr-3 bg-[#161616] border border-[rgba(255,255,255,0.06)] rounded-lg text-xs text-[#F5F5F5] placeholder-[#7A7A7A] focus:outline-none focus:border-[rgba(191,255,0,0.3)]"
               />
             </div>
 
-            <nav className="flex flex-col gap-1">
+            <select
+              value={active}
+              onChange={(event) => setActive(event.target.value)}
+              className="lg:hidden h-10 w-full rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#161616] px-3 text-xs font-bold text-[#F5F5F5]"
+              aria-label="Select guide article"
+            >
+              {filteredSections.flatMap((s) => s.articles.map((a) => (
+                <option key={a.id} value={a.id}>{s.title} / {a.title}</option>
+              )))}
+            </select>
+
+            <nav className="hidden lg:flex flex-col gap-1">
               {filteredSections.map((s) => {
                 const Icon = ICON_MAP[s.iconName];
                 const isOpen = expanded[s.id] ?? true;
@@ -131,23 +144,26 @@ export function GuidePage() {
           {activeArticle ? (
             <article
               ref={contentRef}
-              className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-8 overflow-y-auto max-h-[78vh]"
+              className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-5 md:p-8 overflow-y-auto lg:max-h-[78vh]"
             >
               <h1 className="text-3xl font-extrabold text-[#F5F5F5] mb-6 tracking-tight">
                 {activeArticle.title}
               </h1>
               <div className="prose prose-invert max-w-none">
                 {activeArticle.body.split('\n\n').map((para, i) => (
-                  <p key={i} className="text-sm text-[#A3A3A3] leading-relaxed mb-4 whitespace-pre-line">
+                  <p key={i} className="text-sm text-[#D1D5DB] leading-7 mb-4 whitespace-pre-line">
                     {para}
                   </p>
                 ))}
               </div>
             </article>
           ) : (
-            <div className="bg-[#161616] rounded-2xl border border-[rgba(255,255,255,0.06)] p-8 text-center text-sm text-[#666]">
-              No article matches your search.
-            </div>
+            <StateBlock
+              kind="empty"
+              title="No article matches your search"
+              body="Clear the search query or try a broader term across API, wallet, x402, and build docs."
+              action={<ActionButton tone="secondary" onClick={() => setQuery('')}>Clear search</ActionButton>}
+            />
           )}
         </div>
       </div>

@@ -7,7 +7,7 @@ export function ToastHost() {
   const dismiss = useToastStore((s) => s.dismiss);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[100] flex flex-col gap-2 pointer-events-none">
+    <div className="pointer-events-none fixed bottom-20 left-3 right-3 z-[100] flex flex-col gap-2 md:bottom-6 md:left-auto md:right-6">
       <AnimatePresence>
         {toasts.map((t) => {
           const Icon = t.kind === 'success' ? CheckCircle2 : t.kind === 'error' ? AlertTriangle : Info;
@@ -20,13 +20,15 @@ export function ToastHost() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, x: 40 }}
               transition={{ duration: 0.18 }}
-              className="pointer-events-auto bg-[#151515] border border-[rgba(255,255,255,0.1)] shadow-2xl rounded-xl px-4 py-3 flex items-center gap-3 min-w-[260px] max-w-sm"
+              role="status"
+              className="pointer-events-auto flex w-full items-center gap-3 rounded-xl border border-[rgba(255,255,255,0.1)] bg-[#151515] px-4 py-3 shadow-2xl md:min-w-[280px] md:max-w-sm"
             >
               <Icon className={`w-4 h-4 ${color} shrink-0`} />
               <span className="text-sm text-[#F5F5F5] flex-1">{t.message}</span>
               <button
                 onClick={() => dismiss(t.id)}
-                className="text-[#666666] hover:text-[#F5F5F5] transition-colors"
+                aria-label="Dismiss notification"
+                className="grid h-7 w-7 place-items-center rounded-lg text-[#9CA3AF] transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-[#F5F5F5]"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
