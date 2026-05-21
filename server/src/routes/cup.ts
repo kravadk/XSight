@@ -139,7 +139,7 @@ cupRouter.get('/pundit', async (_req: Request, res: Response) => {
 });
 
 cupRouter.get('/pundit/executions', (req: Request, res: Response) => {
-  const matchId = req.query.matchId ? String(req.query.matchId) : undefined;
+  const matchId = typeof req.query.matchId === 'string' ? req.query.matchId : undefined;
   res.json({ executions: listPunditExecutions(matchId) });
 });
 
@@ -150,7 +150,9 @@ cupRouter.post('/pundit/execute', async (req: Request, res: Response) => {
   try {
     res.json(await executePunditPick(body.matchId));
   } catch (err) {
-    res.status(400).json({
+    // executePunditPick is documented to never throw (it catches on-chain failures
+    // internally); this catch is defensive insurance and 500s a genuine server fault.
+    res.status(500).json({
       error: 'pundit execution failed',
       detail: err instanceof Error ? err.message : String(err),
     });
