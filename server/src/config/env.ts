@@ -48,6 +48,16 @@ export const env = {
   punditWalletAddress: required('PUNDIT_WALLET_ADDRESS'),
   // Stake size per pundit pick, in human token units of the settlement token.
   punditStakeAmount: process.env.PUNDIT_STAKE_AMOUNT ?? '0.5',
+  // X (Twitter) API — OAuth 1.0a user context, required to post pundit announcements.
+  // Empty => the X-poster honestly no-ops; nothing is ever posted.
+  xApiKey: required('X_API_KEY'),
+  xApiSecret: required('X_API_SECRET'),
+  xAccessToken: required('X_ACCESS_TOKEN'),
+  xAccessTokenSecret: required('X_ACCESS_TOKEN_SECRET'),
+  // Autonomous pundit cron (DESIGN Flow D). OFF by default — when true the scheduler
+  // sends real OKB-spending stake txs from the pundit wallet on a timer.
+  punditAutoStakeEnabled: process.env.PUNDIT_AUTOSTAKE_ENABLED === 'true',
+  punditAutoStakeIntervalMs: Number(process.env.PUNDIT_AUTOSTAKE_INTERVAL_MS ?? 1_800_000),
   marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
   // X Layer's public RPC caps eth_getLogs at a 100-block range — keep this <= 100.
   marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 90),
@@ -72,4 +82,9 @@ export const isConfigured = {
   x402: () => env.x402PayoutAddress.length > 0,
   signer: () => env.deployerPrivateKey.length > 0 && env.agenticWalletAddress.length > 0,
   pundit: () => env.punditPrivateKey.length > 0 && env.punditWalletAddress.length > 0,
+  x: () =>
+    env.xApiKey.length > 0 &&
+    env.xApiSecret.length > 0 &&
+    env.xAccessToken.length > 0 &&
+    env.xAccessTokenSecret.length > 0,
 };
