@@ -1,6 +1,7 @@
-import { Contract, encodeBytes32String, formatEther, isAddress } from 'ethers';
+import { Contract, formatEther, isAddress } from 'ethers';
 import { env, isConfigured } from '../config/env.js';
 import { X_LAYER } from '../utils/xlayer.js';
+import { encodeMatchId } from '../utils/cupIds.js';
 import { recordCupSettlementTx } from './cupSettlementLog.js';
 import { getCupMatch } from './cupData.js';
 import { getProvider, getSigner } from './wallet.js';
@@ -136,7 +137,7 @@ export async function readCupOracleMatch(matchId: string) {
   if (!metadata.address) return null;
   try {
     const contract = new Contract(metadata.address, CUP_ORACLE_ABI, getProvider());
-    const record = await contract.getMatch(encodeBytes32String(matchId));
+    const record = await contract.getMatch(encodeMatchId(matchId));
     return {
       matchId,
       registered: true,
@@ -216,7 +217,7 @@ async function writeCupOracleTx(
 
   const signer = getSigner();
   const contract = new Contract(metadata.address, CUP_ORACLE_ABI, signer);
-  const encodedMatchId = encodeBytes32String(matchId);
+  const encodedMatchId = encodeMatchId(matchId);
 
   const match = await getCupMatch(matchId);
   if (!match) throw new Error('match not found in live CupHub feed');
