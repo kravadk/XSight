@@ -7,10 +7,19 @@
 
 ## 1. Scope
 
-- Markets are **1X2 / Match Result**: three outcomes — **Home (1)**, **Draw (2)**,
-  **Away (3)** — on football (soccer) fixtures of the FIFA World Cup.
-- Each market settles in a stablecoin pari-mutuel pool (`ParimutuelMarket`); winners
-  split the pool pro-rata. There is no house and no fixed odds.
+- A FIFA World Cup fixture carries one or more **pari-mutuel markets**, each a small
+  fixed set of outcomes:
+  - **Match Result (1X2)** — Home (1), Draw (2), Away (3).
+  - **Total Goals — Over/Under 2.5** — Over 2.5 (1), Under 2.5 (2).
+  - **Both Teams To Score (BTTS)** — Yes (1), No (2).
+- Every market settles in a stablecoin pari-mutuel pool (`ParimutuelMarket`); winners
+  split the pool pro-rata. There is no house and no fixed odds. Each (fixture × market
+  type) is a **separate pool and a separate on-chain oracle record**.
+- All market types resolve from the **same official final score** of the fixture
+  (§2): Over/Under 2.5 settles **Over** when total goals are 3 or more and **Under**
+  when 2 or fewer; BTTS settles **Yes** when each side scored at least one goal,
+  **No** otherwise. If the multi-source quorum cannot agree on the final score, every
+  market on that fixture is held — none is guessed (§3).
 
 ## 2. The result of record
 

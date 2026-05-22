@@ -19,3 +19,13 @@ export function encodeMatchId(cupMatchId: string): string {
 export function deriveMarketId(cupMatchId: string): string {
   return keccak256(toUtf8Bytes(`xsight-market:${cupMatchId}`));
 }
+
+/**
+ * Composite key string for one (fixture × market type) — feed it to `encodeMatchId`
+ * and `deriveMarketId` to get distinct on-chain keys per market type. The default
+ * '1X2' type returns the bare match id, so existing 1X2 markets keep their exact
+ * keys (no re-registration). Over/Under, BTTS etc. each get a namespaced key.
+ */
+export function encodeMarketKey(cupMatchId: string, marketType: string): string {
+  return marketType === '1X2' ? cupMatchId : `${cupMatchId}::${marketType}`;
+}
