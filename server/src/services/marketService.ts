@@ -11,6 +11,8 @@ import { readCupOracleMatch } from './cupOracleContract.js';
 import { deriveMarketId, encodeMatchId } from '../utils/cupIds.js';
 import { getIndexedMarket, marketIdsForWallet } from './marketIndexer.js';
 import {
+  buildApproveTx,
+  buildStakeTx,
   createMarketTx,
   hasClaimed,
   parimutuelMetadata,
@@ -20,6 +22,7 @@ import {
   readStakeOf,
   settleMarketTx,
 } from './parimutuelContract.js';
+import { getSwapTx } from './onchainos.js';
 import { env } from '../config/env.js';
 
 export type MarketStatus =
@@ -291,4 +294,54 @@ export async function ensureMarketsForUpcomingFixtures(limit?: number): Promise<
 /** Operator: settle a market on-chain once its oracle result is finalized. */
 export async function settleMarket(cupMatchId: string) {
   return settleMarketTx(deriveMarketId(cupMatchId));
+}
+
+export interface SwapStakeStep {
+  kind: 'dex-approve' | 'swap' | 'market-approve' | 'stake';
+  to: string;
+  data: string;
+  value: string;
+  label: string;
+}
+
+/**
+ * Build the unsigned step sequence for staking with ANY X Layer token. The OKX
+ * DEX aggregator swaps the chosen token into the settlement USDT in the user's
+ * OWN wallet, then the usual approve + stake follow. Every step is user-signed —
+ * no custody. The bet is staked at the swap's slippage-protected minimum receive,
+ * so the stake can never exceed what actually landed; any slippage upside stays
+ * with the user.
+ */
+export async function buildSwapStakeTx(input: {
+  cupMatchId: string;
+  fromToken: string;
+  amount: string; // fromToken base units
+  outcome: number;
+  wallet: string;
+}): Promise<{ steps: SwapStakeStep[]; estimatedUsdt: string; minUsdt: string; settlementToken: string }> {
+  const usdt = await readSettlementToken();
+  if (!usdt) throw new Error('settlement token unknown — market not deployed');
+  if (input.fromToken.toLowerCase() === usdt.toLowerCase()) {
+    throw new Error('fromToken is already the settlement token — use /stake-tx directly');
+  }
+  const marketId = deriveMarketId(input.cupMatchId);
+  const swap = await getSwapTx({
+    fromToken: input.fromToken,
+    toToken: usdt,
+    amount: input.amount,
+    userAddress: input.wallet,
+    slippagePercent: 1,
+  });
+  const stakeAmount = swap.minReceiveAmount;
+  if (!/^\d+$/.test(stakeAmount) || stakeAmount === '0') {
+    throw new Error('swap quote produced no receivable USDT');
+  }
+  const approve = await buildApproveTx(stakeAmount);
+  const stake = buildStakeTx(marketId, input.outcome, stakeAmount);
+  const steps: SwapStakeStep[] = [
+    ...swap.steps,
+    { kind: 'market-approve', to: approve.to, data: approve.data, value: approve.value, label: 'Approve USDT for the market' },
+    { kind: 'stake', to: stake.to, data: stake.data, value: stake.value, label: 'Stake into the pool' },
+  ];
+  return { steps, estimatedUsdt: swap.toTokenAmount, minUsdt: stakeAmount, settlementToken: usdt };
 }

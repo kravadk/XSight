@@ -384,17 +384,21 @@ async function fetchSwapTx(params: {
   amount: string;
   chainId: string;
   userAddress: string;
+  slippagePercent?: number;
 }): Promise<OkxSwapResponse> {
   // OKX v6 DEX aggregator REQUIRES `slippagePercent` (NOT `slippage`).
   // "slippagePercent=5" means 5% tolerance. X Layer pools have limited
   // liquidity — wider slippage keeps minAmountOut loose enough to land.
+  // The X Cup stake-with-any-token flow passes a tighter 1% so the bet
+  // amount stays close to the quote.
+  const slippage = params.slippagePercent ?? 5;
   const path =
     `/api/v6/dex/aggregator/swap?chainIndex=${params.chainId}` +
     `&fromTokenAddress=${params.fromToken}` +
     `&toTokenAddress=${params.toToken}` +
     `&amount=${params.amount}` +
     `&userWalletAddress=${params.userAddress}` +
-    `&slippagePercent=5`;
+    `&slippagePercent=${slippage}`;
   console.log(`[fetchSwapTx] → ${path.slice(0, 180)}`);
   const res = await okxGet<OkxEnvelope<OkxSwapResponse[]>>(path);
   if (res.code && res.code !== '0') {
@@ -488,6 +492,83 @@ function wrapCallException(err: unknown, txHash: string, phase: 'approve' | 'swa
   // Not a call exception — re-throw as-is after wrapping
   const msg = err instanceof Error ? err.message : String(err);
   return new OnchainOsError(`${phase} tx failed: ${msg}`);
+}
+
+/** One unsigned step the user's wallet signs and broadcasts. */
+export interface UnsignedSwapStep {
+  kind: 'dex-approve' | 'swap';
+  to: string;
+  data: string;
+  value: string; // 0x-hex wei
+  label: string;
+}
+
+function toHexWei(decimal: string | undefined): string {
+  if (!decimal) return '0x0';
+  try {
+    return `0x${BigInt(decimal).toString(16)}`;
+  } catch {
+    return '0x0';
+  }
+}
+
+/**
+ * Build the UNSIGNED OKX DEX swap step(s) for a user wallet to sign — the
+ * user-custody counterpart of `executeSwap` (which server-signs). Used by the
+ * X Cup "stake with any token" flow: swap the picked token into the settlement
+ * USDT in the user's own wallet, then approve + stake as usual.
+ *
+ * Returns a `dex-approve` step (ERC20 fromToken only) followed by the `swap`
+ * step, plus the quoted output and the slippage-protected minimum receive —
+ * the bet is staked at `minReceiveAmount` so it can never exceed what landed.
+ */
+export async function getSwapTx(params: {
+  fromToken: string;
+  toToken: string;
+  amount: string; // base units of fromToken
+  userAddress: string;
+  chainId?: string;
+  slippagePercent?: number;
+}): Promise<{ steps: UnsignedSwapStep[]; toTokenAmount: string; minReceiveAmount: string }> {
+  requireConfigured();
+  const chainId = params.chainId ?? X_LAYER_CHAIN;
+  const steps: UnsignedSwapStep[] = [];
+
+  if (!isNativeToken(params.fromToken)) {
+    const approve = await fetchApproveTx({
+      tokenAddress: params.fromToken,
+      amount: params.amount,
+      chainId,
+    });
+    steps.push({
+      kind: 'dex-approve',
+      to: params.fromToken,
+      data: approve.data,
+      value: '0x0',
+      label: 'Approve token for the OKX DEX router',
+    });
+  }
+
+  const swap = await fetchSwapTx({
+    fromToken: params.fromToken,
+    toToken: params.toToken,
+    amount: params.amount,
+    chainId,
+    userAddress: params.userAddress,
+    slippagePercent: params.slippagePercent ?? 1,
+  });
+  steps.push({
+    kind: 'swap',
+    to: swap.tx.to,
+    data: swap.tx.data,
+    value: isNativeToken(params.fromToken) ? toHexWei(swap.tx.value) : '0x0',
+    label: 'Swap to USDT via OKX DEX',
+  });
+
+  const toTokenAmount = swap.routerResult?.toTokenAmount ?? '0';
+  const minReceiveAmount = swap.tx.minReceiveAmount ?? toTokenAmount;
+  recordActivity('dex.quote', `swap-tx ${params.fromToken} -> ${params.toToken}`);
+  return { steps, toTokenAmount, minReceiveAmount };
 }
 
 export async function executeSwap(params: {

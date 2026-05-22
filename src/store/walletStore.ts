@@ -53,6 +53,8 @@ interface WalletState {
   disconnect: () => void;
   ensureXLayer: () => Promise<boolean>;
   sendTx: (tx: { to: string; data: string; value?: string }) => Promise<string>;
+  /** Poll until a tx is mined — needed to chain dependent txs (swap → approve → stake). */
+  waitForTx: (hash: string) => Promise<void>;
   setPortfolio: (input: { address: string; network: string; tokens: WalletToken[]; totalUsd: number }) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
@@ -152,6 +154,26 @@ export const useWalletStore = create<WalletState>((set, get) => ({
       params: [{ from: address, to, data, value: value ?? '0x0' }],
     })) as string;
     return txHash;
+  },
+
+  waitForTx: async (hash) => {
+    const provider = getProvider();
+    if (!provider) throw new Error('No wallet found');
+    // X Layer blocks are ~1-2s; poll up to ~90s.
+    for (let i = 0; i < 45; i++) {
+      const receipt = (await provider.request({
+        method: 'eth_getTransactionReceipt',
+        params: [hash],
+      })) as { status?: string } | null;
+      if (receipt) {
+        if (receipt.status && Number(receipt.status) === 0) {
+          throw new Error(`Transaction reverted (${hash.slice(0, 10)}…)`);
+        }
+        return;
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+    throw new Error(`Transaction not mined in time (${hash.slice(0, 10)}…)`);
   },
 
   setPortfolio: ({ address, network, tokens, totalUsd }) =>

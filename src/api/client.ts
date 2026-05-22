@@ -629,6 +629,14 @@ export interface UnsignedTxDto {
   chainId: number;
 }
 
+export interface SwapStakeStepDto {
+  kind: 'dex-approve' | 'swap' | 'market-approve' | 'stake';
+  to: string;
+  data: string;
+  value: string;
+  label: string;
+}
+
 export interface MarketIndexerStatusDto {
   deployed: boolean;
   contract: string | null;
@@ -905,6 +913,14 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ outcome, amount }),
     }),
+  marketSwapStakeTx: (
+    id: string,
+    body: { fromToken: string; amount: string; outcome: number; wallet: string },
+  ) =>
+    request<{ steps: SwapStakeStepDto[]; estimatedUsdt: string; minUsdt: string; settlementToken: string }>(
+      `/markets/${encodeURIComponent(id)}/swap-stake-tx`,
+      { method: 'POST', body: JSON.stringify(body) },
+    ),
   marketClaimTx: (id: string) =>
     request<{ claimTx: UnsignedTxDto }>(`/markets/${encodeURIComponent(id)}/claim-tx`),
   cupPundit: () => request<{ profile: PunditProfileDto; picks: PunditPickDto[] }>('/cup/pundit'),

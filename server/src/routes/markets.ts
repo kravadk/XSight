@@ -7,6 +7,7 @@ import { Router, type Request, type Response } from 'express';
 import { env } from '../config/env.js';
 import { deriveMarketId } from '../utils/cupIds.js';
 import {
+  buildSwapStakeTx,
   ensureMarketsForUpcomingFixtures,
   getMarketDetail,
   getPosition,
@@ -87,6 +88,27 @@ marketsRouter.post('/:id/stake-tx', async (req: Request, res: Response) => {
       approveTx: await buildApproveTx(amount),
       stakeTx: buildStakeTx(marketId, outcome, amount),
     });
+  } catch (err) {
+    txError(res, err);
+  }
+});
+
+// Stake with ANY X Layer token — OKX DEX swaps it to the settlement USDT in the
+// user's wallet, then approve + stake follow. Returns the full unsigned step list.
+marketsRouter.post('/:id/swap-stake-tx', async (req: Request, res: Response) => {
+  const body = req.body as { fromToken?: string; amount?: string; outcome?: number; wallet?: string };
+  const fromToken = String(body.fromToken ?? '');
+  const amount = String(body.amount ?? '');
+  const outcome = Number(body.outcome);
+  const wallet = String(body.wallet ?? '');
+  if (!/^0x[0-9a-fA-F]{40}$/.test(fromToken)) return res.status(400).json({ error: 'fromToken must be a token address' });
+  if (![1, 2, 3].includes(outcome)) return res.status(400).json({ error: 'outcome must be 1, 2 or 3' });
+  if (!/^\d+$/.test(amount) || amount === '0') {
+    return res.status(400).json({ error: 'amount must be a positive integer in fromToken base units' });
+  }
+  if (!/^0x[0-9a-fA-F]{40}$/.test(wallet)) return res.status(400).json({ error: 'wallet must be a valid address' });
+  try {
+    res.json(await buildSwapStakeTx({ cupMatchId: req.params.id, fromToken, amount, outcome, wallet }));
   } catch (err) {
     txError(res, err);
   }
