@@ -1,132 +1,87 @@
-# XSight × OKX X Cup — Build Status & Handoff
+# X Cup — Build Status & Handoff
 
-> **Read this first**, then `docs/xcup/DESIGN.md` (full design + architecture) and
-> `docs/superpowers/plans/` (per-plan implementation plans).
-> Updated: 2026-05-21 · Branch: `feat/xcup-prediction-market`.
+> **Read this first**, then `docs/xcup/DESIGN.md` (design + architecture),
+> `docs/xcup/CONTRACTS.md` (live contract registry) and
+> `docs/xcup/HARDENING-PLAN.md` (the bonded-oracle design).
+> Updated: 2026-05-22 · Branch: `main`.
 
-> 🔴 **DIRECTIVE (user, 2026-05-21): NO MOCKS, NO LOCAL STAND-INS — everything real.**
-> Product AND tests use only real components. The contract test layer runs against a
-> **forked X Layer mainnet** with the real `CupOracleV2` + real USDT/USDC (Hardhat
-> account impersonation). The sole crafted contract is the re-entrancy exploit harness
+> 🔴 **DIRECTIVE: NO MOCKS — everything real.** Product and tests use only real
+> components. Contract tests run against a **forked X Layer mainnet** with the real
+> oracle and real USDT/USDC (Hardhat account impersonation). The sole crafted
+> contract is the re-entrancy exploit harness
 > (`contracts/test/exploit/ReentrancyAttacker.sol`) — an attacker, not a mock.
 
 ## What this is
-World Cup prediction market on X Layer: real-money USDC/USDT pari-mutuel pools on football
-match outcomes, settled by a trustless multi-source oracle, with an autonomous AI pundit
-opponent and a free-to-play funnel. Full spec: `docs/xcup/DESIGN.md`.
 
-## Build approach
-5 sequential plans (decomposition in `DESIGN.md`):
-1. **Smart Contracts** — ✅ DONE
-2. **Oracle Resolution Pipeline** — ✅ DONE
-3. **Market Backend + Indexer** — ✅ DONE
-4. **Frontend (8 screens, World Cup design, real team logos)** — ✅ DONE
-5. **AI Pundit (Hermes) + repo / demo / submission deliverables** — ✅ DONE
+A World Cup prediction market on X Layer: real-money USDT pari-mutuel pools on
+football match outcomes, settled by a **bonded** multi-source oracle, with an
+autonomous AI pundit opponent and a full free-to-play layer. Full spec:
+`docs/xcup/DESIGN.md`.
 
-Mode: build **autonomously**, plan-by-plan — write
-`docs/superpowers/plans/2026-05-21-0N-<name>.md`, then execute it (commit per task),
-checkpoint at each plan boundary.
+## Build — complete
 
-## ✅ DONE — Plan 1 (Smart Contracts) + test rework
-Commits on `feat/xcup-prediction-market`: `0de4a48`, `15d60ee`, `de67571`, `edfb242`,
-`db58700`.
-- `contracts/ParimutuelMarket.sol` — pari-mutuel pool; single-file, no external deps;
-  reads `CupOracleV2.getMatch()` for settlement. **Token-agnostic** (`token`, not `usdc`)
-  — settles in USDT *or* USDC.
-- **Test layer reworked to no-mocks fork tests** — `contracts/test/ParimutuelMarket.test.cjs`
-  runs **23 tests against a forked X Layer mainnet**: real `CupOracleV2`, real USDT
-  (`0x1E4a5963…`) + real USDC (`0x74b7F163…`). Accounts funded by storage-slot `deal`.
-  `contracts/test/Mocks.sol` deleted; only `exploit/ReentrancyAttacker.sol` remains.
-  Run: `npm run contracts:test` (`cross-env FORK=1`).
-- `server/scripts/deploy-parimutuel-market.ts` — mainnet deploy; reads
-  `PARIMUTUEL_TOKEN_ADDRESS`. `server/.env.example` documents the stablecoin registry.
-- Plan doc: `docs/superpowers/plans/2026-05-21-01-smart-contracts.md`.
+The product is **feature-complete and live on X Layer mainnet (chain 196)**.
 
-## ✅ DONE — Plan 2 (Oracle Resolution Pipeline)
-Commit: `feat(oracle): Plan 2 — autonomous resolution pipeline`.
-- `server/src/services/quorumResolver.ts` — idempotent orchestrator driven by real
-  on-chain state: `register → propose → (challenge window) → finalize`, one action per
-  match per pass.
-- `server/src/services/cupScheduler.ts` — periodic pass, **off by default**.
-- `cupOracleContract`: `registerCupOracleMatch` + `readCupChallengeWindow` added.
-- `GET /api/cup/resolver` (status) + `POST /api/cup/resolver/run`.
-- `server/scripts/test-quorum-resolver.ts` — dry-run verification (`test:cup-resolver`).
-- Safety: autonomous writes double-gated — `CUP_WRITE_API_ENABLED` + default-off
-  `CUP_RESOLVER_ENABLED`. Verified: server typecheck clean; resolver dry-run runs
-  end-to-end against live feeds, sends zero txs.
-- Plan doc: `docs/superpowers/plans/2026-05-21-02-oracle-pipeline.md`.
+| Area | Status |
+|---|---|
+| Smart contracts — pari-mutuel market, bonded oracle, M-of-N arbiter, SBT | ✅ built + deployed |
+| Oracle resolution pipeline — multi-source quorum, autonomous resolver | ✅ |
+| Market backend + RPC event indexer | ✅ |
+| Frontend — 8 X Cup screens | ✅ |
+| AI pundit (Hermes) | ✅ |
+| Free-to-play — free picks, bracket, leaderboard, leagues, FanPass SBT | ✅ |
+| Bonded-oracle hardening — `CupOracleV3` + `ArbiterMultisig` | ✅ deployed |
+| `BracketNFT` | ✅ built + fork-tested · ⏳ not yet deployed |
+| Product polish — onboarding, demo mode, Settings, connect modal, tooltips, confetti | ✅ |
+| In-app documentation hub (Overview · Architecture · Integrations · API) | ✅ |
 
-## ✅ DONE — Plan 3 (Market Backend + Indexer)
-Commits: `cc13871` (keccak match-id fix), `8167e3a` (market backend).
-- `services/parimutuelContract.ts` — ABI, reads, operator writes, unsigned
-  approve/stake/claim calldata builders for the user's wallet.
-- `services/marketIndexer.ts` — RPC `getLogs` poller; reconstructs market state from
-  events; in-memory mirror + DB persistence; cursor backfill.
-- `services/marketStore.ts` — DB cache (`cup_markets`/`cup_stakes`/`cup_claims`/
-  `cup_indexer_state`), DB-optional.
-- `services/marketService.ts` — joins live fixtures + indexed state → `MarketView` /
-  `MarketPosition`, pool-share odds.
-- `routes/markets.ts` — `GET /api/markets[/:id[/position]]`, `/indexer`, stake/claim-tx
-  builders, gated operator `ensure`/`settle`.
-- `utils/cupIds.ts` — length-safe keccak match-id encoding (fixes a latent
-  `encodeBytes32String` overflow in the oracle path).
-- Verified: server typecheck clean; `test:market` lists 104 real World Cup 2026 fixtures
-  as markets with honest `contract_not_deployed` state, zero txs.
-- Plan doc: `docs/superpowers/plans/2026-05-21-03-market-backend.md`.
+Per-plan implementation plans live in `docs/superpowers/plans/`.
 
-## ✅ DONE — Plan 4 (Frontend — 8 X Cup screens)
-Commit: `e52881d` (`feat(ui): Plan 4 …`).
-- Dark stadium / night-match theme — floodlit-pitch green + champion gold, Anton
-  display font (`src/index.css`).
-- X Cup navigation (Predict / Compete / Intel); real OKX Wallet connect — EIP-1193,
-  X Layer 196 network guard, `sendTx` (`walletStore`).
-- 8 screens, all on real backend data: Markets feed, Market detail (approve→stake),
-  My Bets (claim), Bracket, Leaderboard, AI Pundit, FanPass, Developers.
-- Real team flags via a FIFA→ISO map; typed market API client + `useApi` hook.
-- Backend: `GET /api/markets/positions?wallet=` for My Bets.
-- Verified: `tsc` clean, `vite build` clean, Markets renders 104 real World Cup
-  fixtures with honest pre-deploy states.
-- Plan doc: `docs/superpowers/plans/2026-05-21-04-frontend.md`.
+## Live on X Layer mainnet (chain 196)
 
-## ✅ DONE — Plan 5 (AI Pundit + deliverables)
-Commits: `feat(pundit): Plan 5 …`, `docs: X Cup README, MIT LICENSE, contract registry`.
-- `services/punditService.ts` — **Hermes**, a Claude-backed pundit: reads a real fixture
-  + the multi-source heuristic edge, returns a conviction-weighted verdict. Honest
-  `heuristic` fallback with no API key. `GET /api/cup/pundit[/:matchId]`.
-- AI Pundit screen wired to the real Hermes service; `test:pundit` dry-run verified
-  (real Claude verdicts).
-- Deliverables: `LICENSE` (MIT), `README.md` (X Cup rewrite), `docs/xcup/CONTRACTS.md`.
-- Plan doc: `docs/superpowers/plans/2026-05-21-05-pundit-deliverables.md`.
+The **active stack** is the bonded-oracle V3 set. Full registry, roles and
+verification inputs: `docs/xcup/CONTRACTS.md`.
 
-## ✅ BUILD COMPLETE — contracts deployed
-All 5 plans done; all three contracts are live on X Layer mainnet (chain 196):
-- `CupOracleV2` — `0xE4dFef03E107225f2239CFfF955a378A9a8158Be`
-- `ParimutuelMarket` — `0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7` (settles in USDT,
-  deploy block 60609636) — `server/.env` set; the event indexer is live and caught up.
-- `FanPassSBT` — `0x74F75532428A99E613a865C97D1084b7f38241BD`
-Registry: `docs/xcup/CONTRACTS.md`.
+| Contract | Address |
+|---|---|
+| `CupOracleV3` | `0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6` |
+| `ArbiterMultisig` | `0x792152c274c42C588D5551C9141C21106d3A2Cce` |
+| `ParimutuelMarket` | `0x0431576845B77a743C87be323c04fad02201E08b` |
+| `FanPassSBT` | `0x74F75532428A99E613a865C97D1084b7f38241BD` |
 
-Onboarding docs done — `docs/xcup/GUIDE.md` (fan how-to-use · developer integration ·
-FAQ), satisfying the DESIGN §12 documentation deliverable.
+The pre-hardening `CupOracleV2` (`0xE4dFef03…`) and its V2-era `ParimutuelMarket`
+(`0xdB4F6A0C…`) are **superseded** — see the "Superseded" table in `CONTRACTS.md`.
 
-Remaining (user steps, no code): verify the contracts on the OKX X Layer explorer
-(single file · solc **v0.8.35** · optimizer 200 · MIT — see `CONTRACTS.md` / GUIDE),
-record the demo video, create the submission X account, submit the Google Form.
-Markets report `market_not_created` until the operator opens them (`POST /api/markets/ensure`).
+Bonds: 50 USDT · 1 h challenge window · 0% protocol fee · 1 h safety timelock.
+Tests: **45 fork tests** (26 `ParimutuelMarket` + 19 `CupOracleV3` /
+`ArbiterMultisig`) against a forked X Layer mainnet — `npm run contracts:test`.
 
-## ⚠ KEY DECISIONS (carry forward)
-- **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet phase.
-- **Stablecoin: USDT + USDC.** `ParimutuelMarket` is token-agnostic; the deploy picks one
-  via `PARIMUTUEL_TOKEN_ADDRESS`. Fork tests cover both.
-  USDT `0x1E4a5963aBFD975d8c9021ce480b42188849D41d`,
-  USDC `0x74b7F16337b8972027F6196A17a631aC6dE26d22` (both 6-decimal).
-- Toolchain: **Hardhat 2** + `.cjs` config & tests (repo root is ESM). Fork config
-  registers chain 196 hardfork history + mines one local block (EDR workaround).
-- Outcome enum mirrors `CupOracleV2`: **1=Home, 2=Draw, 3=Away**; oracle `state==3` =
-  Finalized.
-- **Mainnet deploy + contract verification = USER-GATED** (real OKB gas + live
-  money-holding contract). Not run autonomously.
+## Key decisions (carry forward)
 
-## ▶ NEXT STEP
-Build is complete — see **BUILD COMPLETE** above. The only remaining items are
-user-gated (mainnet deploy + verification, demo video, submission X account).
+- **Mainnet only** — deploy target X Layer mainnet (chain 196); no public-testnet
+  phase. De-risked via fork tests and small first runs.
+- **Settlement token USDT**; staking in USDT/USDC/OKB — a non-USDT token is swapped
+  to USDT in the user's wallet via the OKX DEX aggregator before staking.
+- Outcome enum mirrors the oracle: **1=Home, 2=Draw, 3=Away**.
+- Toolchain: **Hardhat 2** + `.cjs` config & tests (repo root is ESM); deploy
+  scripts compile with the `solc` npm package (`^0.8.35`).
+- **Mainnet writes are USER-GATED** — real OKB gas; autonomous writes are
+  double-gated by `CUP_WRITE_API_ENABLED` + default-off `CUP_RESOLVER_ENABLED`.
+
+## Remaining — user-gated operator steps (no code)
+
+These need real OKB gas / a funded wallet and are intentionally not run
+autonomously:
+
+1. **Open markets on-chain** — markets read `market_not_created` until the operator
+   opens them:
+   `ENSURE_LIMIT=16 CUP_WRITE_API_ENABLED=true npm --prefix server run ensure:markets`
+   (idempotent — existing markets are skipped).
+2. **Verify the 4 contracts** on the OKX X Layer explorer — runbook:
+   `docs/contract-verification.md` (single file · `solc` 0.8.35 · optimizer 200 · MIT).
+3. **Deploy `BracketNFT`** to mainnet — `npm --prefix server run deploy:bracket-nft`,
+   then set `BRACKET_NFT_ADDRESS` in `server/.env`.
+4. *(optional)* Raise the arbiter from 1-of-1 to a **2-of-3** panel via the oracle's
+   timelocked arbiter-change path.
+5. **Hackathon submission** — record the demo video, create the submission X
+   account, submit the Google Form.
