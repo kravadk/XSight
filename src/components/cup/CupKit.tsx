@@ -23,7 +23,7 @@ export function toBaseUnits(amount: number, decimals = 6): string {
 export function formatPool(value: string | undefined): string {
   const n = fromBaseUnits(value);
   if (n >= 1000) return `$${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k`;
-  return `$${n.toLocaleString(undefined, { maximumFractionDigits: n < 10 ? 2 : 0 })}`;
+  return `$${n.toLocaleString('en-US', { maximumFractionDigits: n < 10 ? 2 : 0 })}`;
 }
 
 export function kickoffCountdown(iso: string): { label: string; live: boolean } {

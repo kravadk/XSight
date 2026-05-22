@@ -21,7 +21,7 @@ export function AnimatedNumber({
 }: Props) {
   const animated = useCountUp(value);
   const display = isStatic ? value : animated;
-  const formatted = display.toLocaleString(undefined, {
+  const formatted = display.toLocaleString('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

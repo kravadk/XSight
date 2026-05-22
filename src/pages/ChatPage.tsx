@@ -221,25 +221,30 @@ function SessionList({
             {sessions.map((s) => {
               const active = s.id === sessionId;
               return (
-                <button
+                <div
                   key={s.id}
-                  onClick={() => onSelect(s.id)}
-                  className={`group flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 text-left transition-colors ${
+                  className={`group flex w-full items-start gap-2 rounded-xl px-2.5 py-2.5 transition-colors ${
                     active
                       ? 'bg-[rgba(167,139,250,0.16)] text-[#F5F5F5] ring-1 ring-[rgba(167,139,250,0.24)]'
                       : 'text-[#D1D5DB] hover:bg-[rgba(255,255,255,0.05)] hover:text-[#F5F5F5]'
                   }`}
                 >
-                  <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-bold leading-snug">{s.title}</div>
-                    {s.lastMessage && <div className="mt-0.5 truncate text-[10px] leading-relaxed text-[#A3A3A3]">{s.lastMessage}</div>}
-                    {s.messageCount > 0 && (
-                      <div className="mt-1 text-[9px] font-mono text-[#7A7A7A]">
-                        {Math.ceil(s.messageCount / 2)} msg{Math.ceil(s.messageCount / 2) !== 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => onSelect(s.id)}
+                    className="flex min-w-0 flex-1 items-start gap-2 text-left"
+                  >
+                    <MessageSquare className="mt-0.5 h-3.5 w-3.5 shrink-0 opacity-70" />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-bold leading-snug">{s.title}</div>
+                      {s.lastMessage && <div className="mt-0.5 truncate text-[10px] leading-relaxed text-[#A3A3A3]">{s.lastMessage}</div>}
+                      {s.messageCount > 0 && (
+                        <div className="mt-1 text-[9px] font-mono text-[#7A7A7A]">
+                          {Math.ceil(s.messageCount / 2)} msg{Math.ceil(s.messageCount / 2) !== 1 ? 's' : ''}
+                        </div>
+                      )}
+                    </div>
+                  </button>
                   <button
                     type="button"
                     title="Delete session"
@@ -249,7 +254,7 @@ function SessionList({
                   >
                     <X className="h-3.5 w-3.5" />
                   </button>
-                </button>
+                </div>
               );
             })}
           </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { api, type MarketViewDto } from '../api/client';
 import { useApi } from '../hooks/useApi';
@@ -47,6 +47,12 @@ export function MarketsPage() {
       }),
     [markets, filter, typeFilter],
   );
+
+  // Cap the initial render — 104 World Cup fixtures × 3 market types is 300+ cards.
+  const PAGE = 36;
+  const [visible, setVisible] = useState(PAGE);
+  useEffect(() => setVisible(PAGE), [filter, typeFilter]);
+  const shown = filtered.slice(0, visible);
 
   return (
     <div className="mx-auto w-full max-w-7xl">
@@ -108,10 +114,18 @@ export function MarketsPage() {
         onRetry={reload}
       >
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((m) => (
+          {shown.map((m) => (
             <MarketCard key={m.id} market={m} onOpen={() => openMarket(m.id)} />
           ))}
         </div>
+        {filtered.length > visible && (
+          <button
+            onClick={() => setVisible((v) => v + PAGE)}
+            className="mx-auto mt-5 block rounded-full border border-stadium-line px-5 py-2 text-xs font-bold text-stadium-text-secondary transition-colors hover:border-stadium-line-strong hover:text-stadium-text"
+          >
+            Load more · {filtered.length - visible} left
+          </button>
+        )}
       </StatePanel>
     </div>
   );

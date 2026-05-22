@@ -166,7 +166,8 @@ export function DevelopersPage() {
           {adapters.data ? (
             <>
               <div className="mb-2 text-xs text-stadium-text-secondary">
-                {adapters.data.liveSources}/{adapters.data.requiredLiveSources} live sources ·{' '}
+                {adapters.data.liveSources} live ·{' '}
+                {adapters.data.requiredLiveSources} needed for quorum ·{' '}
                 {adapters.data.readyForProductionSettlement ? 'quorum ready' : 'quorum incomplete'}
               </div>
               <div className="flex flex-col gap-1.5">

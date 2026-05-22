@@ -30,12 +30,13 @@ export function BracketPage() {
     if (saved.data?.bracket) setPicks(saved.data.bracket.picks);
   }, [saved.data]);
 
-  const fixtures = markets.data?.markets ?? [];
-  const byStage = useMemo(() => {
-    const groups: Record<string, typeof fixtures> = {};
-    for (const f of fixtures) (groups[f.stage] ??= []).push(f);
-    return groups;
-  }, [fixtures]);
+  // One row per fixture. The markets feed carries three market types per fixture
+  // (1X2 / Over-Under / BTTS); a bracket only picks the match winner, so filter to
+  // the 1X2 market and key picks by the underlying fixture id.
+  const fixtures = useMemo(
+    () => (markets.data?.markets ?? []).filter((m) => m.marketType === '1X2'),
+    [markets.data],
+  );
 
   async function mintNft() {
     const tx = nft.data?.mintTx;
@@ -130,36 +131,42 @@ export function BracketPage() {
         onRetry={markets.reload}
       >
         <div className="flex flex-col gap-4">
-          {Object.entries(byStage).map(([stage, list]) => (
-            <div key={stage} className="stadium-card p-4">
-              <div className="mb-2 text-micro text-pitch">{stage}</div>
-              <div className="flex flex-col gap-2">
-                {list.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2">
-                    <span className="w-28 shrink-0 truncate text-xs font-semibold text-stadium-text">
-                      {f.home.code} v {f.away.code}
-                    </span>
-                    <div className="ml-auto flex gap-1">
-                      {(['HOME', 'DRAW', 'AWAY'] as Outcome[]).map((o) => (
-                        <button
-                          key={o}
-                          onClick={() => setPicks((p) => ({ ...p, [f.id]: o }))}
-                          className={cn(
-                            'rounded-lg border px-2.5 py-1 text-[10px] font-bold',
-                            picks[f.id] === o
-                              ? 'border-pitch bg-pitch-bg text-stadium-text'
-                              : 'border-stadium-line text-stadium-text-secondary hover:border-stadium-line-strong',
-                          )}
-                        >
-                          {o === 'HOME' ? f.home.code : o === 'AWAY' ? f.away.code : 'DRAW'}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="stadium-card p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-micro text-pitch">Every fixture</span>
+              <span className="text-micro text-stadium-text-muted">
+                {Object.keys(picks).length}/{fixtures.length} picked
+              </span>
             </div>
-          ))}
+            <div className="flex flex-col gap-2">
+              {fixtures.map((f) => (
+                <div
+                  key={f.cupMatchId}
+                  className="flex items-center gap-2 border-b border-stadium-line/60 pb-2 last:border-0 last:pb-0"
+                >
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-stadium-text">
+                    {f.home.code} v {f.away.code}
+                  </span>
+                  <div className="flex shrink-0 gap-1">
+                    {(['HOME', 'DRAW', 'AWAY'] as Outcome[]).map((o) => (
+                      <button
+                        key={o}
+                        onClick={() => setPicks((p) => ({ ...p, [f.cupMatchId]: o }))}
+                        className={cn(
+                          'rounded-lg border px-2.5 py-1 text-[10px] font-bold transition-colors',
+                          picks[f.cupMatchId] === o
+                            ? 'border-pitch bg-pitch-bg text-stadium-text'
+                            : 'border-stadium-line text-stadium-text-secondary hover:border-stadium-line-strong',
+                        )}
+                      >
+                        {o === 'HOME' ? f.home.code : o === 'AWAY' ? f.away.code : 'DRAW'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
           {connected && (
             <button
               onClick={() => void save()}

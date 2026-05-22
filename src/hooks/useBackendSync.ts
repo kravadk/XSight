@@ -3,6 +3,7 @@ import { api, ApiError } from '../api/client';
 import { useApiStore } from '../store/apiStore';
 import { useWalletStore } from '../store/walletStore';
 import { useSyncStore } from '../store/syncStore';
+import { useUiStore } from '../store/uiStore';
 import { notify } from '../store/notificationsStore';
 
 const POLL_MS = 15_000;
@@ -19,6 +20,9 @@ export const useBackendSync = () => {
   const setApiError = useApiStore((s) => s.setError);
   const setLastSync = useSyncStore((s) => s.setLastSync);
   const setOnline = useSyncStore((s) => s.setOnline);
+  // The agent portfolio belongs to the XSight copilot surface. On X Cup the wallet
+  // must reflect the USER's own connection, so we never auto-populate it there.
+  const product = useUiStore((s) => s.product);
 
   const seenCallIds = useRef<Set<string>>(new Set());
   const isFirstRun = useRef(true);
@@ -110,7 +114,10 @@ export const useBackendSync = () => {
       if (tickInProgress.current) return; // prevent parallel ticks
       tickInProgress.current = true;
       try {
-        const results = await Promise.allSettled([syncPortfolio(), syncApi(), syncEconomy()]);
+        const jobs = product === 'xsight'
+          ? [syncPortfolio(), syncApi(), syncEconomy()]
+          : [syncApi(), syncEconomy()];
+        const results = await Promise.allSettled(jobs);
         if (cancelled) return;
         const anyFulfilled = results.some((r) => r.status === 'fulfilled');
         if (anyFulfilled) {
@@ -152,5 +159,6 @@ export const useBackendSync = () => {
     setApiError,
     setLastSync,
     setOnline,
+    product,
   ]);
 };

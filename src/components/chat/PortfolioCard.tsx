@@ -20,7 +20,7 @@ export function PortfolioCard({ advice }: Props) {
       </div>
 
       <div className="text-2xl font-bold text-[#F5F5F5] mb-4">
-        ${totalUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+        ${totalUsd.toLocaleString('en-US', { maximumFractionDigits: 2 })}
       </div>
 
       <div className="flex flex-col gap-2 mb-4">
