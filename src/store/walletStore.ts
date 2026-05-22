@@ -1,12 +1,14 @@
 import { create } from 'zustand';
+import type { OKXUniversalConnectUI } from '@okxconnect/ui';
 
 const X_LAYER_CHAIN_ID = 196;
 const X_LAYER_HEX = '0xc4';
+const X_LAYER_RPC = 'https://rpc.xlayer.tech';
 const X_LAYER_PARAMS = {
   chainId: X_LAYER_HEX,
   chainName: 'X Layer',
   nativeCurrency: { name: 'OKB', symbol: 'OKB', decimals: 18 },
-  rpcUrls: ['https://rpc.xlayer.tech'],
+  rpcUrls: [X_LAYER_RPC],
   blockExplorerUrls: ['https://www.okx.com/web3/explorer/xlayer'],
 };
 
@@ -18,7 +20,7 @@ interface Eip1193Provider {
 
 declare global {
   interface Window {
-    okxwallet?: Eip1193Provider;
+    // `okxwallet` is declared globally by @okxconnect; we read it via a local cast.
     ethereum?: Eip1193Provider;
   }
 }
@@ -26,7 +28,42 @@ declare global {
 /** Prefer the OKX Wallet injection; fall back to any EIP-1193 provider. */
 function getProvider(): Eip1193Provider | null {
   if (typeof window === 'undefined') return null;
-  return window.okxwallet ?? window.ethereum ?? null;
+  const okx = window.okxwallet as Eip1193Provider | undefined;
+  return okx ?? window.ethereum ?? null;
+}
+
+/**
+ * Connection mode. `injected` — the OKX Wallet browser extension / in-app dApp
+ * browser. `okxconnect` — the OKX Connect SDK (QR on desktop, deep link on mobile
+ * and Telegram), used when no provider is injected. Both expose the same store API.
+ */
+type WalletMode = 'injected' | 'okxconnect';
+let mode: WalletMode = 'injected';
+let okxUi: OKXUniversalConnectUI | null = null;
+const EIP155_X_LAYER = 'eip155:196';
+
+/** Lazily load + init the OKX Connect SDK — keeps it out of the main bundle. */
+async function getOkxUi(): Promise<OKXUniversalConnectUI> {
+  if (okxUi) return okxUi;
+  const { OKXUniversalConnectUI } = await import('@okxconnect/ui');
+  okxUi = await OKXUniversalConnectUI.init({
+    dappMetaData: {
+      name: 'X Cup',
+      icon: typeof window !== 'undefined' ? `${window.location.origin}/favicon.ico` : '',
+    },
+  });
+  return okxUi;
+}
+
+/** Route a JSON-RPC request through whichever wallet mode is active. */
+async function walletRpc<T>(method: string, params?: unknown[] | object): Promise<T> {
+  if (mode === 'okxconnect') {
+    if (!okxUi) throw new Error('Wallet not connected');
+    return okxUi.request<T>({ method, params }, EIP155_X_LAYER);
+  }
+  const provider = getProvider();
+  if (!provider) throw new Error('No wallet found');
+  return provider.request({ method, params }) as Promise<T>;
 }
 
 export interface WalletToken {
@@ -72,55 +109,87 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   chainId: 196,
   onXLayer: false,
   connecting: false,
-  walletAvailable: typeof window !== 'undefined' && Boolean(window.okxwallet ?? window.ethereum),
+  // Always true — with the OKX Connect fallback the connect flow works even with
+  // no injected wallet (QR on desktop, deep link on mobile / Telegram).
+  walletAvailable: true,
   tokens: [],
   totalUsd: 0,
   loading: false,
   error: null,
 
   connect: async () => {
-    const provider = getProvider();
-    if (!provider) {
-      set({ error: 'No wallet found. Install OKX Wallet to connect.', walletAvailable: false });
-      return;
-    }
     set({ connecting: true, error: null });
     try {
-      const accounts = (await provider.request({ method: 'eth_requestAccounts' })) as string[];
-      const address = accounts[0] ?? '';
+      const injected = getProvider();
+      if (injected) {
+        // --- injected OKX Wallet / EIP-1193 provider ---
+        mode = 'injected';
+        const accounts = (await injected.request({ method: 'eth_requestAccounts' })) as string[];
+        const address = accounts[0] ?? '';
+        if (!address) throw new Error('No account returned');
+        const chainHex = (await injected.request({ method: 'eth_chainId' })) as string;
+        const chainId = Number.parseInt(chainHex, 16);
+        set({
+          connected: true,
+          address,
+          short: shorten(address),
+          chainId,
+          onXLayer: chainId === X_LAYER_CHAIN_ID,
+          connecting: false,
+          walletAvailable: true,
+        });
+
+        if (!listenersBound && injected.on) {
+          injected.on('accountsChanged', (...args: unknown[]) => {
+            const next = (args[0] as string[] | undefined)?.[0];
+            if (!next) get().disconnect();
+            else set({ address: next, short: shorten(next) });
+          });
+          injected.on('chainChanged', (...args: unknown[]) => {
+            const id = Number.parseInt(String(args[0]), 16);
+            set({ chainId: id, onXLayer: id === X_LAYER_CHAIN_ID });
+          });
+          listenersBound = true;
+        }
+        return;
+      }
+
+      // --- no injected provider: OKX Connect (QR / deep link, mobile + Telegram) ---
+      mode = 'okxconnect';
+      const ui = await getOkxUi();
+      await ui.openModal({
+        namespaces: {
+          eip155: { chains: [EIP155_X_LAYER], rpcMap: { '196': X_LAYER_RPC }, defaultChain: '196' },
+        },
+      });
+      const caip = ui.requestAccountsWithNamespace('eip155')[0] ?? '';
+      const address = caip.includes(':') ? caip.split(':').pop() ?? '' : caip;
       if (!address) throw new Error('No account returned');
-      const chainHex = (await provider.request({ method: 'eth_chainId' })) as string;
-      const chainId = Number.parseInt(chainHex, 16);
       set({
         connected: true,
         address,
         short: shorten(address),
-        chainId,
-        onXLayer: chainId === X_LAYER_CHAIN_ID,
+        chainId: X_LAYER_CHAIN_ID,
+        onXLayer: true,
         connecting: false,
         walletAvailable: true,
       });
-
-      if (!listenersBound && provider.on) {
-        provider.on('accountsChanged', (...args: unknown[]) => {
-          const next = (args[0] as string[] | undefined)?.[0];
-          if (!next) get().disconnect();
-          else set({ address: next, short: shorten(next) });
-        });
-        provider.on('chainChanged', (...args: unknown[]) => {
-          const id = Number.parseInt(String(args[0]), 16);
-          set({ chainId: id, onXLayer: id === X_LAYER_CHAIN_ID });
-        });
-        listenersBound = true;
-      }
     } catch (err) {
       set({ connecting: false, error: err instanceof Error ? err.message : 'Wallet connection failed' });
     }
   },
 
-  disconnect: () => set({ connected: false, address: '', short: '', onXLayer: false }),
+  disconnect: () => {
+    if (mode === 'okxconnect' && okxUi) void okxUi.disconnect().catch(() => undefined);
+    set({ connected: false, address: '', short: '', onXLayer: false });
+  },
 
   ensureXLayer: async () => {
+    // OKX Connect sessions are opened on X Layer directly — no chain switch needed.
+    if (mode === 'okxconnect') {
+      set({ chainId: X_LAYER_CHAIN_ID, onXLayer: true });
+      return true;
+    }
     const provider = getProvider();
     if (!provider) return false;
     if (get().chainId === X_LAYER_CHAIN_ID) return true;
@@ -144,27 +213,16 @@ export const useWalletStore = create<WalletState>((set, get) => ({
   },
 
   sendTx: async ({ to, data, value }) => {
-    const provider = getProvider();
     const { address } = get();
-    if (!provider) throw new Error('No wallet found');
     if (!address) throw new Error('Wallet not connected');
     if (!(await get().ensureXLayer())) throw new Error('Switch your wallet to X Layer to continue');
-    const txHash = (await provider.request({
-      method: 'eth_sendTransaction',
-      params: [{ from: address, to, data, value: value ?? '0x0' }],
-    })) as string;
-    return txHash;
+    return walletRpc<string>('eth_sendTransaction', [{ from: address, to, data, value: value ?? '0x0' }]);
   },
 
   waitForTx: async (hash) => {
-    const provider = getProvider();
-    if (!provider) throw new Error('No wallet found');
     // X Layer blocks are ~1-2s; poll up to ~90s.
     for (let i = 0; i < 45; i++) {
-      const receipt = (await provider.request({
-        method: 'eth_getTransactionReceipt',
-        params: [hash],
-      })) as { status?: string } | null;
+      const receipt = await walletRpc<{ status?: string } | null>('eth_getTransactionReceipt', [hash]);
       if (receipt) {
         if (receipt.status && Number(receipt.status) === 0) {
           throw new Error(`Transaction reverted (${hash.slice(0, 10)}…)`);

@@ -25,6 +25,7 @@
     "contracts:test:bracket-nft": "hardhat test contracts/test/BracketNFT.test.cjs"
   },
   "dependencies": {
+    "@okxconnect/ui": "^1.9.1",
     "@types/qrcode": "^1.5.6",
     "clsx": "^2.1.1",
     "lucide-react": "^0.546.0",
