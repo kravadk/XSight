@@ -5,6 +5,20 @@
 > «нормального» продукту. Складено на основі офіційних docs/GitHub: UMA, Polymarket,
 > Azuro, Overtime/Thales, Kleros (ERC-792), Chainlink Functions.
 
+## Статус виконання
+
+- **Фаза 1 — ✅ зроблено** (`9d14aaf`): `SETTLEMENT-RULES.md` v1, чесне формулювання
+  оракула в `README`/`GUIDE`/`DESIGN`, `rulesHash` комітиться на rulebook.
+- **Фаза 2-3 — ✅ зроблено** (`320f786`): `CupOracleV3.sol` (bonds + slash + flag/
+  timelock) і `ArbiterMultisig.sol` (2-of-3, `ICupArbiter`). Закриває G1/G2/G3/G4/G6.
+- **Фаза 6 (тести) — ✅ зроблено** (`d1d80e7`): 19 fork-тестів проти X Layer mainnet
+  з реальним USDT — усі зелені.
+- **Фаза 4 + 6 (деплой-скрипт) — ✅ зроблено** (`31a5958`): `deploy-cup-oracle-v3.ts`
+  + version-aware бекенд (V3 ABI, bonded write-path).
+- **Деплой у mainnet — ⏳ user-gated** (рішення Розділ 5: 50 USDT bond, 0% fee, 1 год
+  вікно, Chainlink — стретч). Потрібні адреси 3 підписантів `ArbiterMultisig`.
+- **Фаза 5 (dust G7, minStake) — ⏳ на обговорення** (див. Розділ 3 Фаза 5).
+
 ---
 
 ## Розділ 1. Як це зроблено в лідерів (архітектурний дайджест)
