@@ -11,12 +11,12 @@
 
 [![X Layer](https://img.shields.io/badge/X_Layer-mainnet_live-2EBD85?style=flat-square)](https://www.okx.com/xlayer)
 [![Chain 196](https://img.shields.io/badge/chain-196-4AA8E0?style=flat-square)](https://www.okx.com/xlayer)
-[![Contracts](https://img.shields.io/badge/contracts-4_deployed-2EBD85?style=flat-square)](#deployed-contracts)
+[![Contracts](https://img.shields.io/badge/contracts-4_deployed-2EBD85?style=flat-square)](#live-on-x-layer-mainnet)
 [![Fork tests](https://img.shields.io/badge/fork_tests-45_passing-3FB950?style=flat-square)](#testing)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square)](contracts/)
 [![License](https://img.shields.io/badge/license-MIT-EAB308?style=flat-square)](LICENSE)
 
-**[⛓ Deployed contracts](#deployed-contracts)** &nbsp;·&nbsp; **[📖 Documentation](#documentation)** &nbsp;·&nbsp; **[⚖ Settlement rulebook](docs/xcup/SETTLEMENT-RULES.md)** &nbsp;·&nbsp; **[🚀 Run locally](#run-it-locally)**
+**[✨ Highlights](#why-x-cup-stands-out)** &nbsp;·&nbsp; **[🏆 Hackathon fit](#one-product-five-hackathon-tracks)** &nbsp;·&nbsp; **[⛓ Live contracts](#live-on-x-layer-mainnet)** &nbsp;·&nbsp; **[🚀 Run it](#run-it-locally)** &nbsp;·&nbsp; **[📖 Docs](#documentation)**
 
 </div>
 
@@ -25,38 +25,35 @@
 > **Built for the OKX X Layer × X Cup hackathon.** The full contract stack —
 > bonded oracle, M-of-N arbiter, pari-mutuel market and soulbound badge — is
 > **live on X Layer mainnet (chain 196)**. Every payout is a verifiable on-chain
-> transaction; nothing in this repo is a mock.
+> transaction, every test runs against real tokens, and nothing in this repo is
+> a mock.
 
 ---
 
 ## Contents
 
-- [X Cup in one minute](#x-cup-in-one-minute)
-- [Why X Cup is shaped differently](#why-x-cup-is-shaped-differently)
-- [How a pari-mutuel pool works](#how-a-pari-mutuel-pool-works)
-- [The market lifecycle](#the-market-lifecycle)
-- [Market types](#market-types)
-- [Staking — pay with any token](#staking--pay-with-any-token)
-- [The bonded settlement oracle](#the-bonded-settlement-oracle)
-- [Multi-source result quorum](#multi-source-result-quorum)
-- [Hermes — the AI pundit](#hermes--the-ai-pundit)
-- [Free-to-play layer](#free-to-play-layer)
-- [The 8 screens](#the-8-screens)
-- [Open settlement layer — x402 & MCP](#open-settlement-layer--x402--mcp)
-- [OKX ecosystem integrations](#okx-ecosystem-integrations)
-- [Architecture](#architecture)
-- [Deployed contracts](#deployed-contracts)
-- [Tech stack](#tech-stack)
-- [Run it locally](#run-it-locally)
-- [Testing](#testing)
-- [Project structure](#project-structure)
-- [Documentation](#documentation)
-- [Roadmap](#roadmap)
-- [Principles](#principles)
+**For judges** — start here:
+[What X Cup is](#what-x-cup-is) ·
+[Why it stands out](#why-x-cup-stands-out) ·
+[Hackathon fit](#one-product-five-hackathon-tracks) ·
+[OKX integrations](#okx-ecosystem-integrations) ·
+[Live contracts](#live-on-x-layer-mainnet) ·
+[The 8 screens](#the-8-screens)
+
+**The deep dive:**
+[How X Cup works](#how-x-cup-works) ·
+[Architecture](#architecture) ·
+[Tech stack](#tech-stack) ·
+[Run it locally](#run-it-locally) ·
+[Testing](#testing) ·
+[Project structure](#project-structure) ·
+[Documentation](#documentation) ·
+[Roadmap](#roadmap) ·
+[Principles](#principles)
 
 ---
 
-## X Cup in one minute
+## What X Cup is
 
 A fan opens X Cup, picks a World Cup outcome — **who wins**, **how many goals**,
 **whether both teams score** — and stakes a stablecoin into a shared
@@ -69,15 +66,15 @@ with a **bonded optimistic oracle** — proposing a false result costs a slashab
 feeds. A wrong result is challengeable, and the liar's bond pays the challenger.
 
 Everything around the money is built like a real product: stake with **any
-token** (OKX DEX swaps it to USDT in your wallet), an autonomous **AI pundit** to
-play against, a full **free-to-play** layer that needs no wallet, and an open
-**x402 + MCP** data layer so other apps and agents can consume settlement.
+token**, an autonomous **AI pundit** to play against, a full **free-to-play**
+layer that needs no wallet, and an open **x402 + MCP** data layer so other apps
+and agents can consume settlement.
 
 ```
-   ┌──────────┐   stake USDT/USDC/OKB   ┌───────────────┐   2-of-3 feeds agree   ┌──────────────┐
-   │   FAN    │ ──────────────────────▶ │  POOL  (open)  │ ─────────────────────▶ │ ORACLE propose│
-   └──────────┘                         └───────────────┘                        │  (+50 bond)   │
-        ▲                                                                         └──────┬───────┘
+   ┌──────────┐   stake USDT/USDC/OKB   ┌───────────────┐   2-of-3 feeds agree   ┌───────────────┐
+   │   FAN    │ ──────────────────────▶ │  POOL  (open)  │ ─────────────────────▶ │ ORACLE propose │
+   └──────────┘                         └───────────────┘                        │   (+50 bond)   │
+        ▲                                                                         └──────┬────────┘
         │            pro-rata claim()              ┌───────────────┐   finalized          │
         └───────────────────────────────────────── │ POOL (settled)│ ◀────────────────────┘
               your stake × pool ÷ winning stake     └───────────────┘   challenge window passes
@@ -85,41 +82,102 @@ play against, a full **free-to-play** layer that needs no wallet, and an open
 
 ---
 
-## Why X Cup is shaped differently
+## Why X Cup stands out
 
-Most on-chain prediction markets are **infrastructure** — an order book or an
-automated market maker that needs professional market-makers or locked
-liquidity-provider capital before a single bet is placed, and that exposes those
-providers to losses. X Cup is the opposite: a **vertical consumer product** built
-on one mechanism that needs neither.
+Eight things make X Cup more than a hackathon demo — each is **built and live**,
+not promised:
 
-| | Typical order-book / AMM market | **X Cup** |
+| | Feature | Why it matters |
 |---|---|---|
-| Liquidity to start | market-makers or locked LP capital | none — the pool funds itself |
-| Who can lose capital | LPs underwrite the bets | nobody — there is no LP |
-| Custody of stakes | varies | the operator never holds stakes |
-| Payout | a curve / spread, skimmed by a maker | pure pro-rata math in `claim()` |
-| Result trust | an external feed taken on faith | a bonded oracle — a false result is slashable |
-| Time to first bet | onboarding + liquidity bootstrapping | under a minute |
-
-Three properties define it:
-
-- **No house, no LP risk.** The pool funds itself. Nobody underwrites the bets,
-  nobody can lose liquidity-provider capital, and there is no spread skimmed by a
-  market maker.
-- **Un-riggable money.** `claim()` is pure on-chain arithmetic over the staked
-  pool. The operator never custodies stakes and cannot alter a payout.
-- **An economically-defended result.** The only thing that has to be trustworthy
-  is *which outcome won* — and X Cup secures that with a bonded oracle where
-  proposing a false result costs real money (see
-  [the oracle section](#the-bonded-settlement-oracle)).
-
-The result: a fan opens X Cup, reads a market, and bets within a minute — no
-counterparty, no custody, and a settlement path they can verify themselves.
+| 🔒 | **Bonded optimistic oracle** | Results are *economically defended* — proposing a false outcome costs a slashable 50-USDT bond, and an honest challenger takes it. Not "trust the feed". |
+| 🎰 | **Pari-mutuel — zero house** | Pools fund themselves: no market-maker, no LP capital at risk, no spread. `claim()` is pure on-chain math the operator cannot touch. |
+| 💸 | **Stake with any token** | USDT, USDC or OKB — a non-USDT token is swapped to USDT *in your own wallet* via the OKX DEX aggregator. No custody, every step user-signed. |
+| 🤖 | **Hermes — autonomous AI pundit** | A Claude-backed agent issues a conviction-weighted pick for every fixture. A real opponent every fan races on the leaderboard. |
+| 🛰 | **2-of-3 multi-source quorum** | Three independent sports feeds; a result settles only when two agree. Conflicts are held in an honest state, never guessed. |
+| 🎮 | **Full free-to-play layer** | Bracket, leaderboard, private leagues and a soulbound FanPass — the whole product is playable end-to-end with no wallet and no risk. |
+| 🔌 | **Open data layer — x402 + MCP** | Settlement data is a public good: pay-per-call x402 endpoints and an MCP server that other apps and AI agents consume directly. |
+| ✅ | **Live on mainnet, no mocks** | Four contracts deployed to X Layer; 45 fork tests run against the *real* USDT/USDC contracts. Nothing in the codebase is stubbed. |
 
 ---
 
-## How a pari-mutuel pool works
+## One product, five hackathon tracks
+
+X Cup is a single cohesive product — but it lands across **five** eligible
+hackathon tracks at once, because each layer is a genuine, working feature:
+
+| Track | How X Cup delivers it |
+|---|---|
+| 🎯 **Prediction markets** | The core: pari-mutuel World Cup pools, three independent market types per fixture, settled by a bonded optimistic oracle. |
+| 🤖 **AI agents** | *Hermes*, an autonomous Claude-backed pundit; an MCP server exposing agent-readable tools; x402 machine-payable data endpoints. |
+| 🎟 **NFT** | A collectible **Bracket NFT** of a saved tournament call, and a **soulbound FanPass** on-chain reputation badge (SBT). |
+| 👥 **Social** | Private **leagues** with invite codes, a global **leaderboard**, fan-vs-fan and fan-vs-AI competition. |
+| 🕹 **GameFi** | A full **free-to-play** layer — predict the whole 104-fixture bracket, score it live against Hermes, climb FanPass reputation tiers. |
+
+---
+
+## OKX ecosystem integrations
+
+X Cup is built natively on the OKX stack — these are not bolt-ons, they are how
+the product works:
+
+| OKX surface | How X Cup uses it |
+|---|---|
+| **X Layer** (chain 196) | The entire contract stack — oracle, arbiter, market, badge — is deployed and **live on X Layer mainnet**. |
+| **OKX DEX aggregator** | Powers *stake with any token*: the chosen token is swapped to the settlement USDT in the user's own wallet before staking, over aggregated on-chain liquidity. |
+| **OKX Wallet / OKX Connect** | Wallet connection — injected OKX Wallet on desktop, and OKX Connect (QR / deep link) for mobile browsers and Telegram. |
+| **x402** | Pay-per-call data endpoints settled in USDT on X Layer — the open-data layer for AI agents and partner apps. |
+| **OKB** | A first-class stake token (swapped to USDT for settlement) and the X Layer gas token. |
+
+---
+
+## Live on X Layer mainnet
+
+**This is not a testnet demo.** The full stack is deployed and verifiable on
+**X Layer mainnet (chain 196)** — click any address to open it in the explorer:
+
+| Contract | Address | Role |
+|---|---|---|
+| `CupOracleV3` | [`0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6`](https://www.okx.com/web3/explorer/xlayer/address/0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6) | Bonded optimistic settlement oracle |
+| `ArbiterMultisig` | [`0x792152c274c42C588D5551C9141C21106d3A2Cce`](https://www.okx.com/web3/explorer/xlayer/address/0x792152c274c42C588D5551C9141C21106d3A2Cce) | M-of-N arbiter for challenged results |
+| `ParimutuelMarket` | [`0x0431576845B77a743C87be323c04fad02201E08b`](https://www.okx.com/web3/explorer/xlayer/address/0x0431576845B77a743C87be323c04fad02201E08b) | Pari-mutuel pools — settles in USDT, reads `CupOracleV3` |
+| `FanPassSBT` | [`0x74F75532428A99E613a865C97D1084b7f38241BD`](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD) | Soulbound fan-reputation badge |
+
+Every stake, bond, settlement and payout is an on-chain transaction a judge can
+open and verify directly. `BracketNFT` is built and fork-tested; the
+pre-hardening `CupOracleV2` and its market are superseded. Full registry,
+explorer links and verification inputs in [`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
+
+**Want to run it?** → [Run it locally](#run-it-locally) · **Want the test proof?** → [Testing](#testing)
+
+---
+
+## The 8 screens
+
+The product surface a judge can click through — every screen is real and wired
+to the live backend:
+
+| Screen | What you do there |
+|---|---|
+| **Markets** | Browse every World Cup fixture × 3 market types; filter by status and type; see live pool-implied odds. |
+| **Market detail** | One market — the Hermes AI read, outcome buckets with odds, a stake panel (any token), a free no-stake pick, the live oracle state. |
+| **My Bets** | Your open and settled positions, claimable estimates, and one-tx Claim on winning bets. |
+| **Bracket** | Pick all 104 fixtures, save your bracket, score it against Hermes, and mint a Bracket NFT. |
+| **Leaderboard** | Global ranking by pick accuracy — you vs every fan vs the AI — plus private leagues. |
+| **AI Pundit** | Every Hermes pick with its confidence and reasoning. |
+| **FanPass** | Your on-chain football-IQ score, its five-part breakdown, and the soulbound badge. |
+| **Developers** | The deployed contracts, the oracle source adapters, the on-chain settlement log, and the x402 / MCP surface. |
+
+A first-run **walkthrough**, a **demo mode** for visitors with no wallet, a
+**Settings** panel and a guided wallet **connect modal** make the product
+approachable from the first second.
+
+---
+
+## How X Cup works
+
+The mechanism, end to end — for the technically-minded judge.
+
+### Pari-mutuel pools
 
 Everyone who backs an outcome stakes into a **shared pool**. When the result is
 final, the winning side splits the *entire* pool pro-rata to stake:
@@ -151,9 +209,7 @@ Home wins:
 There is no fixed-odds book: the *implied odds* are simply each outcome pool's
 share of the total, and they move as fans stake.
 
----
-
-## The market lifecycle
+### The market lifecycle
 
 Each market is a small state machine on `ParimutuelMarket`:
 
@@ -170,9 +226,7 @@ to release winnings — and guarded by `nonReentrant` + checks-effects-interacti
 The market is **token-agnostic**: the live instance settles in USDT, but the
 contract handles any standard or non-standard ERC-20.
 
----
-
-## Market types
+### Market types
 
 Every World Cup fixture carries **three independent pari-mutuel markets**, each
 its own on-chain pool and its own oracle record:
@@ -180,23 +234,18 @@ its own on-chain pool and its own oracle record:
 | Market | Outcomes | Resolves on |
 |---|---|---|
 | **Match Result (1X2)** | Home · Draw · Away | The official final result. |
-| **Over / Under 2.5 goals** | Over · Under | Total goals in the match — 3+ = Over, 2 or fewer = Under. |
+| **Over / Under 2.5 goals** | Over · Under | Total goals — 3+ = Over, 2 or fewer = Under. |
 | **Both Teams To Score** | Yes · No | Whether each side scored at least one goal. |
 
-All three settle from the **same agreed final score**, so a fan can take a view
-on the winner, the goal count, and both-teams-to-score independently on the same
-fixture. Knockout fixtures are handled with care: a knockout match cannot end in
-a draw, so if the feeds only carry a level regulation score the resolver **holds**
-the Match Result market for operator settlement rather than ever publishing a
-wrong "Draw". The full rule set is published in
-[`SETTLEMENT-RULES.md`](docs/xcup/SETTLEMENT-RULES.md).
+All three settle from the **same agreed final score**. Knockout fixtures are
+handled with care: a knockout match cannot end in a draw, so if the feeds only
+carry a level regulation score the resolver **holds** the Match Result market
+for operator settlement rather than ever publishing a wrong "Draw". The full
+rule set is published in [`SETTLEMENT-RULES.md`](docs/xcup/SETTLEMENT-RULES.md).
 
----
+### Stake with any token
 
-## Staking — pay with any token
-
-A fan should not have to hold the exact settlement token to place a bet. X Cup
-lets you **stake with USDT, USDC or OKB**:
+A fan should not need the exact settlement token to place a bet:
 
 1. Pick an outcome, an amount, and a token in the stake panel.
 2. If the token is **not** the settlement USDT, the backend builds an unsigned
@@ -206,19 +255,13 @@ lets you **stake with USDT, USDC or OKB**:
    exceed what actually landed; any positive slippage stays with you.
 4. The usual `approve` + `stake` follow, and the position appears in **My Bets**.
 
-USDT stakes skip the swap and go straight to `approve` + `stake`. Every step is a
-transaction the user signs in their own wallet.
+USDT stakes skip the swap and go straight to `approve` + `stake`.
 
----
+### The bonded settlement oracle
 
-## The bonded settlement oracle
-
-A prediction market is only as good as its result feed. X Cup settles through
-**`CupOracleV3`**, a **bonded optimistic oracle**.
-
-An *optimistic* oracle assumes a proposed result is correct unless someone
-challenges it. On its own that is just a trust assumption — so X Cup makes the
-assumption **expensive to abuse** by attaching a slashable bond to it:
+X Cup settles through **`CupOracleV3`**, a **bonded optimistic oracle**. An
+*optimistic* oracle assumes a proposed result is correct unless challenged — so
+X Cup makes abuse **expensive** by attaching a slashable bond:
 
 ```
 registerMatch ─▶ proposeResult ─▶ ┌─ no challenge ─▶ finalizeResult
@@ -235,123 +278,67 @@ registerMatch ─▶ proposeResult ─▶ ┌─ no challenge ─▶ finalizeRes
    inside the window; the match routes to the arbiter.
 3. **Arbitrate.** `ArbiterMultisig` — an M-of-N signer panel — rules. The
    **loser's bond is slashed to the winner**: a false proposal costs the proposer
-   50 USDT, and an honest challenge is rewarded. The protocol fee on the slash is
-   **0%**, so the whole loser's bond goes to the winner — maximum incentive to
-   challenge a wrong result.
+   50 USDT, an honest challenge is rewarded, and the protocol fee on the slash is
+   **0%** — maximum incentive to challenge a wrong result.
 4. **Finalize.** Unchallenged after the window — or once arbitrated — the result
    is final and the proposer's bond is returned in full. `ParimutuelMarket` only
    ever reads the *finalized* result.
 
-Additional guarantees:
+Additional guarantees: every match commits a `rulesHash`, `sourceHash`,
+`evidenceHash` and `evidenceUri` **on-chain**; a guarded `flag()` + safety
+**timelock** replaces any one-key emergency override; the arbiter address is
+timelock-upgradeable so the signer panel can grow without redeploying the
+oracle. Design rationale in [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md).
 
-- **Evidence on-chain.** Every match commits a `rulesHash` (binding it to the
-  published rulebook), a `sourceHash`, an `evidenceHash` and an `evidenceUri`.
-- **No instant admin override.** A guarded `flag()` + a safety **timelock**
-  replaces any one-key emergency finalize — a live challenge window can never be
-  silently overridden.
-- **Swappable arbiter.** The oracle's arbiter address is timelock-upgradeable, so
-  the M-of-N panel can grow without redeploying the oracle.
-- **Compatible reads.** `getMatch()` keeps a stable layout, so `ParimutuelMarket`
-  consumes the oracle without any market-side change.
-
-The design rationale is documented in [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md).
-
----
-
-## Multi-source result quorum
+### Multi-source result quorum
 
 The oracle never settles on a single feed. The backend ingests **three
 independent sports sources** — ESPN, football-data.org and TheSportsDB —
 normalizes them, and a result is only eligible for settlement when **at least 2
-of the 3 agree** on the same outcome (`evaluateSettlementQuorum`).
+of the 3 agree** (`evaluateSettlementQuorum`):
 
-- If two or more agree → `settlement_ready`, and the autonomous resolver may
-  propose it on-chain.
-- If no two agree → the market is held in `conflicting_sources` and **does not
-  settle** — no outcome is ever guessed.
-- If too few sources have a result yet → `quorum_unavailable`, and the market
-  waits.
+- two or more agree → `settlement_ready`, the resolver may propose it on-chain;
+- no two agree → held in `conflicting_sources`, the market **does not settle**;
+- too few sources have a result yet → `quorum_unavailable`, the market waits.
 
 Each source contributes a signed receipt (`provider`, `url`, `observedAt`,
 `payloadHash`), and the proposer attests the source count on-chain alongside the
 bond — so a false multi-source claim is itself slashable.
 
----
-
-## Hermes — the AI pundit
+### Hermes — the AI pundit
 
 **Hermes** is an autonomous, Claude-backed pundit. For every fixture it reads the
-fixture context and the multi-source edge signal and issues a **conviction-weighted
+context and the multi-source edge signal and issues a **conviction-weighted
 pick** — Home, Draw or Away with a confidence score — or **passes** when it sees
 no edge. Hermes is an *opponent to beat*, not betting advice: its picks are
-scored against real results and shown head-to-head against every fan on the
-Leaderboard and Bracket.
+scored against real results, head-to-head with every fan on the Leaderboard and
+Bracket.
 
----
+### Free-to-play layer
 
-## Free-to-play layer
-
-X Cup is playable end-to-end **without staking a cent** — a zero-risk on-ramp
-that still teaches the product:
+X Cup is playable end-to-end **without staking a cent** — a zero-risk on-ramp:
 
 - **Bracket** — call the whole tournament: pick the winner of all 104 fixtures,
-  save your bracket, and score it head-to-head against Hermes as results land. A
-  completed bracket is mintable as a collectible NFT.
-- **Leaderboard** — a global ranking by free-pick accuracy: you against every
-  fan and against Hermes. It opens at the first settlement.
-- **Leagues** — private competitions: create a league, share an invite code, and
+  save it, and score it against Hermes as results land. Mintable as an NFT.
+- **Leaderboard** — a global ranking by free-pick accuracy: you vs every fan vs
+  Hermes. Opens at the first settlement.
+- **Leagues** — private competitions: create a league, share an invite code,
   rank your friends on their own board.
-- **FanPass** — a **soulbound** on-chain reputation badge. A football-IQ **score**
-  is built from five inputs — x402 usage, cup interactions, on-chain activity,
-  consistency and oracle participation — and unlocks tiers as real activity grows.
+- **FanPass** — a **soulbound** reputation badge. A football-IQ score is built
+  from five inputs — x402 usage, cup interactions, on-chain activity, consistency
+  and oracle participation — and unlocks tiers as real activity grows.
 
----
+### Open settlement layer — x402 & MCP
 
-## The 8 screens
+X Cup's settlement data is a public good other apps and AI agents can consume:
 
-| Screen | What you do there |
-|---|---|
-| **Markets** | Browse every World Cup fixture × 3 market types; filter by status and market type; see live pool-implied odds. |
-| **Market detail** | One market — the Hermes AI read, outcome buckets with odds, a stake panel (any token), a free no-stake pick, and the live oracle state. |
-| **My Bets** | Your open and settled positions, claimable estimates, and one-tx Claim on winning bets. |
-| **Bracket** | Pick all 104 fixtures, save your bracket, score it against Hermes, and mint a Bracket NFT. |
-| **Leaderboard** | Global ranking by pick accuracy — you vs every fan vs the AI — plus private leagues. |
-| **AI Pundit** | Every Hermes pick with its confidence and reasoning. |
-| **FanPass** | Your on-chain football-IQ score, its five-part breakdown, and the soulbound badge. |
-| **Developers** | The deployed contracts, the oracle source adapters, the on-chain settlement log, and the x402 / MCP surface. |
-
-A first-run **walkthrough**, a **demo mode** for visitors with no wallet, a
-**Settings** panel and a wallet **connect modal** make the product approachable
-from the first second.
-
----
-
-## Open settlement layer — x402 & MCP
-
-X Cup is not a walled garden — its settlement data is a public good other apps
-and AI agents can consume:
-
-- **x402 paid endpoints.** Monetized data routes (`GET /api/v1/cup/ai-edge`,
-  `/cup/fixtures`, `/cup/settlement-check`, …) are gated by an `X-PAYMENT` header
-  and settle pay-per-call in USDT on X Layer. The machine-readable spec is at
-  `GET /api/v1/x402-spec`.
-- **MCP server.** Agent-readable tools are served at `POST /mcp` (JSON-RPC 2.0),
-  with discovery via `GET /mcp` — an AI agent can query fixtures, the AI edge and
-  oracle state directly.
-- **Direct contract reads.** Finalized results are readable straight from
-  `CupOracleV3.getMatch()`, and market state from `ParimutuelMarket.getMarket()`.
-
----
-
-## OKX ecosystem integrations
-
-| OKX surface | How X Cup uses it |
-|---|---|
-| **X Layer** (chain 196) | The entire contract stack — oracle, arbiter, market, badge — is deployed and live on X Layer mainnet. |
-| **OKX DEX aggregator** | Powers *stake with any token*: the chosen token is swapped to the settlement USDT in the user's wallet before staking, using aggregated on-chain liquidity. |
-| **OKX Wallet / OKX Connect** | Wallet connection — injected OKX Wallet on desktop, and OKX Connect (QR / deep link) for mobile browsers and Telegram. |
-| **x402** | Pay-per-call data endpoints settled in USDT on X Layer — the open-data layer for agents and partner apps. |
-| **OKB** | A first-class stake token (swapped to USDT for settlement) and the X Layer gas token. |
+- **x402 paid endpoints.** Monetized routes (`GET /api/v1/cup/ai-edge`,
+  `/cup/fixtures`, `/cup/settlement-check`, …) gated by an `X-PAYMENT` header,
+  settling pay-per-call in USDT on X Layer. Spec at `GET /api/v1/x402-spec`.
+- **MCP server.** Agent-readable tools at `POST /mcp` (JSON-RPC 2.0), discovery
+  via `GET /mcp` — an AI agent can query fixtures, the AI edge and oracle state.
+- **Direct contract reads.** Finalized results straight from
+  `CupOracleV3.getMatch()`, market state from `ParimutuelMarket.getMarket()`.
 
 ---
 
@@ -381,23 +368,6 @@ X Layer mainnet (chain 196)  ◀────────────────
   optional scheduler can run it autonomously.
 - **Frontend** — a React + Vite single-page app: the eight X Cup screens plus an
   XSight copilot surface, sharing the layout chrome and a per-tab error boundary.
-
----
-
-## Deployed contracts
-
-All on **X Layer mainnet (chain 196)** · explorer: `https://www.okx.com/web3/explorer/xlayer`.
-
-| Contract | Address | Role |
-|---|---|---|
-| `CupOracleV3` | `0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6` | Bonded optimistic settlement oracle |
-| `ArbiterMultisig` | `0x792152c274c42C588D5551C9141C21106d3A2Cce` | M-of-N arbiter for challenged results |
-| `ParimutuelMarket` | `0x0431576845B77a743C87be323c04fad02201E08b` | Pari-mutuel pools — settles in USDT, reads `CupOracleV3` |
-| `FanPassSBT` | `0x74F75532428A99E613a865C97D1084b7f38241BD` | Soulbound fan-reputation badge |
-
-`BracketNFT` is built and tested; the pre-hardening `CupOracleV2` + V2-era market
-are superseded. Full registry, explorer links and verification inputs in
-[`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
 
 ---
 
@@ -437,7 +407,8 @@ npm run dev
 ```
 
 The app opens on **Markets**. With no wallet connected every read-only screen
-still works; staking, claiming and bracket-saving prompt a wallet connection.
+still works and the demo banner explains explore mode; staking, claiming and
+bracket-saving prompt a wallet connection.
 
 ---
 
@@ -499,6 +470,7 @@ and what is next:
 - ✅ Multi-source quorum resolver + autonomous AI pundit
 - ✅ Free-to-play layer — bracket, leaderboard, leagues, FanPass SBT
 - ✅ x402 paid endpoints + MCP server for agents
+- ✅ Onboarding, demo mode, settings and guided wallet connect
 - 🔜 Explorer verification of all four mainnet contracts
 - 🔜 Arbiter raised to a 2-of-3 signer panel via the timelocked `proposeArbiter` / `commitArbiter` flow
 - 🔜 `BracketNFT` (built + fork-tested) deployed to mainnet
@@ -519,3 +491,12 @@ and what is next:
 ## License
 
 [MIT](LICENSE).
+
+<div align="center">
+
+---
+
+**X Cup** — built for the OKX X Layer × X Cup hackathon.
+Pari-mutuel World Cup markets · a bonded oracle · an AI pundit · live on chain 196.
+
+</div>
