@@ -35,6 +35,12 @@ A market resolves to the **official final result of the match** as recorded by F
 
 The on-chain settlement oracle records this single outcome; the resolver derives it from
 the official advancing team for knockout matches, not from the regulation scoreline alone.
+If the multi-source feeds carry only a level regulation/extra-time score for a knockout
+fixture — which cannot say who advanced on penalties — the resolver **holds** the Match
+Result market (it never auto-proposes a Draw for a knockout) and the operator settles it
+with the official advancing team. Over/Under and BTTS are unaffected: penalty-shootout
+goals never count toward total goals or BTTS, so those markets settle on the
+regulation-plus-extra-time score as normal.
 
 ## 3. Source priority & quorum
 

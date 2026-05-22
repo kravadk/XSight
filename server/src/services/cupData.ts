@@ -962,7 +962,7 @@ function normalizeEspnEvent(event: unknown, url: string): NormalizedProviderMatc
   if (!item.id || !item.date || !home || !away) return null;
   const status = item.status?.type?.completed ? 'final' : item.status?.type?.state === 'in' ? 'live' : 'scheduled';
   const score = status !== 'scheduled' && home.score !== undefined && away.score !== undefined ? { home: home.score, away: away.score } : undefined;
-  const outcome = status === 'final' && score ? outcomeFromScore(score) : undefined;
+  const outcome = status === 'final' && score ? outcomeFromScore(score, item.name) : undefined;
   const normalizedPayload = {
     providerId: item.id,
     kickoffUtc: new Date(item.date).toISOString(),
@@ -1008,7 +1008,7 @@ function normalizeFootballDataMatch(value: unknown, url: string): NormalizedProv
   const homeScore = match.score?.fullTime?.home;
   const awayScore = match.score?.fullTime?.away;
   const score = typeof homeScore === 'number' && typeof awayScore === 'number' ? { home: homeScore, away: awayScore } : undefined;
-  const outcome = status === 'final' && score ? outcomeFromScore(score) : undefined;
+  const outcome = status === 'final' && score ? outcomeFromScore(score, match.stage) : undefined;
   const normalizedPayload = {
     providerId: match.id,
     kickoffUtc: new Date(match.utcDate).toISOString(),
@@ -1050,7 +1050,7 @@ function normalizeTheSportsDbEvent(value: unknown, url: string): NormalizedProvi
   const awayScore = event.intAwayScore !== null && event.intAwayScore !== undefined ? Number(event.intAwayScore) : undefined;
   const score = Number.isFinite(homeScore) && Number.isFinite(awayScore) ? { home: homeScore as number, away: awayScore as number } : undefined;
   const status = score ? 'final' : event.strStatus?.toLowerCase().includes('live') ? 'live' : 'scheduled';
-  const outcome = status === 'final' && score ? outcomeFromScore(score) : undefined;
+  const outcome = status === 'final' && score ? outcomeFromScore(score, event.strEvent) : undefined;
   const normalizedPayload = {
     providerId: event.idEvent,
     kickoffUtc: new Date(date).toISOString(),
@@ -1102,8 +1102,32 @@ function classifyProviderError(reason: unknown): CupFeed['errors'][number] {
   };
 }
 
-function outcomeFromScore(score: { home: number; away: number }): CupOutcome {
-  return score.home > score.away ? 'HOME' : score.home < score.away ? 'AWAY' : 'DRAW';
+/**
+ * A FIFA World Cup knockout round cannot end in a draw — one team always advances,
+ * decided by extra time or a penalty shootout. A level final score in a knockout
+ * fixture is therefore NOT a Draw, and the regulation/ET score alone cannot say who
+ * advanced. Best-effort round detection from the stage label (most reliable on
+ * football-data.org, which reports GROUP_STAGE / ROUND_OF_16 / … / FINAL).
+ */
+export function isKnockoutStage(stage: string | undefined): boolean {
+  if (!stage) return false;
+  const s = stage.toLowerCase().replace(/[_-]/g, ' ');
+  return /\b(round of 16|round of 32|last 16|quarter|semi|final|knockout|play ?off)\b/.test(s);
+}
+
+/**
+ * 1X2 outcome from a final score. A level score resolves to Draw only for a
+ * group-stage match; in a knockout it is ambiguous (penalties decide it) so we
+ * return undefined — the multi-source quorum then holds rather than settling a
+ * wrong Draw. See docs/xcup/SETTLEMENT-RULES.md §2.
+ */
+function outcomeFromScore(
+  score: { home: number; away: number },
+  stage?: string,
+): CupOutcome | undefined {
+  if (score.home > score.away) return 'HOME';
+  if (score.home < score.away) return 'AWAY';
+  return isKnockoutStage(stage) ? undefined : 'DRAW';
 }
 
 /**

@@ -13,7 +13,7 @@
  * The scheduler only runs it non-dry when CUP_RESOLVER_ENABLED=true.
  */
 import { env } from '../config/env.js';
-import { getCupFeed, type CupMatch, type CupOutcome } from './cupData.js';
+import { getCupFeed, isKnockoutStage, type CupMatch, type CupOutcome } from './cupData.js';
 import {
   cupOracleMetadata,
   finalizeCupOracleResult,
@@ -43,6 +43,10 @@ function deriveMarketOutcome(
   if (marketType === '1X2') {
     const q = match.settlement.sourceQuorum;
     if (q.status !== 'settlement_ready' || !q.outcome) return null;
+    // Backstop: a knockout fixture cannot end in a draw. If the quorum still agrees
+    // on DRAW the sources only carry the regulation score — hold for operator
+    // settlement rather than auto-proposing a wrong result.
+    if (q.outcome === 'DRAW' && isKnockoutStage(match.stage)) return null;
     const idx = q.outcome === 'HOME' ? 1 : q.outcome === 'AWAY' ? 3 : 2;
     return { outcome: q.outcome, label: def.outcomes[idx - 1] };
   }
