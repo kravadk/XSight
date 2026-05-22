@@ -66,6 +66,9 @@ export const env = {
   // BracketNFT (Plan 11). Empty => the contract is not deployed and the mint surface
   // honestly shows a `contract-ready` state.
   bracketNftAddress: required('BRACKET_NFT_ADDRESS'),
+  // Staking closes this many seconds BEFORE kickoff, not exactly at kickoff — a small
+  // buffer that avoids bets landing as the match starts (HARDENING-PLAN Phase 5).
+  marketCloseBufferSeconds: Number(process.env.MARKET_CLOSE_BUFFER_SECONDS ?? 60),
   marketIndexerIntervalMs: Number(process.env.MARKET_INDEXER_INTERVAL_MS ?? 30000),
   // X Layer's public RPC caps eth_getLogs at a 100-block range — keep this <= 100.
   marketIndexerRange: Number(process.env.MARKET_INDEXER_RANGE ?? 90),

@@ -6,6 +6,7 @@ import { getFanPassSbtEligibility, mintFanPassSbt } from '../services/fanPassSbt
 import { listCupSettlementLog } from '../services/cupSettlementLog.js';
 import { getCupPersistenceHealth } from '../services/cupPersistence.js';
 import { getResolverStatus, resolveCupMatches } from '../services/quorumResolver.js';
+import { getIndexerStatus } from '../services/marketIndexer.js';
 import { getPunditPick, getPunditProfile, listPunditPicks } from '../services/punditService.js';
 import { executePunditPick } from '../services/punditExecutor.js';
 import { listPunditExecutions } from '../services/punditExecutionLog.js';
@@ -189,6 +190,53 @@ cupRouter.get('/settlement-log', (req: Request, res: Response) => {
 
 cupRouter.get('/resolver', (_req: Request, res: Response) => {
   res.json(getResolverStatus());
+});
+
+/**
+ * Settlement-stack health (HARDENING-PLAN Phase 5). Aggregates the oracle, the market
+ * indexer and the last resolver pass into one snapshot, and raises an alert if any
+ * result is challenged on-chain, a resolver step errored, or the indexer is behind.
+ */
+cupRouter.get('/health', (_req: Request, res: Response) => {
+  const oracle = cupOracleMetadata();
+  const resolver = getResolverStatus();
+  const indexer = getIndexerStatus();
+  const steps = resolver.lastReport?.steps ?? [];
+  const proposedAwaiting = steps.filter((s) => s.action === 'wait_challenge' || s.action === 'finalize').length;
+  const challenged = steps.filter((s) => s.onchainState === 2).length;
+  const stepErrors = steps.filter((s) => Boolean(s.error)).length;
+
+  const alerts: string[] = [];
+  if (oracle.status !== 'deployed') alerts.push('settlement oracle is not deployed');
+  if (challenged > 0) alerts.push(`${challenged} match(es) challenged on-chain — arbiter ruling required`);
+  if (stepErrors > 0) alerts.push(`${stepErrors} resolver step(s) errored on the last pass`);
+  if (indexer.deployed && !indexer.backfilled) alerts.push('market indexer has not finished backfilling');
+
+  res.json({
+    status: alerts.length === 0 ? 'ok' : 'attention',
+    generatedAt: new Date().toISOString(),
+    oracle: {
+      version: oracle.version,
+      deployed: oracle.status === 'deployed',
+      bonded: oracle.bonded,
+      address: oracle.address,
+      arbiter: oracle.arbiterAddress,
+    },
+    indexer: {
+      deployed: indexer.deployed,
+      backfilled: indexer.backfilled,
+      lastBlock: indexer.lastBlock,
+      markets: indexer.markets,
+    },
+    resolver: {
+      enabled: resolver.enabled,
+      lastPassAt: resolver.lastReport?.generatedAt ?? null,
+      proposedAwaiting,
+      challenged,
+      errors: stepErrors,
+    },
+    alerts,
+  });
 });
 
 cupRouter.post('/resolver/run', async (req: Request, res: Response) => {

@@ -58,7 +58,12 @@ function buildMarketView(match: CupMatch): MarketView {
   const deployed = Boolean(parimutuelMetadata().address);
   const indexed = getIndexedMarket(marketId);
   const kickoffMs = Date.parse(match.kickoffUtc);
-  const closeTime = Number.isFinite(kickoffMs) ? Math.floor(kickoffMs / 1000) : null;
+  // The real close is whatever the operator set on-chain; before the market exists,
+  // project it as kickoff minus the close buffer.
+  const projectedClose = Number.isFinite(kickoffMs)
+    ? Math.floor(kickoffMs / 1000) - env.marketCloseBufferSeconds
+    : null;
+  const closeTime = indexed && indexed.closeTime > 0 ? indexed.closeTime : projectedClose;
   const nowSec = Math.floor(Date.now() / 1000);
 
   let marketStatus: MarketStatus;
@@ -261,6 +266,12 @@ export async function ensureMarketsForUpcomingFixtures(limit?: number): Promise<
       skipped.push({ id: match.id, reason: 'kickoff not in the future' });
       continue;
     }
+    // Staking closes a buffer before kickoff, not exactly at kickoff.
+    const closeTime = kickoff - env.marketCloseBufferSeconds;
+    if (closeTime <= nowSec) {
+      skipped.push({ id: match.id, reason: 'inside the close buffer — staking already closed' });
+      continue;
+    }
     const marketId = deriveMarketId(match.id);
     const onchain = await readMarket(marketId);
     if (onchain?.exists) {
@@ -268,7 +279,7 @@ export async function ensureMarketsForUpcomingFixtures(limit?: number): Promise<
       continue;
     }
     try {
-      const res = await createMarketTx(marketId, encodeMatchId(match.id), kickoff);
+      const res = await createMarketTx(marketId, encodeMatchId(match.id), closeTime);
       created.push({ id: match.id, txHash: res.txHash });
     } catch (err) {
       skipped.push({ id: match.id, reason: err instanceof Error ? err.message : String(err) });
