@@ -1,22 +1,38 @@
-# 🏆 X Cup — World Cup Prediction Market on X Layer
+<div align="center">
 
-**X Cup is the first real-money football prediction market on [X Layer](https://www.okx.com/xlayer) (OKX's zkEVM, chain 196).**
+# ⚽ X Cup
 
-A fan opens the app, picks a World Cup outcome — *who wins, how many goals,
-whether both teams score* — stakes a stablecoin into a shared **pari-mutuel
-pool**, and claims a pro-rata share of that pool once the result is finalized
-on-chain. No order book, no AMM, no house. Winners split the pool; the math is
-pure, the result is economically defended, and every payout is a verifiable
-on-chain transaction.
+### The first real-money World Cup prediction market on X Layer
 
-> Built for the **OKX X Layer × X Cup hackathon**. The full contract stack is
-> **live on X Layer mainnet** — see [Deployed contracts](#deployed-contracts).
+*Pick an outcome · stake a stablecoin · winners split the pool.*
+**No house. No order book. No LP risk.**
+
+`4 live contracts` &nbsp;·&nbsp; `3 markets per fixture` &nbsp;·&nbsp; `104 fixtures` &nbsp;·&nbsp; `8 screens` &nbsp;·&nbsp; `45 fork tests` &nbsp;·&nbsp; `0 mocks`
+
+[![X Layer](https://img.shields.io/badge/X_Layer-mainnet_live-2EBD85?style=flat-square)](https://www.okx.com/xlayer)
+[![Chain 196](https://img.shields.io/badge/chain-196-4AA8E0?style=flat-square)](https://www.okx.com/xlayer)
+[![Contracts](https://img.shields.io/badge/contracts-4_deployed-2EBD85?style=flat-square)](#deployed-contracts)
+[![Fork tests](https://img.shields.io/badge/fork_tests-45_passing-3FB950?style=flat-square)](#testing)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square)](contracts/)
+[![License](https://img.shields.io/badge/license-MIT-EAB308?style=flat-square)](LICENSE)
+
+**[⛓ Deployed contracts](#deployed-contracts)** &nbsp;·&nbsp; **[📖 Documentation](#documentation)** &nbsp;·&nbsp; **[⚖ Settlement rulebook](docs/xcup/SETTLEMENT-RULES.md)** &nbsp;·&nbsp; **[🚀 Run locally](#run-it-locally)**
+
+</div>
+
+---
+
+> **Built for the OKX X Layer × X Cup hackathon.** The full contract stack —
+> bonded oracle, M-of-N arbiter, pari-mutuel market and soulbound badge — is
+> **live on X Layer mainnet (chain 196)**. Every payout is a verifiable on-chain
+> transaction; nothing in this repo is a mock.
 
 ---
 
 ## Contents
 
-- [What is X Cup](#what-is-x-cup)
+- [X Cup in one minute](#x-cup-in-one-minute)
+- [Why X Cup is shaped differently](#why-x-cup-is-shaped-differently)
 - [How a pari-mutuel pool works](#how-a-pari-mutuel-pool-works)
 - [The market lifecycle](#the-market-lifecycle)
 - [Market types](#market-types)
@@ -35,17 +51,56 @@ on-chain transaction.
 - [Testing](#testing)
 - [Project structure](#project-structure)
 - [Documentation](#documentation)
+- [Roadmap](#roadmap)
 - [Principles](#principles)
 
 ---
 
-## What is X Cup
+## X Cup in one minute
+
+A fan opens X Cup, picks a World Cup outcome — **who wins**, **how many goals**,
+**whether both teams score** — and stakes a stablecoin into a shared
+**pari-mutuel pool**. When the result is finalized on-chain, the winning side
+splits the *entire* pool pro-rata to stake. No order book, no AMM, no house.
+
+Only one thing has to be trustworthy: *which outcome won*. X Cup secures that
+with a **bonded optimistic oracle** — proposing a false result costs a slashable
+**50-USDT bond** — backed by a **2-of-3 quorum** over three independent sports
+feeds. A wrong result is challengeable, and the liar's bond pays the challenger.
+
+Everything around the money is built like a real product: stake with **any
+token** (OKX DEX swaps it to USDT in your wallet), an autonomous **AI pundit** to
+play against, a full **free-to-play** layer that needs no wallet, and an open
+**x402 + MCP** data layer so other apps and agents can consume settlement.
+
+```
+   ┌──────────┐   stake USDT/USDC/OKB   ┌───────────────┐   2-of-3 feeds agree   ┌──────────────┐
+   │   FAN    │ ──────────────────────▶ │  POOL  (open)  │ ─────────────────────▶ │ ORACLE propose│
+   └──────────┘                         └───────────────┘                        │  (+50 bond)   │
+        ▲                                                                         └──────┬───────┘
+        │            pro-rata claim()              ┌───────────────┐   finalized          │
+        └───────────────────────────────────────── │ POOL (settled)│ ◀────────────────────┘
+              your stake × pool ÷ winning stake     └───────────────┘   challenge window passes
+```
+
+---
+
+## Why X Cup is shaped differently
 
 Most on-chain prediction markets are **infrastructure** — an order book or an
 automated market maker that needs professional market-makers or locked
-liquidity-provider capital before a single bet can be placed, and that exposes
-those providers to losses. X Cup takes the opposite shape: it is a **vertical
-consumer product** built around one mechanism that needs neither.
+liquidity-provider capital before a single bet is placed, and that exposes those
+providers to losses. X Cup is the opposite: a **vertical consumer product** built
+on one mechanism that needs neither.
+
+| | Typical order-book / AMM market | **X Cup** |
+|---|---|---|
+| Liquidity to start | market-makers or locked LP capital | none — the pool funds itself |
+| Who can lose capital | LPs underwrite the bets | nobody — there is no LP |
+| Custody of stakes | varies | the operator never holds stakes |
+| Payout | a curve / spread, skimmed by a maker | pure pro-rata math in `claim()` |
+| Result trust | an external feed taken on faith | a bonded oracle — a false result is slashable |
+| Time to first bet | onboarding + liquidity bootstrapping | under a minute |
 
 Three properties define it:
 
@@ -59,8 +114,8 @@ Three properties define it:
   proposing a false result costs real money (see
   [the oracle section](#the-bonded-settlement-oracle)).
 
-The result: a fan can open X Cup, read a market, and bet within a minute, with
-no counterparty, no custody, and a settlement path they can verify themselves.
+The result: a fan opens X Cup, reads a market, and bets within a minute — no
+counterparty, no custody, and a settlement path they can verify themselves.
 
 ---
 
@@ -265,6 +320,10 @@ that still teaches the product:
 | **FanPass** | Your on-chain football-IQ score, its five-part breakdown, and the soulbound badge. |
 | **Developers** | The deployed contracts, the oracle source adapters, the on-chain settlement log, and the x402 / MCP surface. |
 
+A first-run **walkthrough**, a **demo mode** for visitors with no wallet, a
+**Settings** panel and a wallet **connect modal** make the product approachable
+from the first second.
+
 ---
 
 ## Open settlement layer — x402 & MCP
@@ -427,6 +486,23 @@ docs/xcup/      product, architecture and contract documentation
 | [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md) | The bonded-oracle design and rationale. |
 | [`UI-SPEC.md`](docs/xcup/UI-SPEC.md) | Per-tab UI spec — expected content and error behaviour. |
 | [`BUILD-STATUS.md`](docs/xcup/BUILD-STATUS.md) | What is built, deployed and outstanding. |
+
+---
+
+## Roadmap
+
+X Cup is feature-complete and live on mainnet for the hackathon. What is shipped,
+and what is next:
+
+- ✅ Bonded optimistic oracle + M-of-N arbiter — live on X Layer
+- ✅ Pari-mutuel market, three market types per fixture — live
+- ✅ Multi-source quorum resolver + autonomous AI pundit
+- ✅ Free-to-play layer — bracket, leaderboard, leagues, FanPass SBT
+- ✅ x402 paid endpoints + MCP server for agents
+- 🔜 Explorer verification of all four mainnet contracts
+- 🔜 Arbiter raised to a 2-of-3 signer panel via the timelocked `proposeArbiter` / `commitArbiter` flow
+- 🔜 `BracketNFT` (built + fork-tested) deployed to mainnet
+- 🔭 Optional fourth on-chain result source added to the quorum
 
 ---
 
