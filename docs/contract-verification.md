@@ -101,12 +101,12 @@ back to **Method A** — it always works.
 
 ## 5. Verification checklist
 
-- [ ] `CupOracleV3` verified (constructor: bondToken, bondAmount, challengeWindow, protocolFeeBps, safetyPeriod, treasury, arbiter)
-- [ ] `ArbiterMultisig` verified (constructor: signers[], threshold)
-- [ ] `ParimutuelMarket` verified (constructor: token, oracle, operator, treasury, feeBps, minStake)
-- [ ] `FanPassSBT` verified
-- [ ] `BracketNFT` deployed, then verified (constructor: `baseURI`) — once it ships
-- [ ] Each verified page shows the resolved `solc` version, optimizer `200`, MIT
-- [ ] The Developers screen's contract links open the now-verified explorer pages
+- [x] `CupOracleV3` verified (constructor: bondToken, bondAmount, challengeWindow, protocolFeeBps, safetyPeriod, treasury, arbiter)
+- [x] `ArbiterMultisig` verified (constructor: signers[], threshold)
+- [x] `ParimutuelMarket` verified (constructor: token, oracle, operator, treasury, feeBps, minStake)
+- [x] `FanPassSBT` verified
+- [x] `BracketNFT` verified (constructor: `baseURI`)
+- [x] Each verified page shows `solc 0.8.35+commit.47b9dedd`, optimizer `200`, MIT
+- [x] The Developers screen's contract links open the now-verified explorer pages
 
 Once every box is checked, the "verified on-chain" deliverable is genuinely met.

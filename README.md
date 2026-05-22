@@ -12,6 +12,7 @@
 [![X Layer](https://img.shields.io/badge/X_Layer-mainnet_live-2EBD85?style=flat-square)](https://www.okx.com/xlayer)
 [![Chain 196](https://img.shields.io/badge/chain-196-4AA8E0?style=flat-square)](https://www.okx.com/xlayer)
 [![Contracts](https://img.shields.io/badge/contracts-5_deployed-2EBD85?style=flat-square)](#live-on-x-layer-mainnet)
+[![Source verified](https://img.shields.io/badge/source-verified_on--chain-3FB950?style=flat-square)](https://www.okx.com/web3/explorer/xlayer/address/0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6)
 [![Fork tests](https://img.shields.io/badge/fork_tests-45_passing-3FB950?style=flat-square)](#testing)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square)](contracts/)
 [![License](https://img.shields.io/badge/license-MIT-EAB308?style=flat-square)](LICENSE)
@@ -472,9 +473,9 @@ and what is next:
 - ✅ Free-to-play layer — bracket, leaderboard, leagues, FanPass SBT
 - ✅ x402 paid endpoints + MCP server for agents
 - ✅ Onboarding, demo mode, settings and guided wallet connect
-- 🔜 Explorer verification of all four mainnet contracts
-- 🔜 Arbiter raised to a 2-of-3 signer panel via the timelocked `proposeArbiter` / `commitArbiter` flow
+- ✅ All five contracts verified on the OKX X Layer explorer
 - ✅ `BracketNFT` deployed to mainnet (`0x532DdCCB…`)
+- 🔜 Arbiter raised to a 2-of-3 signer panel via the timelocked `proposeArbiter` / `commitArbiter` flow
 - 🔭 Optional fourth on-chain result source added to the quorum
 
 ---

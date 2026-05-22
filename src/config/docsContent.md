@@ -364,7 +364,9 @@ FanPassSBT        0x74F75532428A99E613a865C97D1084b7f38241BD
 BracketNFT        0x532DdCCB09389A35D353f73a06bE162D123ccD70
 ```
 
-Live status for every contract is on the [Developers screen](tab:developers).
+**All five are verified on the X Layer explorer** — click an address to open
+the verified source (`solc 0.8.35`, optimizer 200, MIT). Live indexer status for
+every contract is on the [Developers screen](tab:developers).
 
 <!--ARTICLE x402-endpoints|x402 API endpoints-->
 

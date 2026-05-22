@@ -67,4 +67,6 @@ V3-stack constructor args (ABI-encoded, no `0x` prefix):
   0000000000000000000000001e4a5963abfd975d8c9021ce480b42188849d41d00000000000000000000000019da7aab20be913fb697ebfef4b8f12ac463ebf600000000000000000000000082736f84ad234566180f902237e2fb4c35177bdb00000000000000000000000082736f84ad234566180f902237e2fb4c35177bdb00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   ```
 
-Record the `Verified` status back in this file once the explorer confirms each.
+**Status:** ✅ all five contracts above are **verified** on the OKX X Layer
+explorer (single file · `solc 0.8.35+commit.47b9dedd` · optimizer 200 · MIT).
+The explorer links in the active-stack table open the verified source pages.

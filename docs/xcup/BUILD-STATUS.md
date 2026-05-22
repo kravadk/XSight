@@ -77,8 +77,9 @@ autonomously:
    opens them:
    `ENSURE_LIMIT=16 CUP_WRITE_API_ENABLED=true npm --prefix server run ensure:markets`
    (idempotent — existing markets are skipped).
-2. **Verify the 4 contracts** on the OKX X Layer explorer — runbook:
-   `docs/contract-verification.md` (single file · `solc` 0.8.35 · optimizer 200 · MIT).
+2. ~~**Verify the contracts** on the OKX X Layer explorer~~ — ✅ all five
+   contracts (`CupOracleV3`, `ArbiterMultisig`, `ParimutuelMarket`,
+   `FanPassSBT`, `BracketNFT`) are verified — `solc 0.8.35`, optimizer 200, MIT.
 3. ~~**Deploy `BracketNFT`** to mainnet~~ — ✅ deployed at
    `0x532DdCCB09389A35D353f73a06bE162D123ccD70`. Add
    `BRACKET_NFT_ADDRESS=0x532DdCCB09389A35D353f73a06bE162D123ccD70` to the
