@@ -1,8 +1,8 @@
 # X Cup — World Cup Prediction Market on X Layer
 
 > The first real-money football prediction market on X Layer. Stake USDT/USDC on World
-> Cup outcomes into pari-mutuel pools, settled by a trustless multi-source oracle — with
-> an autonomous AI pundit to beat.
+> Cup outcomes into pari-mutuel pools, settled by an optimistic multi-source oracle —
+> with an autonomous AI pundit to beat.
 
 **Built for the OKX X Layer × X Cup hackathon.**
 
@@ -13,10 +13,13 @@ winners simply split the pool.
 
 ## Why on-chain
 
-Without trustless resolution, leaderboards and payouts are "trust us." X Cup's
+Without verifiable resolution, leaderboards and payouts are "trust us." X Cup's
 `CupOracleV2` anchors each result with multi-source evidence hashes and an optimistic
-challenge window; `ParimutuelMarket` only ever reads the *finalized* result. The outcome
-and the money are un-riggable — even by the operator. That's the premise, not a garnish.
+challenge window; `ParimutuelMarket` only ever reads the *finalized* result. The
+**money** is un-riggable — payouts are pure on-chain math the operator cannot touch.
+The **result** is operator-proposed under that challenge window and a published
+[rulebook](docs/xcup/SETTLEMENT-RULES.md); the [hardening plan](docs/xcup/HARDENING-PLAN.md)
+adds bonds + slashing to make the result economically un-riggable too.
 
 ## How it works
 

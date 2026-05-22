@@ -1106,10 +1106,17 @@ function outcomeFromScore(score: { home: number; away: number }): CupOutcome {
   return score.home > score.away ? 'HOME' : score.home < score.away ? 'AWAY' : 'DRAW';
 }
 
+/**
+ * On-chain commitment to the published settlement rulebook. The hash binds every match
+ * to docs/xcup/SETTLEMENT-RULES.md v1 — bump `rulebookVersion` only alongside a new
+ * rulebook revision, never edit the rule text without one.
+ */
 function rulesHash(matchId: string): string {
   return hashJson({
     matchId,
-    rule: 'Final result after regulation plus official extra time when applicable. Penalty shootouts only count when the market rules explicitly include them.',
+    rulebook: 'docs/xcup/SETTLEMENT-RULES.md',
+    rulebookVersion: 'v1',
+    rule: '1X2 Match Result, settled on the official FIFA final result. Group stage = the 90-minute result; knockout = the result after extra time and, if still level, the penalty shootout. Abandoned, postponed or cancelled matches are voided and fully refunded. Full rulebook: SETTLEMENT-RULES.md v1.',
     disputeWindowSeconds: 3600,
   });
 }

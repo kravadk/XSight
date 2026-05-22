@@ -29,6 +29,11 @@ pro-rata with the other winners. No house, no order book — just the pool.
 **Refunds.** If a market is voided, or nobody backed the winning outcome, every staker
 can claim their stake back — nothing is lost to the protocol.
 
+**The rules are published.** Exactly how a market resolves — extra time, penalties,
+abandoned/postponed matches, VAR, source priority — is fixed in
+[`SETTLEMENT-RULES.md`](SETTLEMENT-RULES.md) and committed to on-chain via each match's
+`rulesHash`.
+
 **Other screens.** *Bracket* — pick the knockout path (off-chain, opens at the knockout
 stage). *Leaderboard* — global ranking + you vs Hermes. *AI Pundit* — Hermes' open
 picks. *FanPass* — your on-chain football-IQ score and soulbound badge.
@@ -86,11 +91,14 @@ explorer links: [`CONTRACTS.md`](CONTRACTS.md). `matchId`/`marketId` are
 **Is it real money?** Yes — markets settle in real USDT on X Layer mainnet. There are
 also off-chain free-to-play surfaces (bracket, leaderboard) that cost nothing.
 
-**How is settlement trustless?** A result is never one operator's word. `CupOracleV2`
-takes a result only after ≥2 independent sources agree (quorum), anchors evidence
-hashes on-chain, and opens an optimistic challenge window before finalizing.
-`ParimutuelMarket` reads *only* the finalized outcome — even the operator cannot
-mis-pay a pool.
+**How does the result get settled?** The match result is *proposed* on-chain to
+`CupOracleV2` only when ≥2 independent sources agree (multi-source quorum); evidence
+hashes are anchored on-chain; a ~1-hour **challenge window** follows before the result
+is finalized, and `ParimutuelMarket` reads *only* the finalized result. The exact
+resolution rules are published in [`SETTLEMENT-RULES.md`](SETTLEMENT-RULES.md). Today
+the proposer is the project operator and the challenge window is the guard; the
+[hardening plan](HARDENING-PLAN.md) adds **bonds + slashing** so a false proposal is
+economically punished — that is the path to a fully trustless oracle.
 
 **What if the sources disagree?** The market honestly reports `conflicting_sources` /
 `quorum_unavailable` and settlement holds — no guess is forced.
@@ -105,9 +113,12 @@ settles in USDT (`0x1E4a5963…`); the contract itself is token-agnostic.
 multi-source edge signal, then issues a conviction-weighted pick. It's an opponent to
 beat, not advice.
 
-**Can the team rig payouts?** No. Payouts are pure math in `claim()` — `your stake ×
-pool ÷ winning pool`. The signer wallet can only propose results (caught by the
-challenge window); it can never touch staked funds.
+**Can the team rig payouts?** The **payout math cannot be rigged** — `claim()` is pure
+on-chain arithmetic (`your stake × pool ÷ winning pool`) and the operator can never
+touch staked funds. The **result** is operator-proposed today, bounded by the challenge
+window and the published [rulebook](SETTLEMENT-RULES.md); the bonded-oracle upgrade
+([HARDENING-PLAN](HARDENING-PLAN.md)) makes a dishonest result cost the proposer a
+slashable bond.
 
 **Is the code audited?** Self-audited against the checklist in `DESIGN.md` §7.3;
 `ParimutuelMarket` has 23 fork-based tests against real X Layer mainnet (real oracle,
