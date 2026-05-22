@@ -54,6 +54,7 @@ const XCUP_NAV: NavGroup[] = [
       { id: 'pundit', label: 'AI Pundit', icon: Bot, badge: 'live' },
       { id: 'fanpass', label: 'FanPass', icon: BadgeCheck },
       { id: 'developers', label: 'Developers', icon: Code2 },
+      { id: 'docs', label: 'Docs', icon: BookOpen },
     ],
   },
 ];

@@ -17,6 +17,7 @@ export type Tab =
   | 'pundit'
   | 'fanpass'
   | 'developers'
+  | 'docs'
   // XSight copilot
   | 'portfolio'
   | 'dashboard'

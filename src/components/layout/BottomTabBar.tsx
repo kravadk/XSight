@@ -34,6 +34,7 @@ const NAV: Record<'xsight' | 'xcup', { main: Item[]; more: Item[] }> = {
       { id: 'pundit', label: 'AI Pundit', icon: Bot },
       { id: 'fanpass', label: 'FanPass', icon: BadgeCheck },
       { id: 'developers', label: 'Developers', icon: Code2 },
+      { id: 'docs', label: 'Docs', icon: BookOpen },
     ],
   },
 };

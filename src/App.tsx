@@ -32,6 +32,7 @@ const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then((m) =>
 const PunditPage = lazy(() => import('./pages/PunditPage').then((m) => ({ default: m.PunditPage })));
 const FanPassPage = lazy(() => import('./pages/FanPassPage').then((m) => ({ default: m.FanPassPage })));
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((m) => ({ default: m.DevelopersPage })));
+const DocsPage = lazy(() => import('./pages/DocsPage').then((m) => ({ default: m.DocsPage })));
 
 export default function App() {
   const { product, activeTab } = useUiStore();
@@ -73,6 +74,7 @@ export default function App() {
                 {activeTab === 'pundit' && <PunditPage />}
                 {activeTab === 'fanpass' && <FanPassPage />}
                 {activeTab === 'developers' && <DevelopersPage />}
+                {activeTab === 'docs' && <DocsPage />}
                 {/* fallback for any unrouted tab */}
                 {['cup', 'agentbet', 'files', 'rewards'].includes(activeTab) &&
                   (product === 'xcup' ? <MarketsPage /> : <ChatPage />)}
