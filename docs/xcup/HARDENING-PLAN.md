@@ -18,9 +18,13 @@
 - **Фаза 5 — ✅ зроблено** (`906a05b`, `b934408`): `ParimutuelMarket` — minStake +
   поглинання dust останнім переможцем (G7); `GET /api/cup/health`; close-buffer перед
   kickoff. Fork-тести: 45 зелених (26 ринок + 19 V3).
-- **Деплой у mainnet — ⏳ user-gated** (рішення Розділ 5: 50 USDT bond, 0% fee, 1 год
-  вікно, Chainlink — стретч). Лишилось одне: адреси 3 підписантів `ArbiterMultisig`
-  (`CUP_ARBITER_SIGNERS`) — без них деплой не запускається.
+- **Деплой у mainnet — ✅ зроблено** (X Layer 196): `CupOracleV3`
+  `0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6`, `ArbiterMultisig`
+  `0x792152c274c42C588D5551C9141C21106d3A2Cce` (1-of-1, операторський; арбітр в
+  оракулі змінний за timelock), новий `ParimutuelMarket`
+  `0x0431576845B77a743C87be323c04fad02201E08b`. Bond 50 USDT, 0% fee, 1 год вікно.
+- **Лишилось:** верифікація 3 контрактів на explorer; (опційно) підняти арбітр до
+  2-of-3 через `proposeArbiter`/`commitArbiter`; Chainlink — стретч.
 
 ---
 

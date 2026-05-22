@@ -1,7 +1,7 @@
 # X Cup — World Cup Prediction Market on X Layer
 
 > The first real-money football prediction market on X Layer. Stake USDT/USDC on World
-> Cup outcomes into pari-mutuel pools, settled by an optimistic multi-source oracle —
+> Cup outcomes into pari-mutuel pools, settled by a bonded multi-source oracle —
 > with an autonomous AI pundit to beat.
 
 **Built for the OKX X Layer × X Cup hackathon.**
@@ -14,12 +14,13 @@ winners simply split the pool.
 ## Why on-chain
 
 Without verifiable resolution, leaderboards and payouts are "trust us." X Cup's
-`CupOracleV2` anchors each result with multi-source evidence hashes and an optimistic
-challenge window; `ParimutuelMarket` only ever reads the *finalized* result. The
-**money** is un-riggable — payouts are pure on-chain math the operator cannot touch.
-The **result** is operator-proposed under that challenge window and a published
-[rulebook](docs/xcup/SETTLEMENT-RULES.md); the [hardening plan](docs/xcup/HARDENING-PLAN.md)
-adds bonds + slashing to make the result economically un-riggable too.
+`CupOracleV3` is a **bonded optimistic oracle** — a result is proposed with a slashable
+USDT bond, anyone can challenge it with an equal bond inside a challenge window, and a
+challenge routes to an arbiter that slashes the loser's bond to the winner;
+`ParimutuelMarket` only ever reads the *finalized* result. The **money** is un-riggable
+— payouts are pure on-chain math the operator cannot touch — and the **result** is now
+economically defended: a false proposal costs the proposer their bond, under a published
+[rulebook](docs/xcup/SETTLEMENT-RULES.md). See [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md).
 
 ## How it works
 
@@ -85,9 +86,11 @@ real USDT + USDC contracts, no mocks. Mainnet deploy + verification are user-gat
 
 | Contract | Status |
 |---|---|
-| `CupOracleV2` | Deployed — `0xE4dFef03E107225f2239CFfF955a378A9a8158Be` (X Layer 196) |
-| `ParimutuelMarket` | Deployed — `0xdB4F6A0CC67B3dF1f25129079E3f45b996A4B9D7` (settles in USDT) |
+| `CupOracleV3` | Deployed — `0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6` (X Layer 196) — bonded optimistic oracle |
+| `ArbiterMultisig` | Deployed — `0x792152c274c42C588D5551C9141C21106d3A2Cce` — arbiter for challenged results |
+| `ParimutuelMarket` | Deployed — `0x0431576845B77a743C87be323c04fad02201E08b` (settles in USDT, reads `CupOracleV3`) |
 | `FanPassSBT` | Deployed — `0x74F75532428A99E613a865C97D1084b7f38241BD` |
+| `CupOracleV2` · `ParimutuelMarket` (V2-era) | Superseded — pre-hardening, see `docs/xcup/CONTRACTS.md` |
 
 Full registry + explorer links: [`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
 
