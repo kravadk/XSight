@@ -7,6 +7,7 @@ import { MatchupHeader, OutcomeBar, MarketStatusBadge, PageHeader, StatePanel, f
 import { cn } from '../utils/format';
 
 type Filter = 'all' | 'upcoming' | 'live' | 'finished';
+type TypeFilter = 'all' | '1X2' | 'OU25' | 'BTTS';
 
 const FILTERS: { id: Filter; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -15,21 +16,36 @@ const FILTERS: { id: Filter; label: string }[] = [
   { id: 'finished', label: 'Finished' },
 ];
 
+const TYPE_FILTERS: { id: TypeFilter; label: string }[] = [
+  { id: 'all', label: 'All types' },
+  { id: '1X2', label: 'Match Result' },
+  { id: 'OU25', label: 'Over/Under 2.5' },
+  { id: 'BTTS', label: 'Both Score' },
+];
+
+const TYPE_SHORT: Record<string, string> = {
+  '1X2': 'Match Result',
+  OU25: 'O/U 2.5',
+  BTTS: 'Both Score',
+};
+
 export function MarketsPage() {
   const { data, loading, error, reload } = useApi(() => api.markets(), []);
   const openMarket = useUiStore((s) => s.openMarket);
   const [filter, setFilter] = useState<Filter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
   const markets = useMemo(() => data?.markets ?? [], [data]);
   const filtered = useMemo(
     () =>
       markets.filter((m) => {
+        if (typeFilter !== 'all' && m.marketType !== typeFilter) return false;
         if (filter === 'live') return m.matchStatus === 'live';
         if (filter === 'finished') return m.matchStatus === 'final' || m.matchStatus === 'settled';
         if (filter === 'upcoming') return m.matchStatus === 'scheduled';
         return true;
       }),
-    [markets, filter],
+    [markets, filter, typeFilter],
   );
 
   return (
@@ -47,7 +63,7 @@ export function MarketsPage() {
         }
       />
 
-      <div className="mb-5 flex items-center gap-2">
+      <div className="mb-3 flex items-center gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.id}
@@ -65,6 +81,23 @@ export function MarketsPage() {
         {!loading && !error && (
           <span className="ml-auto text-xs tabular text-stadium-text-muted">{filtered.length} markets</span>
         )}
+      </div>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2">
+        {TYPE_FILTERS.map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setTypeFilter(t.id)}
+            className={cn(
+              'rounded-full px-3 py-1 text-[11px] font-bold transition-colors',
+              typeFilter === t.id
+                ? 'bg-gold text-stadium-base'
+                : 'border border-stadium-line text-stadium-text-secondary hover:text-stadium-text',
+            )}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
       <StatePanel
@@ -94,7 +127,15 @@ function MarketCard({ market, onOpen }: { market: MarketViewDto; onOpen: () => v
 
       <MatchupHeader home={market.home} away={market.away} kickoffUtc={market.kickoffUtc} />
 
-      <OutcomeBar odds={market.impliedOdds} winningOutcome={market.winningOutcome} />
+      <span className="-mt-1 w-fit rounded-md border border-stadium-line bg-stadium-base px-2 py-0.5 text-[10px] font-bold text-gold">
+        {TYPE_SHORT[market.marketType] ?? market.marketType}
+      </span>
+
+      <OutcomeBar
+        odds={market.impliedOdds}
+        winningOutcome={market.winningOutcome}
+        outcomeLabels={market.outcomeLabels}
+      />
 
       <div className="flex items-center justify-between border-t border-stadium-line pt-3">
         <div>

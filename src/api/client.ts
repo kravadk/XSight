@@ -582,6 +582,10 @@ export interface ParimutuelContractDto {
 
 export interface MarketViewDto {
   id: string;
+  cupMatchId: string;
+  marketType: string;
+  marketTypeLabel: string;
+  outcomeLabels: string[];
   marketId: string;
   matchId: string;
   home: { code: string; name: string };

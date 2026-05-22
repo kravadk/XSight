@@ -10,11 +10,12 @@ import { cn } from '../utils/format';
 import { FreePickPanel } from '../components/cup/FreePickPanel';
 import { PunditReadCard } from '../components/cup/PunditReadCard';
 
-const OUTCOMES = [
-  { id: 1, label: 'Home', color: 'var(--color-outcome-home)' },
-  { id: 2, label: 'Draw', color: 'var(--color-outcome-draw)' },
-  { id: 3, label: 'Away', color: 'var(--color-outcome-away)' },
-] as const;
+const OUTCOME_COLORS_3 = [
+  'var(--color-outcome-home)',
+  'var(--color-outcome-draw)',
+  'var(--color-outcome-away)',
+];
+const OUTCOME_COLORS_2 = ['var(--color-outcome-home)', 'var(--color-outcome-away)'];
 
 /**
  * Tokens a fan can stake with. USDT is the settlement token (direct approve+stake);
@@ -53,6 +54,13 @@ export function MarketDetailPage() {
 
   const canStake = data?.marketStatus === 'open';
   const amountNum = Number(amount) || 0;
+  const outcomeLabels = data?.outcomeLabels ?? ['Home', 'Draw', 'Away'];
+  const outcomeColors = outcomeLabels.length === 2 ? OUTCOME_COLORS_2 : OUTCOME_COLORS_3;
+  const outcomes = outcomeLabels.map((label, i) => ({
+    id: (i + 1) as 1 | 2 | 3,
+    label,
+    color: outcomeColors[i] ?? OUTCOME_COLORS_3[2],
+  }));
 
   async function handleApprove() {
     if (!data || amountNum <= 0) return;
@@ -129,7 +137,9 @@ export function MarketDetailPage() {
             {/* hero */}
             <div className="stadium-card pitch-stripes overflow-hidden p-5">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-stadium-text-muted">{data.stage}</span>
+                <span className="text-[11px] font-semibold text-stadium-text-muted">
+                  {data.stage} · <span className="text-gold">{data.marketTypeLabel}</span>
+                </span>
                 <MarketStatusBadge status={data.marketStatus} />
               </div>
               <MatchupHeader home={data.home} away={data.away} size="lg" kickoffUtc={data.kickoffUtc} />
@@ -141,12 +151,12 @@ export function MarketDetailPage() {
               </div>
             </div>
 
-            {/* AI pundit read */}
-            <PunditReadCard matchId={matchId} />
+            {/* AI pundit read — a 1X2 signal, shown only on the Match Result market */}
+            {data.marketType === '1X2' && <PunditReadCard matchId={data.cupMatchId} />}
 
             {/* outcome buckets */}
-            <div className="grid grid-cols-3 gap-2">
-              {OUTCOMES.map((o) => {
+            <div className={cn('grid gap-2', outcomes.length === 2 ? 'grid-cols-2' : 'grid-cols-3')}>
+              {outcomes.map((o) => {
                 const implied = [0, data.impliedOdds.home, data.impliedOdds.draw, data.impliedOdds.away][o.id];
                 const fair = data.aiFairOdds
                   ? [0, data.aiFairOdds.home, data.aiFairOdds.draw, data.aiFairOdds.away][o.id]
@@ -155,7 +165,7 @@ export function MarketDetailPage() {
                 return (
                   <button
                     key={o.id}
-                    onClick={() => setOutcome(o.id as 1 | 2 | 3)}
+                    onClick={() => setOutcome(o.id)}
                     disabled={!canStake}
                     className={cn(
                       'rounded-xl border p-3 text-left transition-all disabled:opacity-60',
@@ -167,7 +177,9 @@ export function MarketDetailPage() {
                       {Math.round(implied * 100)}%
                     </div>
                     <div className="text-[10px] text-stadium-text-secondary">
-                      AI fair {fair !== null ? `${Math.round(fair * 100)}%` : '—'}
+                      {data.marketType === '1X2'
+                        ? `AI fair ${fair !== null ? `${Math.round(fair * 100)}%` : '—'}`
+                        : 'pool-implied'}
                     </div>
                   </button>
                 );
@@ -180,7 +192,9 @@ export function MarketDetailPage() {
                 <>
                   <div className="mb-3 flex items-center gap-2">
                     <Wallet className="h-4 w-4 text-pitch" />
-                    <span className="text-sm font-bold text-stadium-text">Stake on {OUTCOMES[outcome - 1].label}</span>
+                    <span className="text-sm font-bold text-stadium-text">
+                      Stake on {outcomeLabels[outcome - 1] ?? outcomeLabels[0]}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input
@@ -255,8 +269,10 @@ export function MarketDetailPage() {
               )}
             </div>
 
-            {/* free-to-play pick */}
-            <FreePickPanel matchId={matchId} locked={data.matchStatus !== 'scheduled'} />
+            {/* free-to-play pick — 1X2 only */}
+            {data.marketType === '1X2' && (
+              <FreePickPanel matchId={data.cupMatchId} locked={data.matchStatus !== 'scheduled'} />
+            )}
 
             {/* oracle strip */}
             <div className="stadium-card flex items-center justify-between p-3.5 text-xs">

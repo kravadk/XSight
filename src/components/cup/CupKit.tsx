@@ -156,17 +156,27 @@ const OUTCOME_LABEL = ['', 'Home', 'Draw', 'Away'];
 export function OutcomeBar({
   odds,
   winningOutcome,
+  outcomeLabels,
 }: {
   odds: { home: number; draw: number; away: number };
   winningOutcome?: number | null;
+  /** Labels for contract outcomes 1..N. Defaults to Home/Draw/Away (1X2). */
+  outcomeLabels?: string[];
 }) {
-  const total = odds.home + odds.draw + odds.away;
-  const seg = (v: number) => (total > 0 ? (v / total) * 100 : 33.33);
-  const cells: { key: 1 | 2 | 3; v: number; color: string }[] = [
-    { key: 1, v: odds.home, color: 'var(--color-outcome-home)' },
-    { key: 2, v: odds.draw, color: 'var(--color-outcome-draw)' },
-    { key: 3, v: odds.away, color: 'var(--color-outcome-away)' },
-  ];
+  const labels = outcomeLabels && outcomeLabels.length >= 2 ? outcomeLabels : ['Home', 'Draw', 'Away'];
+  const palette =
+    labels.length === 2
+      ? ['var(--color-outcome-home)', 'var(--color-outcome-away)']
+      : ['var(--color-outcome-home)', 'var(--color-outcome-draw)', 'var(--color-outcome-away)'];
+  const values = [odds.home, odds.draw, odds.away];
+  const cells = labels.map((label, i) => ({
+    key: (i + 1) as 1 | 2 | 3,
+    v: values[i] ?? 0,
+    color: palette[i] ?? 'var(--color-outcome-away)',
+    label,
+  }));
+  const total = cells.reduce((sum, c) => sum + c.v, 0);
+  const seg = (v: number) => (total > 0 ? (v / total) * 100 : 100 / cells.length);
   return (
     <div>
       <div className="flex h-2 overflow-hidden rounded-full bg-[rgba(255,255,255,0.05)]">
@@ -188,7 +198,7 @@ export function OutcomeBar({
             className={cn(winningOutcome === c.key && 'text-gold')}
             style={{ color: winningOutcome === c.key ? undefined : c.color }}
           >
-            {OUTCOME_LABEL[c.key]} {total > 0 ? `${Math.round(seg(c.v))}%` : '—'}
+            {c.label} {total > 0 ? `${Math.round(seg(c.v))}%` : '—'}
           </span>
         ))}
       </div>
