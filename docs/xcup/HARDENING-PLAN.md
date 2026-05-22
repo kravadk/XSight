@@ -15,9 +15,12 @@
   з реальним USDT — усі зелені.
 - **Фаза 4 + 6 (деплой-скрипт) — ✅ зроблено** (`31a5958`): `deploy-cup-oracle-v3.ts`
   + version-aware бекенд (V3 ABI, bonded write-path).
+- **Фаза 5 — ✅ зроблено** (`906a05b`, `b934408`): `ParimutuelMarket` — minStake +
+  поглинання dust останнім переможцем (G7); `GET /api/cup/health`; close-buffer перед
+  kickoff. Fork-тести: 45 зелених (26 ринок + 19 V3).
 - **Деплой у mainnet — ⏳ user-gated** (рішення Розділ 5: 50 USDT bond, 0% fee, 1 год
-  вікно, Chainlink — стретч). Потрібні адреси 3 підписантів `ArbiterMultisig`.
-- **Фаза 5 (dust G7, minStake) — ⏳ на обговорення** (див. Розділ 3 Фаза 5).
+  вікно, Chainlink — стретч). Лишилось одне: адреси 3 підписантів `ArbiterMultisig`
+  (`CUP_ARBITER_SIGNERS`) — без них деплой не запускається.
 
 ---
 
