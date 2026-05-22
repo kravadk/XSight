@@ -5,6 +5,7 @@ import { TopBar } from './components/layout/TopBar';
 import { BottomTabBar } from './components/layout/BottomTabBar';
 import { ToastHost } from './components/common/ToastHost';
 import { CommandPalette } from './components/common/CommandPalette';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { useUiStore } from './store/uiStore';
 import { useBackendSync } from './hooks/useBackendSync';
 
@@ -45,6 +46,7 @@ export default function App() {
               transition={{ duration: 0.2 }}
               className="h-full min-w-0"
             >
+              <ErrorBoundary resetKey={activeTab}>
               <Suspense fallback={<PageSkeleton />}>
                 {/* XSight copilot */}
                 {(activeTab === 'portfolio' || activeTab === 'dashboard') && <PortfolioPage />}
@@ -66,6 +68,7 @@ export default function App() {
                 {['cup', 'agentbet', 'files', 'rewards'].includes(activeTab) &&
                   (product === 'xcup' ? <MarketsPage /> : <ChatPage />)}
               </Suspense>
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
         </main>
