@@ -94,7 +94,7 @@ export function DevelopersPage() {
 
   const contracts = [
     oracle.data && {
-      name: 'CupOracleV2',
+      name: oracle.data.name ?? 'CupOracle',
       address: oracle.data.address,
       explorerUrl: oracle.data.explorerUrl,
       status: oracle.data.status,

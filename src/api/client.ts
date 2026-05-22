@@ -382,7 +382,10 @@ export interface CupOracleContractDto {
   explorerUrl: string | null;
   sourcePath: string;
   legacyAddress?: string | null;
+  v2Address?: string | null;
   version?: string;
+  bonded?: boolean;
+  arbiterAddress?: string | null;
   challengeWindowSeconds: number;
   writeApiEnabled: boolean;
   abi: string[];
@@ -606,6 +609,7 @@ export interface MarketDetailDto extends MarketViewDto {
   aiEdge: CupAiEdgeDto | null;
   aiFairOdds: { home: number; draw: number; away: number } | null;
   oracle: CupOnchainMatchDto | null;
+  oracleContract: CupOracleContractDto;
   contract: ParimutuelContractDto;
 }
 

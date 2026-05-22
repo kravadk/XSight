@@ -3,7 +3,7 @@
  *
  * OFF by default. The loop only runs when CUP_RESOLVER_ENABLED=true; otherwise the
  * resolver stays dry-run-only (invoke it manually via the API or test script).
- * Enabling it makes the server send real OKB-spending txs on CupOracleV2.
+ * Enabling it makes the server send real OKB-spending txs on the CupOracle.
  */
 import { env } from '../config/env.js';
 import { resolveCupMatches } from './quorumResolver.js';

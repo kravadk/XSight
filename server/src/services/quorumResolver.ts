@@ -1,13 +1,13 @@
 /**
  * Quorum resolver — the autonomous bridge between CupHub multi-source ingestion and
- * the deployed CupOracleV2 (DESIGN §2.1 Flow F).
+ * the deployed CupOracle (V2, or the bonded V3 once CUP_ORACLE_V3_ADDRESS is set).
  *
  * It is idempotent and driven entirely by REAL on-chain state (`readCupOracleMatch`):
  * a finished match with a 2-of-N source quorum flows
  *   register -> propose -> (challenge window) -> finalize,
  * one action per match per pass so every tx is independently observable on-chain.
  *
- * NO MOCKS — real sports feeds via `cupData`, real CupOracleV2, real signer.
+ * NO MOCKS — real sports feeds via `cupData`, real on-chain CupOracle, real signer.
  *
  * SAFETY: `resolveCupMatches({ dryRun:false })` sends real OKB-spending transactions.
  * The scheduler only runs it non-dry when CUP_RESOLVER_ENABLED=true.

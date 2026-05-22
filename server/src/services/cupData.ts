@@ -5,6 +5,9 @@ import { recordActivity } from './activityTracker.js';
 import { persistCupMatches } from './cupPersistence.js';
 import { getFanScore } from './cupReputation.js';
 
+/** Active settlement-oracle display name — CupOracleV3 once CUP_ORACLE_V3_ADDRESS is set. */
+const ORACLE_NAME = env.cupOracleV3Address.trim().length >= 42 ? 'CupOracleV3' : 'CupOracleV2';
+
 export type CupMatchStatus = 'scheduled' | 'live' | 'final' | 'proposed' | 'challenged' | 'settled';
 export type CupOutcome = 'HOME' | 'DRAW' | 'AWAY';
 export type CupSourceStatus =
@@ -555,12 +558,12 @@ export async function getCupTrackProof(): Promise<CupTrackProof> {
       {
         track: 'Prediction Infrastructure',
         status: 'ready',
-        judgeShouldSee: 'CupHub receipts, quorum checks, CupOracleV2 evidence, challenge window, and finalized result reads.',
+        judgeShouldSee: `CupHub receipts, quorum checks, ${ORACLE_NAME} evidence, challenge window, and finalized result reads.`,
         doNotClaim: 'Do not say XSight is a user-facing prediction market.',
         proofs: [
           { label: 'Oracle panel', kind: 'ui', value: 'CupHub > Oracle proof' },
           { label: 'Settlement check', kind: 'api', value: 'GET /api/cup/settlement-check?matchId=...' },
-          { label: 'CupOracleV2', kind: 'contract', value: oracleAddress },
+          { label: ORACLE_NAME, kind: 'contract', value: oracleAddress },
           { label: 'Reference consumer', kind: 'code', value: 'examples/cuphub-reference-market.ts' },
         ],
       },
@@ -714,7 +717,7 @@ export async function buildCupActionPlan(matchId: string, mode: CupActionPlan['m
       'Treat AI edge as a non-canonical signal; settlement depends on source quorum and oracle finalization.',
     ],
     xlayerActions: [
-      'Read CupOracleV2 match state on X Layer.',
+      `Read ${ORACLE_NAME} match state on X Layer.`,
       'Only write app-specific payouts after finalized oracle outcome.',
       'Require explicit user approval before any swap, hedge, or stake action.',
     ],

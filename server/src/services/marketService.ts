@@ -7,7 +7,7 @@
  * `contract_not_deployed` — never a fabricated pool.
  */
 import { getCupAiEdge, getCupFeed, getCupMatch, type CupMatch } from './cupData.js';
-import { readCupOracleMatch } from './cupOracleContract.js';
+import { cupOracleMetadata, readCupOracleMatch } from './cupOracleContract.js';
 import { deriveMarketId, encodeMatchId, encodeMarketKey, decodeMarketKey } from '../utils/cupIds.js';
 import { MARKET_TYPES, MARKET_TYPE_IDS, isMarketTypeId, type MarketTypeId } from './marketTypes.js';
 import { getIndexedMarket, marketIdsForWallet } from './marketIndexer.js';
@@ -161,6 +161,7 @@ export async function getMarketDetail(marketKey: string) {
     aiEdge,
     aiFairOdds: aiEdge?.fairProbability ?? null,
     oracle,
+    oracleContract: cupOracleMetadata(),
     contract: parimutuelMetadata(),
   };
 }

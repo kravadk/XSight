@@ -53,7 +53,7 @@ export function MarketsPage() {
       <PageHeader
         kicker="World Cup 2026 · X Layer"
         title="Match Markets"
-        sub="Real-money pari-mutuel pools on football outcomes — settled by a trustless multi-source oracle."
+        sub="Real-money pari-mutuel pools on football outcomes — settled by a bonded multi-source oracle."
         action={
           data?.contract.address ? (
             <span className="hidden rounded-lg border border-pitch-border bg-pitch-bg px-3 py-1.5 text-xs font-bold text-pitch md:block">

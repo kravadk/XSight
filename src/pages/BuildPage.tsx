@@ -84,19 +84,24 @@ app.post("/xsight-webhook", express.json(), (req, res) => {
 
 const CONTRACTS: { name: string; address: string; description: string }[] = [
   {
-    name: 'CupOracleV2',
-    address: '0xE4dFef03E107225f2239CFfF955a378A9a8158Be',
-    description: 'Optimistic World Cup settlement oracle deployed on X Layer',
+    name: 'CupOracleV3',
+    address: '0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6',
+    description: 'Bonded optimistic World Cup settlement oracle on X Layer',
   },
   {
-    name: 'OnchainOS Router',
-    address: '0x000000000000000000000000000000000000DEAD',
-    description: 'Aggregator contract used by the swap service',
+    name: 'ArbiterMultisig',
+    address: '0x792152c274c42C588D5551C9141C21106d3A2Cce',
+    description: 'Arbiter that rules on challenged oracle results',
   },
   {
-    name: 'OKB',
+    name: 'ParimutuelMarket',
+    address: '0x0431576845B77a743C87be323c04fad02201E08b',
+    description: 'Pari-mutuel prediction pool, settles off CupOracleV3',
+  },
+  {
+    name: 'WOKB',
     address: '0xe538905cf8410324e03A5A23C1c177a474D59b2b',
-    description: 'X Layer native OKB token',
+    description: 'Wrapped OKB on X Layer',
   },
   {
     name: 'USDT',

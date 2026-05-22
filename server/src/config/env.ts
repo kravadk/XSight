@@ -37,7 +37,7 @@ export const env = {
     : (process.env.NODE_ENV ?? 'development') !== 'production',
   cupWriteApiKey: required('CUP_WRITE_API_KEY'),
   // Autonomous oracle resolver. OFF by default — when true the scheduler sends real
-  // OKB-spending registerMatch/proposeResult/finalizeResult txs on CupOracleV2.
+  // OKB-spending registerMatch/proposeResult/finalizeResult txs on the CupOracle.
   cupResolverEnabled: process.env.CUP_RESOLVER_ENABLED === 'true',
   cupResolverIntervalMs: Number(process.env.CUP_RESOLVER_INTERVAL_MS ?? 300000),
   // ParimutuelMarket (Plan 3). Empty market address => contract not deployed yet:

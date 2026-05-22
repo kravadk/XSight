@@ -278,7 +278,9 @@ export function MarketDetailPage() {
             <div className="stadium-card flex items-center justify-between p-3.5 text-xs">
               <span className="text-stadium-text-secondary">Settlement oracle</span>
               <span className="font-mono text-stadium-text">
-                CupOracleV2 {data.oracle?.registered ? `· state ${data.oracle.state ?? 0}` : '· awaiting registration'}
+                {data.oracleContract?.name ?? 'CupOracle'}
+                {data.oracleContract?.bonded ? ' · bonded' : ''}
+                {data.oracle?.registered ? ` · state ${data.oracle.state ?? 0}` : ' · awaiting registration'}
               </span>
             </div>
           </div>

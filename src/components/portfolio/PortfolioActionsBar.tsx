@@ -22,8 +22,8 @@ export function PortfolioActionsBar() {
   const [moreOpen, setMoreOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const displayAddr = address || '0x000000000000000000000000000000000000DEAD';
-  const explorerUrl = `https://www.oklink.com/xlayer/address/${displayAddr}`;
+  const displayAddr = address;
+  const explorerUrl = address ? `https://www.oklink.com/xlayer/address/${address}` : '';
 
   const copyAddr = () => {
     void navigator.clipboard.writeText(displayAddr).then(
