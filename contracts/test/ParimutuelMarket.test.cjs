@@ -131,9 +131,9 @@ async function finalizeOracle(ownerSigner, matchId) {
   await (await oracle.finalizeResult(matchId)).wait();
 }
 
-async function deployMarket(tokenAddr, feeBps, operator, treasury) {
+async function deployMarket(tokenAddr, feeBps, operator, treasury, minStake = 0n) {
   const Factory = await ethers.getContractFactory("ParimutuelMarket");
-  const market = await Factory.deploy(tokenAddr, ORACLE, operator.address, treasury.address, feeBps);
+  const market = await Factory.deploy(tokenAddr, ORACLE, operator.address, treasury.address, feeBps, minStake);
   await market.waitForDeployment();
   return market;
 }
@@ -350,6 +350,73 @@ describe("ParimutuelMarket — forked X Layer mainnet", function () {
       // nonReentrant + the CEI `claimed` flag block the re-entry; the malicious transfer
       // then fails, so the whole outer claim reverts and no double payout escapes.
       await expect(market.connect(alice).claim(marketId)).to.be.reverted;
+    });
+  });
+
+  describe("Phase 5 — minStake + dust absorption (real USDT)", function () {
+    const TKN = TOKENS.USDT;
+
+    it("minStake: stakes below the floor revert, at/above succeed", async () => {
+      const [, operator, treasury, alice] = await ethers.getSigners();
+      const market = await deployMarket(TKN, 0, operator, treasury, amt(5));
+      expect(await market.minStake()).to.equal(amt(5));
+      const marketId = randomId();
+      await market.connect(operator).createMarket(marketId, randomId(), (await nowTs()) + 3600n);
+      await fund(TKN, market, alice, amt(20));
+      await expect(market.connect(alice).stake(marketId, HOME, amt(3))).to.be.revertedWith("below min stake");
+      await market.connect(alice).stake(marketId, HOME, amt(5)); // exactly the floor
+      expect((await market.getMarket(marketId)).poolHome).to.equal(amt(5));
+    });
+
+    it("setMinStake: owner-only, takes effect on the next stake", async () => {
+      const [deployer, operator, treasury, alice] = await ethers.getSigners();
+      const market = await deployMarket(TKN, 0, operator, treasury, 0n);
+      await expect(market.connect(alice).setMinStake(amt(10))).to.be.revertedWith("not owner");
+      await market.connect(deployer).setMinStake(amt(10));
+      expect(await market.minStake()).to.equal(amt(10));
+      const marketId = randomId();
+      await market.connect(operator).createMarket(marketId, randomId(), (await nowTs()) + 3600n);
+      await fund(TKN, market, alice, amt(10));
+      await expect(market.connect(alice).stake(marketId, HOME, amt(9))).to.be.revertedWith("below min stake");
+    });
+
+    it("dust: the last winner to claim absorbs the rounding remainder, nothing is stranded", async () => {
+      const signers = await ethers.getSigners();
+      const [, operator, treasury] = signers;
+      const [w1, w2, w3, loser] = [signers[3], signers[4], signers[5], signers[6]];
+
+      const matchId = await registerAndPropose(oracleOwner, HOME);
+      const market = await deployMarket(TKN, 0, operator, treasury, 0n);
+      const marketId = randomId();
+      await market.connect(operator).createMarket(marketId, matchId, (await nowTs()) + 3600n);
+
+      // 3 winners stake 10 each (winnerPool 30); 1 loser stakes 5 -> payoutPool 35.
+      // floor(10e6 * 35e6 / 30e6) = 11_666_666 -> 2 base units of dust over 3 claims.
+      for (const w of [w1, w2, w3]) {
+        await fund(TKN, market, w, amt(10));
+        await market.connect(w).stake(marketId, HOME, amt(10));
+      }
+      await fund(TKN, market, loser, amt(5));
+      await market.connect(loser).stake(marketId, AWAY, amt(5));
+
+      await warp(WARP);
+      await finalizeOracle(oracleOwner, matchId);
+      await market.settle(marketId);
+
+      const tk = tokenAt(TKN);
+      const base = 11_666_666n;
+      const b1 = await tk.balanceOf(w1.address);
+      await market.connect(w1).claim(marketId);
+      expect((await tk.balanceOf(w1.address)) - b1).to.equal(base);
+      const b2 = await tk.balanceOf(w2.address);
+      await market.connect(w2).claim(marketId);
+      expect((await tk.balanceOf(w2.address)) - b2).to.equal(base);
+      const b3 = await tk.balanceOf(w3.address);
+      await market.connect(w3).claim(marketId); // last winner — absorbs the 2-unit dust
+      expect((await tk.balanceOf(w3.address)) - b3).to.equal(base + 2n);
+
+      // the whole payout pool has left the contract — nothing stranded
+      expect(await tk.balanceOf(await market.getAddress())).to.equal(0n);
     });
   });
 });

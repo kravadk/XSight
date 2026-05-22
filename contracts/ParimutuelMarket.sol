@@ -35,6 +35,8 @@ contract ParimutuelMarket {
     address public operator;
     address public treasury;
     uint16 public feeBps;
+    /// @notice Minimum stake per `stake()` call — an anti-dust-spam floor. 0 disables it.
+    uint256 public minStake;
     /// @notice The ERC20 the market settles in — USDT or USDC on X Layer. Token-agnostic
     ///         on purpose: handles both standard (bool-returning) and non-standard
     ///         (void-returning, e.g. USDT) ERC20s via the low-level helpers below.
@@ -53,6 +55,9 @@ contract ParimutuelMarket {
         uint256 totalPool;
         uint256 payoutPool; // totalPool minus fee, fixed at settle
         uint256[4] pool; // indexed by outcome 1/2/3; index 0 unused
+        uint32[4] stakerCount; // distinct stakers per outcome — for dust absorption
+        uint32 claimedWinners; // winners who have claimed (non-refund path)
+        uint256 distributed; // running total paid out — for dust absorption
     }
 
     mapping(bytes32 => Market) private _markets;
@@ -67,6 +72,8 @@ contract ParimutuelMarket {
     event OperatorChanged(address indexed operator);
     event TreasuryChanged(address indexed treasury);
     event FeeChanged(uint16 feeBps);
+    event MinStakeChanged(uint256 minStake);
+    event DustSwept(bytes32 indexed marketId, address indexed to, uint256 amount);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     modifier onlyOwner() {
@@ -84,7 +91,14 @@ contract ParimutuelMarket {
         _entered = 0;
     }
 
-    constructor(address token_, address oracle_, address operator_, address treasury_, uint16 feeBps_) {
+    constructor(
+        address token_,
+        address oracle_,
+        address operator_,
+        address treasury_,
+        uint16 feeBps_,
+        uint256 minStake_
+    ) {
         require(token_ != address(0) && oracle_ != address(0), "zero addr");
         require(operator_ != address(0) && treasury_ != address(0), "zero addr");
         require(feeBps_ <= MAX_FEE_BPS, "fee too high");
@@ -94,6 +108,7 @@ contract ParimutuelMarket {
         operator = operator_;
         treasury = treasury_;
         feeBps = feeBps_;
+        minStake = minStake_;
         emit OwnershipTransferred(address(0), msg.sender);
     }
 
@@ -122,6 +137,12 @@ contract ParimutuelMarket {
         emit FeeChanged(v);
     }
 
+    /// @notice Set the anti-dust-spam minimum stake. Only affects future stakes.
+    function setMinStake(uint256 v) external onlyOwner {
+        minStake = v;
+        emit MinStakeChanged(v);
+    }
+
     // ---- market lifecycle ----
     function createMarket(bytes32 marketId, bytes32 matchId, uint64 closeTime) external onlyOperator {
         require(marketId != bytes32(0) && matchId != bytes32(0), "bad id");
@@ -141,9 +162,13 @@ contract ParimutuelMarket {
         require(block.timestamp < m.closeTime, "closed");
         require(outcome >= OUTCOME_HOME && outcome <= OUTCOME_AWAY, "bad outcome");
         require(amount > 0, "zero amount");
+        require(amount >= minStake, "below min stake");
         _pullToken(msg.sender, amount);
         m.pool[outcome] += amount;
         m.totalPool += amount;
+        // count each distinct staker per outcome once — the winning outcome's count
+        // tells claim() which winner is last, so it can absorb the rounding dust.
+        if (_stake[marketId][msg.sender][outcome] == 0) m.stakerCount[outcome] += 1;
         _stake[marketId][msg.sender][outcome] += amount;
         emit Staked(marketId, msg.sender, outcome, amount);
     }
@@ -195,7 +220,21 @@ contract ParimutuelMarket {
             payout = s[1] + s[2] + s[3];
         } else {
             uint256 won = s[m.winningOutcome];
-            if (won > 0) payout = (won * m.payoutPool) / m.pool[m.winningOutcome];
+            if (won > 0) {
+                payout = (won * m.payoutPool) / m.pool[m.winningOutcome];
+                m.claimedWinners += 1;
+                m.distributed += payout;
+                // the last winning staker to claim absorbs the integer-division dust,
+                // so the whole payout pool leaves the contract and nothing is stranded.
+                if (m.claimedWinners == m.stakerCount[m.winningOutcome]) {
+                    uint256 dust = m.payoutPool - m.distributed;
+                    if (dust > 0) {
+                        payout += dust;
+                        m.distributed += dust;
+                        emit DustSwept(marketId, msg.sender, dust);
+                    }
+                }
+            }
         }
         require(payout > 0, "nothing to claim");
         _pushToken(msg.sender, payout);

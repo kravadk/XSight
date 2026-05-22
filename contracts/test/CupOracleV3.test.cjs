@@ -391,7 +391,7 @@ describe("ParimutuelMarket settles against CupOracleV3 unchanged (forked X Layer
 
     // market points at the V3 oracle — same ICupOracle interface, no logical change
     const Market = await ethers.getContractFactory("ParimutuelMarket");
-    const market = await Market.deploy(USDT, await oracle.getAddress(), operator.address, treasury.address, 0);
+    const market = await Market.deploy(USDT, await oracle.getAddress(), operator.address, treasury.address, 0, 0);
     await market.waitForDeployment();
 
     // proposer = owner (funded for one bond); HOME wins
