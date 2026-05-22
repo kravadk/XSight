@@ -23,6 +23,33 @@ import {
   registerCupOracleMatch,
   type CupOracleOutcome,
 } from './cupOracleContract.js';
+import { MARKET_TYPES, MARKET_TYPE_IDS, type MarketTypeId } from './marketTypes.js';
+import { encodeMarketKey } from '../utils/cupIds.js';
+
+/** Map a contract outcome index (1/2/3) to the CupOracle enum proxy the oracle stores. */
+const INDEX_TO_OUTCOME: Record<number, CupOutcome> = { 1: 'HOME', 2: 'DRAW', 3: 'AWAY' };
+
+/**
+ * The winning outcome + label for one (fixture × market type), or null if it cannot be
+ * derived yet. 1X2 uses the multi-source quorum's agreed outcome; Over/Under and BTTS
+ * derive from the agreed final score. The oracle only ever stores the index 1/2/3 —
+ * the human label belongs to the market type.
+ */
+function deriveMarketOutcome(
+  match: CupMatch,
+  marketType: MarketTypeId,
+): { outcome: CupOutcome; label: string } | null {
+  const def = MARKET_TYPES[marketType];
+  if (marketType === '1X2') {
+    const q = match.settlement.sourceQuorum;
+    if (q.status !== 'settlement_ready' || !q.outcome) return null;
+    const idx = q.outcome === 'HOME' ? 1 : q.outcome === 'AWAY' ? 3 : 2;
+    return { outcome: q.outcome, label: def.outcomes[idx - 1] };
+  }
+  if (!match.score) return null;
+  const idx = def.deriveOutcome(match.score);
+  return { outcome: INDEX_TO_OUTCOME[idx], label: def.outcomes[idx - 1] };
+}
 
 export type ResolverAction =
   | 'skip' // match not finished
@@ -34,10 +61,12 @@ export type ResolverAction =
   | 'done'; // finalized on-chain
 
 export interface ResolverStep {
-  matchId: string;
+  matchId: string; // the (fixture × market type) composite key — distinct on-chain record
+  marketType: string;
   label: string;
   action: ResolverAction;
-  outcome: CupOutcome | null;
+  outcome: CupOutcome | null; // contract outcome 1/2/3 as the oracle enum proxy
+  outcomeLabel: string | null; // human label for this market type's outcome
   reason: string;
   onchainState: number | null; // 0 Open · 1 Proposed · 2 Challenged · 3 Finalized · null = unregistered
   challengeEndsAt: number | null;
@@ -63,12 +92,15 @@ let lastReport: ResolverReport | null = null;
 
 function step(
   match: CupMatch,
+  marketType: MarketTypeId,
   partial: Partial<ResolverStep> & { action: ResolverAction; reason: string },
 ): ResolverStep {
   return {
-    matchId: match.id,
-    label: `${match.home.code} v ${match.away.code}`,
+    matchId: encodeMarketKey(match.id, marketType),
+    marketType,
+    label: `${match.home.code} v ${match.away.code} · ${MARKET_TYPES[marketType].shortLabel}`,
     outcome: null,
+    outcomeLabel: null,
     onchainState: null,
     challengeEndsAt: null,
     executed: null,
@@ -77,26 +109,45 @@ function step(
   };
 }
 
-async function planMatch(match: CupMatch, challengeWindow: number, nowSec: number): Promise<ResolverStep> {
+async function planMarket(
+  match: CupMatch,
+  marketType: MarketTypeId,
+  challengeWindow: number,
+  nowSec: number,
+): Promise<ResolverStep> {
   if (match.status !== 'final') {
-    return step(match, { action: 'skip', reason: `match is ${match.status}, not final` });
+    return step(match, marketType, { action: 'skip', reason: `match is ${match.status}, not final` });
   }
 
   const quorum = match.settlement.sourceQuorum;
-  if (quorum.status !== 'settlement_ready' || !quorum.outcome) {
-    return step(match, { action: 'hold', reason: quorum.reason });
+  if (quorum.status !== 'settlement_ready') {
+    return step(match, marketType, { action: 'hold', reason: quorum.reason });
   }
-  const outcome = quorum.outcome;
+  const derived = deriveMarketOutcome(match, marketType);
+  if (!derived) {
+    return step(match, marketType, {
+      action: 'hold',
+      reason: 'agreed final score unavailable for this market type',
+    });
+  }
+  const { outcome, label } = derived;
+  const marketKey = encodeMarketKey(match.id, marketType);
 
-  const onchain = await readCupOracleMatch(match.id);
+  const onchain = await readCupOracleMatch(marketKey);
   if (onchain === null) {
-    return step(match, { action: 'hold', outcome, reason: 'CupOracleV2 not deployed — set CUP_ORACLE_V2_ADDRESS' });
+    return step(match, marketType, {
+      action: 'hold',
+      outcome,
+      outcomeLabel: label,
+      reason: 'CupOracle not deployed — set CUP_ORACLE_V2_ADDRESS / CUP_ORACLE_V3_ADDRESS',
+    });
   }
   if (!onchain.registered) {
-    return step(match, {
+    return step(match, marketType, {
       action: 'register',
       outcome,
-      reason: 'finished + 2-of-N quorum ready; not yet registered on CupOracleV2',
+      outcomeLabel: label,
+      reason: 'finished + 2-of-N quorum ready; not yet registered on-chain',
     });
   }
 
@@ -104,12 +155,19 @@ async function planMatch(match: CupMatch, challengeWindow: number, nowSec: numbe
   const endsAt = 'challengeEndsAt' in onchain ? Number(onchain.challengeEndsAt) : 0;
 
   if (state === ORACLE_STATE.FINALIZED) {
-    return step(match, { action: 'done', outcome, onchainState: state, reason: 'already finalized on-chain' });
+    return step(match, marketType, {
+      action: 'done',
+      outcome,
+      outcomeLabel: label,
+      onchainState: state,
+      reason: 'already finalized on-chain',
+    });
   }
   if (state === ORACLE_STATE.CHALLENGED) {
-    return step(match, {
+    return step(match, marketType, {
       action: 'hold',
       outcome,
+      outcomeLabel: label,
       onchainState: state,
       reason: cupOracleMetadata().bonded
         ? 'result challenged on-chain — arbiter ruling pending (resolveChallenge)'
@@ -118,17 +176,19 @@ async function planMatch(match: CupMatch, challengeWindow: number, nowSec: numbe
   }
   if (state === ORACLE_STATE.PROPOSED) {
     if (nowSec < endsAt) {
-      return step(match, {
+      return step(match, marketType, {
         action: 'wait_challenge',
         outcome,
+        outcomeLabel: label,
         onchainState: state,
         challengeEndsAt: endsAt,
         reason: `challenge window open until ${new Date(endsAt * 1000).toISOString()}`,
       });
     }
-    return step(match, {
+    return step(match, marketType, {
       action: 'finalize',
       outcome,
+      outcomeLabel: label,
       onchainState: state,
       challengeEndsAt: endsAt,
       reason: 'challenge window elapsed — ready to finalize',
@@ -136,31 +196,34 @@ async function planMatch(match: CupMatch, challengeWindow: number, nowSec: numbe
   }
 
   // state === Open: registered, awaiting a proposal.
-  return step(match, {
+  return step(match, marketType, {
     action: 'propose',
     outcome,
+    outcomeLabel: label,
     onchainState: state,
-    reason: `registered (challengeWindow ${challengeWindow}s); ready to propose ${outcome}`,
+    reason: `registered (challengeWindow ${challengeWindow}s); ready to propose ${label}`,
   });
 }
 
-/** Compute the next action for every fixture in the live feed. Reads only — no txs. */
+/** Compute the next action for every (fixture × market type) in the live feed. Reads only. */
 export async function planResolution(): Promise<ResolverStep[]> {
   const feed = await getCupFeed();
   const challengeWindow = await readCupChallengeWindow();
   const nowSec = Math.floor(Date.now() / 1000);
   const steps: ResolverStep[] = [];
   for (const match of feed.fixtures) {
-    try {
-      steps.push(await planMatch(match, challengeWindow, nowSec));
-    } catch (err) {
-      steps.push(
-        step(match, {
-          action: 'hold',
-          reason: 'planning failed',
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
+    for (const marketType of MARKET_TYPE_IDS) {
+      try {
+        steps.push(await planMarket(match, marketType, challengeWindow, nowSec));
+      } catch (err) {
+        steps.push(
+          step(match, marketType, {
+            action: 'hold',
+            reason: 'planning failed',
+            error: err instanceof Error ? err.message : String(err),
+          }),
+        );
+      }
     }
   }
   return steps;
@@ -171,7 +234,7 @@ function summarize(steps: ResolverStep[], dryRun: boolean, executed: number): st
   for (const s of steps) counts.set(s.action, (counts.get(s.action) ?? 0) + 1);
   const parts = [...counts.entries()].map(([action, n]) => `${action}:${n}`);
   const errors = steps.filter((s) => s.error).length;
-  return `${steps.length} fixtures [${parts.join(' ')}]${dryRun ? ' (dry-run)' : ` executed:${executed}`}${errors ? ` errors:${errors}` : ''}`;
+  return `${steps.length} markets [${parts.join(' ')}]${dryRun ? ' (dry-run)' : ` executed:${executed}`}${errors ? ` errors:${errors}` : ''}`;
 }
 
 /**

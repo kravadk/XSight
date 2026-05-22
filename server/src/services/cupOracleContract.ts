@@ -1,7 +1,7 @@
 import { Contract, formatEther, isAddress } from 'ethers';
 import { env, isConfigured } from '../config/env.js';
 import { X_LAYER } from '../utils/xlayer.js';
-import { encodeMatchId } from '../utils/cupIds.js';
+import { decodeMarketKey, encodeMatchId } from '../utils/cupIds.js';
 import { recordCupSettlementTx } from './cupSettlementLog.js';
 import { getCupMatch } from './cupData.js';
 import { getProvider, getSigner } from './wallet.js';
@@ -264,9 +264,12 @@ async function writeCupOracleTx(
 
   const signer = getSigner();
   const contract = new Contract(metadata.address, isV3 ? CUP_ORACLE_V3_ABI : CUP_ORACLE_ABI, signer);
+  // `matchId` may be a composite (fixture × market type) key — it hashes to a distinct
+  // on-chain record, but the CupHub evidence is looked up by the underlying fixture id.
   const encodedMatchId = encodeMatchId(matchId);
+  const { cupMatchId } = decodeMarketKey(matchId);
 
-  const match = await getCupMatch(matchId);
+  const match = await getCupMatch(cupMatchId);
   if (!match) throw new Error('match not found in live CupHub feed');
 
   if (method === 'proposeResult' && match.settlement.sourceQuorum.status !== 'settlement_ready') {

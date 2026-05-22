@@ -8,7 +8,8 @@
  */
 import { getCupAiEdge, getCupFeed, getCupMatch, type CupMatch } from './cupData.js';
 import { readCupOracleMatch } from './cupOracleContract.js';
-import { deriveMarketId, encodeMatchId } from '../utils/cupIds.js';
+import { deriveMarketId, encodeMatchId, encodeMarketKey, decodeMarketKey } from '../utils/cupIds.js';
+import { MARKET_TYPES, MARKET_TYPE_IDS, isMarketTypeId, type MarketTypeId } from './marketTypes.js';
 import { getIndexedMarket, marketIdsForWallet } from './marketIndexer.js';
 import {
   buildApproveTx,
@@ -34,9 +35,13 @@ export type MarketStatus =
   | 'refund';
 
 export interface MarketView {
-  id: string; // CupHub match id (route param)
+  id: string; // composite (fixture × market type) key — the route param
+  cupMatchId: string; // the underlying CupHub fixture id
+  marketType: string; // 1X2 | OU25 | BTTS
+  marketTypeLabel: string;
+  outcomeLabels: string[]; // labels for contract outcomes 1..N
   marketId: string; // bytes32 ParimutuelMarket id
-  matchId: string; // bytes32 CupOracleV2 id
+  matchId: string; // bytes32 CupOracle id
   home: { code: string; name: string };
   away: { code: string; name: string };
   stage: string;
@@ -45,6 +50,7 @@ export interface MarketView {
   closeTime: number | null;
   matchStatus: CupMatch['status'];
   marketStatus: MarketStatus;
+  // pools/odds are slot-indexed (home=1, draw=2, away=3); a 2-outcome type leaves slot 3 at 0.
   pools: { home: string; draw: string; away: string; total: string };
   impliedOdds: { home: number; draw: number; away: number };
   winningOutcome: number | null;
@@ -55,9 +61,11 @@ function fraction(part: bigint, total: bigint): number {
   return Math.round(Number((part * 10_000n) / total)) / 10_000;
 }
 
-function buildMarketView(match: CupMatch): MarketView {
-  const marketId = deriveMarketId(match.id);
-  const matchId = encodeMatchId(match.id);
+function buildMarketView(match: CupMatch, marketType: MarketTypeId): MarketView {
+  const key = encodeMarketKey(match.id, marketType);
+  const def = MARKET_TYPES[marketType];
+  const marketId = deriveMarketId(key);
+  const matchId = encodeMatchId(key);
   const deployed = Boolean(parimutuelMetadata().address);
   const indexed = getIndexedMarket(marketId);
   const kickoffMs = Date.parse(match.kickoffUtc);
@@ -101,7 +109,11 @@ function buildMarketView(match: CupMatch): MarketView {
   }
 
   return {
-    id: match.id,
+    id: key,
+    cupMatchId: match.id,
+    marketType,
+    marketTypeLabel: def.label,
+    outcomeLabels: [...def.outcomes],
     marketId,
     matchId,
     home: { code: match.home.code, name: match.home.name },
@@ -118,21 +130,30 @@ function buildMarketView(match: CupMatch): MarketView {
   };
 }
 
-/** Every CupHub fixture as a market view (fixtures + indexed on-chain pools). */
+/** Every (CupHub fixture × market type) as a market view. */
 export async function listMarkets(): Promise<MarketView[]> {
   const feed = await getCupFeed();
-  return feed.fixtures.map(buildMarketView);
+  const views: MarketView[] = [];
+  for (const match of feed.fixtures) {
+    for (const marketType of MARKET_TYPE_IDS) {
+      views.push(buildMarketView(match, marketType));
+    }
+  }
+  return views;
 }
 
 /** One market + the inputs the staking panel needs (token, AI fair odds, oracle state). */
-export async function getMarketDetail(cupMatchId: string) {
+export async function getMarketDetail(marketKey: string) {
+  const { cupMatchId, marketType } = decodeMarketKey(marketKey);
+  if (!isMarketTypeId(marketType)) return null;
   const match = await getCupMatch(cupMatchId);
   if (!match) return null;
-  const view = buildMarketView(match);
+  const view = buildMarketView(match, marketType);
+  // AI fair odds are a 1X2 signal — only meaningful for the Match Result market.
   const [aiEdge, settlementToken, oracle] = await Promise.all([
-    getCupAiEdge(cupMatchId),
+    marketType === '1X2' ? getCupAiEdge(cupMatchId) : Promise.resolve(null),
     readSettlementToken(),
-    readCupOracleMatch(cupMatchId),
+    readCupOracleMatch(marketKey),
   ]);
   return {
     ...view,
@@ -162,10 +183,12 @@ export interface MarketPosition {
 }
 
 /** A wallet's position in one market — real contract reads (stakeOf + claimed). */
-export async function getPosition(cupMatchId: string, wallet: string): Promise<MarketPosition | null> {
+export async function getPosition(marketKey: string, wallet: string): Promise<MarketPosition | null> {
+  const { cupMatchId, marketType } = decodeMarketKey(marketKey);
+  if (!isMarketTypeId(marketType)) return null;
   const match = await getCupMatch(cupMatchId);
   if (!match) return null;
-  const marketId = deriveMarketId(cupMatchId);
+  const marketId = deriveMarketId(marketKey);
   const zero = { home: '0', draw: '0', away: '0' };
 
   if (!parimutuelMetadata().address) {
@@ -232,10 +255,13 @@ export async function listWalletPositions(
   const feed = await getCupFeed();
   const out: Array<MarketPosition & { market: MarketView }> = [];
   for (const match of feed.fixtures) {
-    if (!staked.has(deriveMarketId(match.id))) continue;
-    const position = await getPosition(match.id, wallet);
-    if (position && position.status !== 'no_position' && position.status !== 'contract_not_deployed') {
-      out.push({ ...position, market: buildMarketView(match) });
+    for (const marketType of MARKET_TYPE_IDS) {
+      const key = encodeMarketKey(match.id, marketType);
+      if (!staked.has(deriveMarketId(key))) continue;
+      const position = await getPosition(key, wallet);
+      if (position && position.status !== 'no_position' && position.status !== 'contract_not_deployed') {
+        out.push({ ...position, market: buildMarketView(match, marketType) });
+      }
     }
   }
   return out;
@@ -275,17 +301,22 @@ export async function ensureMarketsForUpcomingFixtures(limit?: number): Promise<
       skipped.push({ id: match.id, reason: 'inside the close buffer — staking already closed' });
       continue;
     }
-    const marketId = deriveMarketId(match.id);
-    const onchain = await readMarket(marketId);
-    if (onchain?.exists) {
-      skipped.push({ id: match.id, reason: 'market already exists' });
-      continue;
-    }
-    try {
-      const res = await createMarketTx(marketId, encodeMatchId(match.id), closeTime);
-      created.push({ id: match.id, txHash: res.txHash });
-    } catch (err) {
-      skipped.push({ id: match.id, reason: err instanceof Error ? err.message : String(err) });
+    // One on-chain market per (fixture × market type) — 1X2, Over/Under 2.5, BTTS.
+    for (const marketType of MARKET_TYPE_IDS) {
+      if (limit !== undefined && created.length >= limit) break;
+      const key = encodeMarketKey(match.id, marketType);
+      const marketId = deriveMarketId(key);
+      const onchain = await readMarket(marketId);
+      if (onchain?.exists) {
+        skipped.push({ id: key, reason: 'market already exists' });
+        continue;
+      }
+      try {
+        const res = await createMarketTx(marketId, encodeMatchId(key), closeTime);
+        created.push({ id: key, txHash: res.txHash });
+      } catch (err) {
+        skipped.push({ id: key, reason: err instanceof Error ? err.message : String(err) });
+      }
     }
   }
   return { created, skipped };

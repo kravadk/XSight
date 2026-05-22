@@ -29,3 +29,10 @@ export function deriveMarketId(cupMatchId: string): string {
 export function encodeMarketKey(cupMatchId: string, marketType: string): string {
   return marketType === '1X2' ? cupMatchId : `${cupMatchId}::${marketType}`;
 }
+
+/** Inverse of `encodeMarketKey` — split a composite key back into fixture id + type. */
+export function decodeMarketKey(marketKey: string): { cupMatchId: string; marketType: string } {
+  const i = marketKey.indexOf('::');
+  if (i < 0) return { cupMatchId: marketKey, marketType: '1X2' };
+  return { cupMatchId: marketKey.slice(0, i), marketType: marketKey.slice(i + 2) };
+}
