@@ -26,6 +26,11 @@ export const env = {
   x402AssetAddress: required('X402_ASSET_ADDRESS'),
   cupOracleAddress: required('CUP_ORACLE_ADDRESS'),
   cupOracleV2Address: required('CUP_ORACLE_V2_ADDRESS'),
+  // Bonded optimistic oracle (HARDENING-PLAN Phase 2-6). Empty => not deployed yet:
+  // the backend uses CupOracleV2. When set, the resolver drives the bonded CupOracleV3
+  // (propose/challenge post a USDT bond) and a challenged result routes to the arbiter.
+  cupOracleV3Address: required('CUP_ORACLE_V3_ADDRESS'),
+  cupArbiterAddress: required('CUP_ARBITER_ADDRESS'),
   fanPassSbtAddress: required('FANPASS_SBT_ADDRESS'),
   cupWriteApiEnabled: process.env.CUP_WRITE_API_ENABLED
     ? process.env.CUP_WRITE_API_ENABLED === 'true'

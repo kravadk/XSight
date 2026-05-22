@@ -11,6 +11,7 @@
     "activity": "tsx scripts/generate-activity.ts",
     "wallet:create": "tsx scripts/create-demo-wallet.ts",
     "deploy:cup-oracle": "tsx scripts/deploy-cup-oracle.ts",
+    "deploy:cup-oracle-v3": "tsx scripts/deploy-cup-oracle-v3.ts",
     "deploy:fanpass-sbt": "tsx scripts/deploy-fanpass-sbt.ts",
     "deploy:bracket-nft": "tsx scripts/deploy-bracket-nft.ts",
     "deploy:parimutuel": "tsx scripts/deploy-parimutuel-market.ts",

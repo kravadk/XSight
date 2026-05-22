@@ -111,7 +111,9 @@ async function planMatch(match: CupMatch, challengeWindow: number, nowSec: numbe
       action: 'hold',
       outcome,
       onchainState: state,
-      reason: 'result challenged on-chain — manual review required before finalize',
+      reason: cupOracleMetadata().bonded
+        ? 'result challenged on-chain — arbiter ruling pending (resolveChallenge)'
+        : 'result challenged on-chain — manual review required before finalize',
     });
   }
   if (state === ORACLE_STATE.PROPOSED) {
