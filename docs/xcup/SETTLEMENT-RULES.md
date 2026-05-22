@@ -2,8 +2,8 @@
 
 > **Rulebook v1.** The `rulesHash` stored on `CupOracleV2` for every match commits to
 > this document. It defines exactly how a market resolves, so the result of any X Cup
-> market is unambiguous before anyone stakes. Published per the standard set by leading
-> prediction markets (Polymarket publishes an equivalent rubric for sports markets).
+> market is unambiguous before anyone stakes. It is published in full so every staker
+> can read the exact resolution criteria up front.
 
 ## 1. Scope
 

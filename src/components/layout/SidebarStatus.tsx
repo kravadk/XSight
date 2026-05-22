@@ -15,14 +15,14 @@ export function SidebarStatus() {
   const { latencyMs, online: rpcOnline } = useRpcPing();
 
   const allOnline = backendOnline && rpcOnline;
+  // Latency is informational, not an error — a working-but-slow RPC stays amber,
+  // and the muted grey is used when the RPC is unreachable or not yet measured.
   const latencyColor =
-    latencyMs == null
+    latencyMs == null || !rpcOnline
       ? 'text-[#666]'
-      : latencyMs < 200
+      : latencyMs < 300
         ? 'text-[#22C55E]'
-        : latencyMs < 600
-          ? 'text-[#F59E0B]'
-          : 'text-[#EF4444]';
+        : 'text-[#F59E0B]';
 
   return (
     <div className="px-6 py-3 border-t border-[rgba(255,255,255,0.06)]">
@@ -35,7 +35,10 @@ export function SidebarStatus() {
         />
         <span className="text-[11px] font-bold text-[#F5F5F5] flex-1">{network || 'X Layer'}</span>
         {latencyMs != null && (
-          <span className={cn('text-[10px] tabular font-mono', latencyColor)}>{latencyMs}ms</span>
+          <span className={cn('text-[10px] tabular font-mono', latencyColor)}>
+            <span className="text-[#666]">RPC </span>
+            {latencyMs}ms
+          </span>
         )}
       </div>
     </div>

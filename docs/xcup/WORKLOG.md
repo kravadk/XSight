@@ -23,7 +23,7 @@ Build, plan-by-plan: oracle pipeline → market backend + indexer → frontend �
 
 Deleted `contracts/test/Mocks.sol`. Rebuilt `ParimutuelMarket.test.cjs` as **23 tests
 against a forked X Layer mainnet** — the real `CupOracleV2`, real USDT + USDC. Test
-accounts funded by Foundry-style `deal` (storage-slot probing — no whale dependency).
+accounts funded by a storage-slot `deal` (slot probing — no whale dependency).
 Kept one crafted contract: `exploit/ReentrancyAttacker.sol` — an exploit harness, since
 a re-entrancy attack can only originate from the settlement token.
 `ParimutuelMarket` made **token-agnostic** (`usdc` → `token`). Hardhat config given a

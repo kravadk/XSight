@@ -1,4 +1,4 @@
-import { Bell, Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink } from 'lucide-react';
+import { Bell, Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink, Settings, HelpCircle } from 'lucide-react';
 import { useWalletStore } from '../../store/walletStore';
 import { toast } from '../../store/toastStore';
 import { useState } from 'react';
@@ -6,11 +6,15 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CipherScramble } from '../common/CipherScramble';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { MagneticButton } from '../common/MagneticButton';
-import { useUiStore } from '../../store/uiStore';
+import { useUiStore, type Tab } from '../../store/uiStore';
 
 export function TopBar() {
-  const { connected, short, address, onXLayer, connecting, connect, disconnect, ensureXLayer } = useWalletStore();
+  const { connected, short, address, onXLayer, disconnect, ensureXLayer } = useWalletStore();
   const product = useUiStore((s) => s.product);
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
+  const setSettingsOpen = useUiStore((s) => s.setSettingsOpen);
+  const setHelpOpen = useUiStore((s) => s.setHelpOpen);
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
   const notifications = useNotificationsStore((s) => s.items);
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const markRead = useNotificationsStore((s) => s.markRead);
@@ -25,14 +29,13 @@ export function TopBar() {
     toast.success('Wallet address copied');
   };
 
-  const handleConnect = async () => {
-    await connect();
-    const s = useWalletStore.getState();
-    if (s.connected) {
-      if (!s.onXLayer) await s.ensureXLayer();
-      toast.success('Wallet connected');
-    } else if (s.error) {
-      toast.error(s.error);
+  // Clicking a notification marks it read and, if it carries a destination,
+  // jumps to that tab and closes the panel.
+  const handleNotifClick = (n: Notification) => {
+    markRead(n.id);
+    if (n.link) {
+      setActiveTab(n.link as Tab);
+      setNotifOpen(false);
     }
   };
 
@@ -57,6 +60,22 @@ export function TopBar() {
       </div>
 
       <div className="flex min-w-0 shrink-0 items-center gap-1.5 md:gap-2.5">
+        <button
+          onClick={() => setHelpOpen(true)}
+          title="How X Cup works"
+          aria-label="Open the walkthrough"
+          className="grid h-9 w-9 place-items-center rounded-full text-stadium-text-secondary transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-stadium-text"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </button>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          title="Settings"
+          aria-label="Open settings"
+          className="grid h-9 w-9 place-items-center rounded-full text-stadium-text-secondary transition-colors hover:bg-[rgba(255,255,255,0.06)] hover:text-stadium-text"
+        >
+          <Settings className="h-5 w-5" />
+        </button>
         <button
           onClick={() => setNotifOpen(true)}
           title="Notifications"
@@ -109,11 +128,11 @@ export function TopBar() {
           </div>
         ) : (
           <MagneticButton
-            onClick={() => void handleConnect()}
-            className="flex h-10 items-center gap-2 rounded-xl bg-pitch px-5 text-sm font-bold text-stadium-base transition-colors hover:bg-pitch-bright glow-pitch disabled:opacity-60"
+            onClick={() => setConnectModalOpen(true)}
+            className="flex h-10 items-center gap-2 rounded-xl bg-pitch px-5 text-sm font-bold text-stadium-base transition-colors hover:bg-pitch-bright glow-pitch"
           >
             <Wallet className="h-4 w-4" />
-            {connecting ? 'Connecting…' : 'Connect'}
+            Connect
           </MagneticButton>
         )}
       </div>
@@ -172,7 +191,7 @@ export function TopBar() {
               ) : (
                 <div className="flex flex-col gap-1.5">
                   {notifications.slice(0, 30).map((n) => (
-                    <NotificationRow key={n.id} n={n} onClick={() => markRead(n.id)} />
+                    <NotificationRow key={n.id} n={n} onClick={() => handleNotifClick(n)} />
                   ))}
                 </div>
               )}
@@ -207,8 +226,9 @@ function NotificationRow({ n, onClick }: { n: Notification; onClick: () => void 
           {n.title}
         </div>
         {n.body && <div className="truncate text-[10px] text-stadium-text-secondary">{n.body}</div>}
-        <div className="mt-0.5 text-[10px] tabular text-stadium-text-muted">
-          {new Date(n.timestamp).toLocaleTimeString()}
+        <div className="mt-0.5 flex items-center gap-1.5 text-[10px] tabular text-stadium-text-muted">
+          <span>{new Date(n.timestamp).toLocaleTimeString()}</span>
+          {n.link && <span className="font-bold text-pitch">· Open →</span>}
         </div>
       </div>
       {!n.read && <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-pitch" />}

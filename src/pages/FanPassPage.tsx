@@ -3,6 +3,7 @@ import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
+import { InfoTip } from '../components/common/InfoTip';
 
 const BREAKDOWN_LABELS: Record<string, string> = {
   x402Usage: 'x402 usage',
@@ -48,7 +49,15 @@ export function FanPassPage() {
         title="FanPass"
         sub="A soulbound badge that scores your football IQ — pick accuracy, on-chain activity and oracle participation."
       />
-      <StatePanel loading={score.loading || sbt.loading} error={score.error} empty={!score.data} onRetry={score.reload}>
+      <StatePanel
+        loading={score.loading || sbt.loading}
+        error={score.error || sbt.error}
+        empty={!score.data}
+        onRetry={() => {
+          score.reload();
+          sbt.reload();
+        }}
+      >
         {score.data && (
           <div className="flex flex-col gap-4">
             <div className="stadium-card pitch-stripes flex items-center gap-5 p-5">
@@ -68,7 +77,14 @@ export function FanPassPage() {
             </div>
 
             <div className="stadium-card p-4">
-              <div className="mb-3 text-micro text-pitch">Score breakdown</div>
+              <div className="mb-3 flex items-center gap-1 text-micro text-pitch">
+                Score breakdown
+                <InfoTip label="About your FanPass score">
+                  Your FanPass score blends pick accuracy, on-chain activity, oracle
+                  participation and consistency into one number. Cross the threshold and the
+                  soulbound FanPass badge becomes mintable.
+                </InfoTip>
+              </div>
               <div className="flex flex-col gap-2.5">
                 {Object.entries(score.data.breakdown).map(([k, v]) => (
                   <div key={k}>

@@ -7,7 +7,7 @@
  * V3 is not on mainnet yet (deploy is the user-gated Phase 6 step).
  *
  * Test accounts are funded by writing the real token's `balanceOf` storage slot on the
- * fork (Foundry-style `deal` — the slot is discovered by probing, not hard-coded).
+ * fork (storage-slot `deal` — the slot is discovered by probing, not hard-coded).
  *
  * Run: `npm run contracts:test` (sets FORK=1; needs X_LAYER_RPC_URL or the public RPC).
  * If the process is not forked, the whole suite skips rather than failing.
@@ -47,7 +47,7 @@ async function warp(seconds) {
   await network.provider.send("evm_mine", []);
 }
 
-// --- Foundry-style `deal`: locate the ERC20 balanceOf storage slot, then write it. ---
+// --- storage-slot `deal`: locate the ERC20 balanceOf storage slot, then write it. ---
 const slotCache = {};
 async function balanceSlot(tokenAddr) {
   if (slotCache[tokenAddr] !== undefined) return slotCache[tokenAddr];

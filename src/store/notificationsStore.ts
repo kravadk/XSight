@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { usePrefsStore } from './prefsStore';
 
 export interface Notification {
   id: string;
@@ -43,6 +44,10 @@ export const notify = {
     useNotificationsStore.getState().push({ kind: 'info', title, body }),
   error: (title: string, body?: string) =>
     useNotificationsStore.getState().push({ kind: 'error', title, body }),
-  event: (title: string, body?: string, link?: string) =>
-    useNotificationsStore.getState().push({ kind: 'event', title, body, link }),
+  event: (title: string, body?: string, link?: string) => {
+    // Event notifications are opt-out from Settings — operational toasts
+    // (success/error/info) always show, but ambient events can be silenced.
+    if (!usePrefsStore.getState().notifyEvents) return;
+    useNotificationsStore.getState().push({ kind: 'event', title, body, link });
+  },
 };

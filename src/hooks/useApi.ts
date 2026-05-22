@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface AsyncState<T> {
   data: T | null;
   loading: boolean;
   error: string | null;
-  reload: () => void;
+  /** Re-runs `fn`. Awaitable — resolves once the fresh data (or error) is applied. */
+  reload: () => Promise<void>;
 }
 
 /**
@@ -18,30 +19,39 @@ export function useApi<T>(fn: () => Promise<T>, deps: unknown[] = []): AsyncStat
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const run = useCallback(fn, deps);
+  const mounted = useRef(true);
+  const callId = useRef(0);
 
-  const load = useCallback(() => {
-    let live = true;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const load = useCallback(async (): Promise<void> => {
+    // Tag this run; only the latest one is allowed to apply its result, so a
+    // slow in-flight request can't overwrite a newer one after deps change.
+    const id = ++callId.current;
     setLoading(true);
     setError(null);
-    run()
-      .then((d) => {
-        if (live) {
-          setData(d);
-          setLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (live) {
-          setError(e instanceof Error ? e.message : 'request failed');
-          setLoading(false);
-        }
-      });
-    return () => {
-      live = false;
-    };
+    try {
+      const d = await run();
+      if (mounted.current && id === callId.current) {
+        setData(d);
+        setLoading(false);
+      }
+    } catch (e) {
+      if (mounted.current && id === callId.current) {
+        setError(e instanceof Error ? e.message : 'request failed');
+        setLoading(false);
+      }
+    }
   }, [run]);
 
-  useEffect(() => load(), [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   return { data, loading, error, reload: load };
 }

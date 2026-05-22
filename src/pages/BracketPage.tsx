@@ -4,6 +4,7 @@ import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
 import { toast } from '../store/toastStore';
+import { celebrate } from '../store/celebrateStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 
@@ -45,7 +46,8 @@ export function BracketPage() {
     try {
       const hash = await sendTx(tx);
       toast.success(`Bracket NFT mint submitted · ${hash.slice(0, 10)}…`);
-      nft.reload();
+      // Keep the button busy until the NFT state actually reflects the mint.
+      await nft.reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Mint failed');
     } finally {
@@ -59,7 +61,9 @@ export function BracketPage() {
     try {
       await api.saveBracket(address, picks);
       toast.success('Bracket saved');
-      saved.reload();
+      celebrate();
+      // Keep the button busy until the saved bracket is re-fetched.
+      await saved.reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Save failed');
     } finally {

@@ -72,6 +72,7 @@ export const useBackendSync = () => {
               notify.event(
                 'x402 payment received',
                 `${c.endpoint} · ${c.amount} ${c.asset}`,
+                'api', // clicking the notification jumps to the x402 API tab
               );
             }
           }

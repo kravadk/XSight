@@ -35,7 +35,7 @@ Commits on `feat/xcup-prediction-market`: `0de4a48`, `15d60ee`, `de67571`, `edfb
   — settles in USDT *or* USDC.
 - **Test layer reworked to no-mocks fork tests** — `contracts/test/ParimutuelMarket.test.cjs`
   runs **23 tests against a forked X Layer mainnet**: real `CupOracleV2`, real USDT
-  (`0x1E4a5963…`) + real USDC (`0x74b7F163…`). Accounts funded by Foundry-style `deal`.
+  (`0x1E4a5963…`) + real USDC (`0x74b7F163…`). Accounts funded by storage-slot `deal`.
   `contracts/test/Mocks.sol` deleted; only `exploit/ReentrancyAttacker.sol` remains.
   Run: `npm run contracts:test` (`cross-env FORK=1`).
 - `server/scripts/deploy-parimutuel-market.ts` — mainnet deploy; reads

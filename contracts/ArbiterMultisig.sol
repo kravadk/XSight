@@ -8,12 +8,12 @@ interface ICupOracleResolver {
 }
 
 /// @title ArbiterMultisig
-/// @notice M-of-N arbiter for CupOracleV3 challenged results. Implements the ERC-792-style
+/// @notice M-of-N arbiter for CupOracleV3 challenged results. Implements the pluggable
 ///         `ICupArbiter` interface: the oracle opens a dispute via `requestRuling`, the
 ///         signers vote on the final outcome, and on the first outcome to reach the
 ///         threshold the multisig calls `resolveChallenge` back on the oracle.
 /// @dev    A deliberately small, swappable arbiter for the hackathon — CupOracleV3 can
-///         point `arbiter` at a Kleros-style court later (timelocked) without redeploying.
+///         point `arbiter` at a larger arbiter panel later (timelocked) without redeploying.
 contract ArbiterMultisig {
     // Ruling values mirror CupOracleV3.Outcome: 1 Home, 2 Draw, 3 Away (0 Unknown is invalid).
     uint8 internal constant RULING_MIN = 1;

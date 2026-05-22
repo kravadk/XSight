@@ -61,6 +61,7 @@ export function StatePanel({
   error,
   empty,
   emptyLabel,
+  emptyAction,
   onRetry,
   children,
 }: {
@@ -68,6 +69,8 @@ export function StatePanel({
   error: string | null;
   empty?: boolean;
   emptyLabel?: string;
+  /** Optional next step shown inside the empty state so it's never a dead end. */
+  emptyAction?: { label: string; onClick: () => void };
   onRetry?: () => void;
   children: ReactNode;
 }) {
@@ -102,6 +105,14 @@ export function StatePanel({
       <div className="stadium-card flex flex-col items-center gap-2 p-12 text-center">
         <div className="text-3xl">⚽</div>
         <div className="text-sm font-semibold text-stadium-text">{emptyLabel ?? 'Nothing here yet'}</div>
+        {emptyAction && (
+          <button
+            onClick={emptyAction.onClick}
+            className="mt-2 rounded-xl bg-pitch px-4 py-2 text-xs font-bold text-stadium-base hover:bg-pitch-bright glow-pitch"
+          >
+            {emptyAction.label}
+          </button>
+        )}
       </div>
     );
   }

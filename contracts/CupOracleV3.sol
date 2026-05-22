@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @notice Pluggable arbiter for challenged results — ERC-792-style. The oracle calls
+/// @notice Pluggable arbiter interface for challenged results. The oracle calls
 ///         `requestRuling` when a result is challenged; the arbiter later calls back
 ///         `resolveChallenge` on the oracle once it has a ruling.
 interface ICupArbiter {

@@ -5,6 +5,7 @@ import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
 import { useUiStore } from '../store/uiStore';
 import { toast } from '../store/toastStore';
+import { celebrate } from '../store/celebrateStore';
 import { MatchupHeader, PageHeader, StatePanel, fromBaseUnits } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 
@@ -25,6 +26,7 @@ const STATUS: Record<MarketPositionDto['status'], { label: string; cls: string }
 export function BetsPage() {
   const { connected, address, connect, sendTx } = useWalletStore();
   const openMarket = useUiStore((s) => s.openMarket);
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
   const { data, loading, error, reload } = useApi(
     () => (connected && address ? api.marketPositions(address) : Promise.resolve({ wallet: '', positions: [] })),
     [connected, address],
@@ -39,7 +41,10 @@ export function BetsPage() {
       const { claimTx } = await api.marketClaimTx(p.market.id);
       const hash = await sendTx(claimTx);
       toast.success(`Claim submitted · ${hash.slice(0, 10)}…`);
-      reload();
+      // Winning claims earn a celebration; a refund claim is just settled funds.
+      if (p.status === 'won_claimable') celebrate();
+      // Keep the button busy until the refreshed position is in.
+      await reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Claim failed');
     } finally {
@@ -77,6 +82,7 @@ export function BetsPage() {
         error={error}
         empty={positions.length === 0}
         emptyLabel="No bets yet — stake on a market to get started"
+        emptyAction={{ label: 'Browse markets', onClick: () => setActiveTab('markets') }}
         onRetry={reload}
       >
         <div className="flex flex-col gap-3">

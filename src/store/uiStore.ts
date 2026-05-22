@@ -41,11 +41,20 @@ interface UiState {
   activeSubTab: SubTab;
   /** CupHub match id of the market open in the X Cup detail screen. */
   marketDetailId: string | null;
+  /** Wallet connect modal — opened from the TopBar button and the demo banner. */
+  connectModalOpen: boolean;
+  /** Settings panel — opened from the TopBar gear. */
+  settingsOpen: boolean;
+  /** Welcome walkthrough — re-openable from the TopBar "?" after first run. */
+  helpOpen: boolean;
   setProduct: (product: Product) => void;
   setActiveTab: (tab: Tab) => void;
   setActiveSubTab: (subTab: SubTab) => void;
   /** Open the X Cup Market detail screen for a given match. */
   openMarket: (matchId: string) => void;
+  setConnectModalOpen: (open: boolean) => void;
+  setSettingsOpen: (open: boolean) => void;
+  setHelpOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -53,8 +62,14 @@ export const useUiStore = create<UiState>((set) => ({
   activeTab: 'markets',
   activeSubTab: 'chat',
   marketDetailId: null,
+  connectModalOpen: false,
+  settingsOpen: false,
+  helpOpen: false,
   setProduct: (product) => set({ product, activeTab: DEFAULT_TAB[product] }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setActiveSubTab: (subTab) => set({ activeSubTab: subTab }),
   openMarket: (matchId) => set({ marketDetailId: matchId, activeTab: 'market-detail', product: 'xcup' }),
+  setConnectModalOpen: (connectModalOpen) => set({ connectModalOpen }),
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setHelpOpen: (helpOpen) => set({ helpOpen }),
 }));

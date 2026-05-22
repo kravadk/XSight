@@ -8,7 +8,7 @@
  *     stake → settle → claim lifecycle is exercised against both.
  *
  * Test accounts are funded by writing the real token's `balanceOf` storage slot on the
- * fork (Foundry-style `deal` — the slot is discovered by probing, not hard-coded), then
+ * fork (storage-slot `deal` — the slot is discovered by probing, not hard-coded), then
  * every transfer runs through the token's real bytecode.
  *
  * The single crafted contract is `contracts/test/exploit/ReentrancyAttacker.sol`, an
@@ -69,7 +69,7 @@ async function impersonate(addr) {
   return ethers.getSigner(addr);
 }
 
-// --- Foundry-style `deal`: locate the ERC20 `balanceOf` storage slot, then write it. ---
+// --- storage-slot `deal`: locate the ERC20 `balanceOf` storage slot, then write it. ---
 const slotCache = {};
 async function balanceSlot(tokenAddr) {
   if (slotCache[tokenAddr] !== undefined) return slotCache[tokenAddr];

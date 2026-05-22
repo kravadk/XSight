@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, ShieldCheck, Wallet } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
@@ -9,6 +9,7 @@ import { MatchupHeader, MarketStatusBadge, StatePanel, toBaseUnits, formatPool }
 import { cn } from '../utils/format';
 import { FreePickPanel } from '../components/cup/FreePickPanel';
 import { PunditReadCard } from '../components/cup/PunditReadCard';
+import { InfoTip } from '../components/common/InfoTip';
 
 const OUTCOME_COLORS_3 = [
   'var(--color-outcome-home)',
@@ -48,6 +49,13 @@ export function MarketDetailPage() {
   const [stakeToken, setStakeToken] = useState<string>('USDT');
   const [busy, setBusy] = useState<null | 'approve' | 'stake'>(null);
 
+  // Reset the pick when the open market changes — outcome count differs per type,
+  // so a stale `outcome` index must never carry across markets.
+  useEffect(() => {
+    setOutcome(1);
+    setAmount('');
+  }, [matchId]);
+
   if (!matchId) {
     return <div className="mx-auto max-w-md py-20 text-center text-sm text-stadium-text-secondary">No market selected.</div>;
   }
@@ -67,8 +75,9 @@ export function MarketDetailPage() {
     setBusy('approve');
     try {
       const { approveTx } = await api.marketStakeTx(matchId!, outcome, toBaseUnits(amountNum));
-      await sendTx(approveTx);
-      toast.success('Approval submitted — confirm it, then stake');
+      const hash = await sendTx(approveTx);
+      await waitForTx(hash); // wait for the approval to mine before stake is allowed
+      toast.success('Approval confirmed — you can stake now');
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Approval failed');
     } finally {
@@ -144,8 +153,13 @@ export function MarketDetailPage() {
               </div>
               <MatchupHeader home={data.home} away={data.away} size="lg" kickoffUtc={data.kickoffUtc} />
               <div className="mt-4 flex justify-between border-t border-stadium-line pt-3 text-xs">
-                <span className="text-stadium-text-secondary">
+                <span className="inline-flex items-center gap-1 text-stadium-text-secondary">
                   Pool <span className="font-mono font-semibold text-stadium-text">{formatPool(data.pools.total)}</span>
+                  <InfoTip label="How payouts work">
+                    Every stake joins one shared pool. When the market settles, the winning
+                    side splits the whole pool pro-rata — your payout ≈ your stake × pool ÷
+                    total winning stake. No fixed odds, no house.
+                  </InfoTip>
                 </span>
                 <span className="text-stadium-text-secondary">{data.venue}</span>
               </div>
@@ -276,7 +290,14 @@ export function MarketDetailPage() {
 
             {/* oracle strip */}
             <div className="stadium-card flex items-center justify-between p-3.5 text-xs">
-              <span className="text-stadium-text-secondary">Settlement oracle</span>
+              <span className="inline-flex items-center gap-1 text-stadium-text-secondary">
+                Settlement oracle
+                <InfoTip label="About the settlement oracle">
+                  Results are proposed under a USDT bond and stay open to challenge for a
+                  fixed window. A wrong result can be challenged — the loser forfeits the
+                  bond. Lying costs money, so the posted result is the honest one.
+                </InfoTip>
+              </span>
               <span className="font-mono text-stadium-text">
                 {data.oracleContract?.name ?? 'CupOracle'}
                 {data.oracleContract?.bonded ? ' · bonded' : ''}

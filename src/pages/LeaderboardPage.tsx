@@ -2,6 +2,7 @@ import { Crown, Bot, User } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
+import { useUiStore } from '../store/uiStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 import { useState } from 'react';
@@ -16,6 +17,7 @@ function pct(n: number): string {
 
 export function LeaderboardPage() {
   const { connected, address } = useWalletStore();
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
   const { data, loading, error, reload } = useApi(() => api.cupLeaderboard(), []);
   const [view, setView] = useState<'global' | 'leagues'>('global');
 
@@ -102,6 +104,7 @@ export function LeaderboardPage() {
             error={error}
             empty={rows.length === 0}
             emptyLabel="Global ranking opens at the first settlement"
+            emptyAction={{ label: 'Make a free pick', onClick: () => setActiveTab('markets') }}
             onRetry={reload}
           >
             <div className="stadium-card divide-y divide-stadium-line">
@@ -110,7 +113,7 @@ export function LeaderboardPage() {
                   key={r.wallet}
                   className={cn(
                     'flex items-center gap-3 p-3.5',
-                    you && r.wallet === you.wallet && 'bg-pitch-bg',
+                    you && r.wallet.toLowerCase() === you.wallet.toLowerCase() && 'bg-pitch-bg',
                   )}
                 >
                   <span className="font-display w-8 text-center text-lg text-stadium-text-muted">{r.rank}</span>

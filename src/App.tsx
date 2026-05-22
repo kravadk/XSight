@@ -1,12 +1,18 @@
 import { lazy, Suspense } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, MotionConfig } from 'motion/react';
 import { Sidebar } from './components/layout/Sidebar';
 import { TopBar } from './components/layout/TopBar';
 import { BottomTabBar } from './components/layout/BottomTabBar';
+import { SettingsPanel } from './components/layout/SettingsPanel';
 import { ToastHost } from './components/common/ToastHost';
 import { CommandPalette } from './components/common/CommandPalette';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { Onboarding } from './components/common/Onboarding';
+import { ConnectModal } from './components/common/ConnectModal';
+import { DemoBanner } from './components/common/DemoBanner';
+import { Confetti } from './components/common/Confetti';
 import { useUiStore } from './store/uiStore';
+import { usePrefsStore } from './store/prefsStore';
 import { useBackendSync } from './hooks/useBackendSync';
 
 // XSight copilot
@@ -29,14 +35,17 @@ const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((m) => (
 
 export default function App() {
   const { product, activeTab } = useUiStore();
+  const reducedMotion = usePrefsStore((s) => s.reducedMotion);
   useBackendSync();
 
   return (
+    <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
     <div className="flex min-h-screen w-full overflow-x-hidden bg-stadium-base text-stadium-text">
       <Sidebar />
       <div className="flex min-h-screen w-full min-w-0 flex-col md:ml-[240px] md:w-[calc(100vw-240px)] md:flex-none">
         <TopBar />
         <main className="relative min-w-0 flex-1 overflow-x-hidden p-3 pb-24 md:p-6 md:pb-8">
+          <DemoBanner />
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -76,7 +85,12 @@ export default function App() {
       <BottomTabBar />
       <ToastHost />
       <CommandPalette />
+      <SettingsPanel />
+      <ConnectModal />
+      <Onboarding />
+      <Confetti />
     </div>
+    </MotionConfig>
   );
 }
 
