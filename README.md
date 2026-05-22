@@ -7,11 +7,11 @@
 *Pick an outcome · stake a stablecoin · winners split the pool.*
 **No house. No order book. No LP risk.**
 
-`4 live contracts` &nbsp;·&nbsp; `3 markets per fixture` &nbsp;·&nbsp; `104 fixtures` &nbsp;·&nbsp; `8 screens` &nbsp;·&nbsp; `45 fork tests` &nbsp;·&nbsp; `0 mocks`
+`5 live contracts` &nbsp;·&nbsp; `3 markets per fixture` &nbsp;·&nbsp; `104 fixtures` &nbsp;·&nbsp; `8 screens` &nbsp;·&nbsp; `45 fork tests` &nbsp;·&nbsp; `0 mocks`
 
 [![X Layer](https://img.shields.io/badge/X_Layer-mainnet_live-2EBD85?style=flat-square)](https://www.okx.com/xlayer)
 [![Chain 196](https://img.shields.io/badge/chain-196-4AA8E0?style=flat-square)](https://www.okx.com/xlayer)
-[![Contracts](https://img.shields.io/badge/contracts-4_deployed-2EBD85?style=flat-square)](#live-on-x-layer-mainnet)
+[![Contracts](https://img.shields.io/badge/contracts-5_deployed-2EBD85?style=flat-square)](#live-on-x-layer-mainnet)
 [![Fork tests](https://img.shields.io/badge/fork_tests-45_passing-3FB950?style=flat-square)](#testing)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square)](contracts/)
 [![License](https://img.shields.io/badge/license-MIT-EAB308?style=flat-square)](LICENSE)
@@ -141,11 +141,12 @@ the product works:
 | `ArbiterMultisig` | [`0x792152c274c42C588D5551C9141C21106d3A2Cce`](https://www.okx.com/web3/explorer/xlayer/address/0x792152c274c42C588D5551C9141C21106d3A2Cce) | M-of-N arbiter for challenged results |
 | `ParimutuelMarket` | [`0x0431576845B77a743C87be323c04fad02201E08b`](https://www.okx.com/web3/explorer/xlayer/address/0x0431576845B77a743C87be323c04fad02201E08b) | Pari-mutuel pools — settles in USDT, reads `CupOracleV3` |
 | `FanPassSBT` | [`0x74F75532428A99E613a865C97D1084b7f38241BD`](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD) | Soulbound fan-reputation badge |
+| `BracketNFT` | [`0x532DdCCB09389A35D353f73a06bE162D123ccD70`](https://www.okx.com/web3/explorer/xlayer/address/0x532DdCCB09389A35D353f73a06bE162D123ccD70) | Collectible bracket NFT — minted from a saved tournament call |
 
 Every stake, bond, settlement and payout is an on-chain transaction a judge can
-open and verify directly. `BracketNFT` is built and fork-tested; the
-pre-hardening `CupOracleV2` and its market are superseded. Full registry,
-explorer links and verification inputs in [`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
+open and verify directly. The pre-hardening `CupOracleV2` and its market are
+superseded. Full registry, explorer links and verification inputs in
+[`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
 
 **Want to run it?** → [Run it locally](#run-it-locally) · **Want the test proof?** → [Testing](#testing)
 
@@ -473,7 +474,7 @@ and what is next:
 - ✅ Onboarding, demo mode, settings and guided wallet connect
 - 🔜 Explorer verification of all four mainnet contracts
 - 🔜 Arbiter raised to a 2-of-3 signer panel via the timelocked `proposeArbiter` / `commitArbiter` flow
-- 🔜 `BracketNFT` (built + fork-tested) deployed to mainnet
+- ✅ `BracketNFT` deployed to mainnet (`0x532DdCCB…`)
 - 🔭 Optional fourth on-chain result source added to the quorum
 
 ---

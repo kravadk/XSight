@@ -13,6 +13,7 @@ All contracts target **X Layer mainnet (chain 196)**. Explorer:
 | `ArbiterMultisig` | [`0x792152c274c42C588D5551C9141C21106d3A2Cce`](https://www.okx.com/web3/explorer/xlayer/address/0x792152c274c42C588D5551C9141C21106d3A2Cce) | M-of-N arbiter (`ICupArbiter`) for challenged results — deployed **1-of-1** (operator `0x82736f84…`); the oracle's `arbiter` is timelock-upgradeable to a larger panel. Source: `contracts/ArbiterMultisig.sol`. |
 | `ParimutuelMarket` | [`0x0431576845B77a743C87be323c04fad02201E08b`](https://www.okx.com/web3/explorer/xlayer/address/0x0431576845B77a743C87be323c04fad02201E08b) | Pari-mutuel pool — holds USDT, settles pro-rata off `CupOracleV3`. Settles in **USDT**; oracle `0x19da7aab…`; operator/treasury `0x82736f84…`; fee 0 bps; minStake 0; last-claimer dust absorption. Deploy block `60680302`, tx `0x9be09b2a…c209e8`. Source: `contracts/ParimutuelMarket.sol`. |
 | `FanPassSBT` | [`0x74F75532428A99E613a865C97D1084b7f38241BD`](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD) | Soulbound fan-reputation badge. Source: `contracts/FanPassSBT.sol`. |
+| `BracketNFT` | [`0x532DdCCB09389A35D353f73a06bE162D123ccD70`](https://www.okx.com/web3/explorer/xlayer/address/0x532DdCCB09389A35D353f73a06bE162D123ccD70) | Collectible bracket NFT — minted from a saved tournament call. `baseURI` `https://x-sight.vercel.app/bracket/`. Source: `contracts/BracketNFT.sol`. |
 
 ### Superseded — pre-hardening (V2)
 

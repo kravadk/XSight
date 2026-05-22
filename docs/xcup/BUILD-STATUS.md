@@ -31,7 +31,7 @@ The product is **feature-complete and live on X Layer mainnet (chain 196)**.
 | AI pundit (Hermes) | ✅ |
 | Free-to-play — free picks, bracket, leaderboard, leagues, FanPass SBT | ✅ |
 | Bonded-oracle hardening — `CupOracleV3` + `ArbiterMultisig` | ✅ deployed |
-| `BracketNFT` | ✅ built + fork-tested · ⏳ not yet deployed |
+| `BracketNFT` | ✅ deployed (`0x532DdCCB…`) |
 | Product polish — onboarding, demo mode, Settings, connect modal, tooltips, confetti | ✅ |
 | In-app documentation hub (Overview · Architecture · Integrations · API) | ✅ |
 
@@ -79,8 +79,10 @@ autonomously:
    (idempotent — existing markets are skipped).
 2. **Verify the 4 contracts** on the OKX X Layer explorer — runbook:
    `docs/contract-verification.md` (single file · `solc` 0.8.35 · optimizer 200 · MIT).
-3. **Deploy `BracketNFT`** to mainnet — `npm --prefix server run deploy:bracket-nft`,
-   then set `BRACKET_NFT_ADDRESS` in `server/.env`.
+3. ~~**Deploy `BracketNFT`** to mainnet~~ — ✅ deployed at
+   `0x532DdCCB09389A35D353f73a06bE162D123ccD70`. Add
+   `BRACKET_NFT_ADDRESS=0x532DdCCB09389A35D353f73a06bE162D123ccD70` to the
+   Render backend's environment variables.
 4. *(optional)* Raise the arbiter from 1-of-1 to a **2-of-3** panel via the oracle's
    timelocked arbiter-change path.
 5. **Hackathon submission** — record the demo video, create the submission X

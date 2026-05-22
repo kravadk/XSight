@@ -354,16 +354,17 @@ below is clickable to the explorer.
 | [ArbiterMultisig](https://www.okx.com/web3/explorer/xlayer/address/0x792152c274c42C588D5551C9141C21106d3A2Cce) | M-of-N arbiter for challenged results |
 | [ParimutuelMarket](https://www.okx.com/web3/explorer/xlayer/address/0x0431576845B77a743C87be323c04fad02201E08b) | Pari-mutuel pools — settles in USDT, reads `CupOracleV3` |
 | [FanPassSBT](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD) | Soulbound fan-reputation badge |
+| [BracketNFT](https://www.okx.com/web3/explorer/xlayer/address/0x532DdCCB09389A35D353f73a06bE162D123ccD70) | Collectible bracket NFT — minted from a saved tournament call |
 
 ```text
 CupOracleV3       0x19da7aab20Be913fb697ebfef4b8f12Ac463Ebf6
 ArbiterMultisig   0x792152c274c42C588D5551C9141C21106d3A2Cce
 ParimutuelMarket  0x0431576845B77a743C87be323c04fad02201E08b
 FanPassSBT        0x74F75532428A99E613a865C97D1084b7f38241BD
+BracketNFT        0x532DdCCB09389A35D353f73a06bE162D123ccD70
 ```
 
-`BracketNFT` is built and fork-tested. Live status for every contract is on the
-[Developers screen](tab:developers).
+Live status for every contract is on the [Developers screen](tab:developers).
 
 <!--ARTICLE x402-endpoints|x402 API endpoints-->
 
