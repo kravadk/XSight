@@ -8,8 +8,8 @@
  * Run: ENSURE_LIMIT=16 CUP_WRITE_API_ENABLED=true npm --prefix server run ensure:markets
  */
 import 'dotenv/config';
-import { ensureMarketsForUpcomingFixtures } from '../src/services/marketService.js';
-import { parimutuelMetadata } from '../src/services/parimutuelContract.js';
+import { ensureMarketsForUpcomingFixtures } from '../../../server/src/services/marketService.js';
+import { parimutuelMetadata } from '../../../server/src/services/parimutuelContract.js';
 
 const limit = Number(process.env.ENSURE_LIMIT) || 16;
 const meta = parimutuelMetadata();

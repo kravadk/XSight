@@ -20,9 +20,9 @@
     "test:activity": "npm --prefix server run activity",
     "test:all": "npm run test:health && npm run test:api",
     "contracts:compile": "hardhat compile",
-    "contracts:test": "cross-env FORK=1 hardhat test contracts/test/ParimutuelMarket.test.cjs contracts/test/CupOracleV3.test.cjs",
-    "contracts:test:oracle-v3": "cross-env FORK=1 hardhat test contracts/test/CupOracleV3.test.cjs",
-    "contracts:test:bracket-nft": "hardhat test contracts/test/BracketNFT.test.cjs",
+    "contracts:test": "cross-env FORK=1 hardhat test apps/xcup/contracts/test/ParimutuelMarket.test.cjs apps/xcup/contracts/test/CupOracleV3.test.cjs",
+    "contracts:test:oracle-v3": "cross-env FORK=1 hardhat test apps/xcup/contracts/test/CupOracleV3.test.cjs",
+    "contracts:test:bracket-nft": "hardhat test apps/xcup/contracts/test/BracketNFT.test.cjs",
     "mirror:xcup": "git subtree push --prefix=apps/xcup xcup-mirror main",
     "mirror:hook": "git subtree push --prefix=apps/hook hook-mirror main",
     "mirror": "npm run mirror:xcup && npm run mirror:hook"

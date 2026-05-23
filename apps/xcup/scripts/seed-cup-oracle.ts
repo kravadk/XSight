@@ -1,8 +1,8 @@
 import { Contract, JsonRpcProvider, Wallet, encodeBytes32String, isAddress } from 'ethers';
 import 'dotenv/config';
-import { env } from '../src/config/env.js';
-import { listCupMatches } from '../src/services/cupData.js';
-import { CUP_ORACLE_ABI } from '../src/services/cupOracleContract.js';
+import { env } from '../../../server/src/config/env.js';
+import { listCupMatches } from '../../../server/src/services/cupData.js';
+import { CUP_ORACLE_ABI } from '../../../server/src/services/cupOracleContract.js';
 
 if (!isAddress(env.cupOracleV2Address)) {
   throw new Error('CUP_ORACLE_V2_ADDRESS is required and must be a valid deployed address');

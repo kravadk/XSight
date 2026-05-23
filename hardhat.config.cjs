@@ -6,9 +6,9 @@ const KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const FORK = process.env.FORK === "1";
 
 /**
- * Hardhat config for the ParimutuelMarket contract layer.
+ * Hardhat config for the X Cup contract layer.
  * CommonJS (.cjs) because the repo root is an ESM project ("type":"module").
- * - sources live in ./contracts (alongside the existing CupOracleV2.sol etc.)
+ * - sources live in apps/xcup/contracts/ (Parimutuel, CupOracleV3, ArbiterMultisig, FanPassSBT, BracketNFT)
  * - unit tests run on a clean in-memory chain (no network)
  * - the fork integration test enables mainnet forking only when FORK=1
  *
@@ -20,10 +20,10 @@ module.exports = {
     settings: { optimizer: { enabled: true, runs: 200 } },
   },
   paths: {
-    sources: "./contracts",
-    tests: "./contracts/test",
-    artifacts: "./contracts/artifacts-hh",
-    cache: "./contracts/cache-hh",
+    sources: "./apps/xcup/contracts",
+    tests: "./apps/xcup/contracts/test",
+    artifacts: "./apps/xcup/contracts/artifacts-hh",
+    cache: "./apps/xcup/contracts/cache-hh",
   },
   networks: {
     // X Layer (chain 196) is not in Hardhat's built-in hardfork registry, so a fork
