@@ -11,6 +11,7 @@ import { strategyRouter } from './routes/strategies.js';
 import { mcpRouter } from './routes/mcp.js';
 import { cupRouter } from './routes/cup.js';
 import { marketsRouter } from './routes/markets.js';
+import { hookRouter } from './routes/hook.js';
 import { startTokenTracker } from './services/tokenTracker.js';
 import { startPoolTracker } from './services/poolTracker.js';
 import { startStrategyEngine } from './services/strategyEngine.js';
@@ -19,6 +20,7 @@ import { startAgentHeartbeat } from './services/agentHeartbeat.js';
 import { startQuorumResolver } from './services/cupScheduler.js';
 import { startMarketIndexer } from './services/marketIndexer.js';
 import { startPunditAutoStake } from './services/punditScheduler.js';
+import { startFanScoreSync } from './services/fanScoreSync.js';
 
 const app = express();
 
@@ -40,6 +42,7 @@ app.use('/api/market', marketRouter);
 app.use('/api/strategies', strategyRouter);
 app.use('/api/cup', cupRouter);
 app.use('/api/markets', marketsRouter);
+app.use('/api/hook', hookRouter);
 app.use('/api/v1', analysisRouter);
 app.use('/mcp', mcpRouter);
 
@@ -52,6 +55,7 @@ startAgentHeartbeat(); // autonomous micro-swaps every 8 min for on-chain activi
 startQuorumResolver(); // autonomous CupOracleV2 resolution (off unless CUP_RESOLVER_ENABLED=true)
 void startMarketIndexer(); // ParimutuelMarket event indexer (idle until PARIMUTUEL_MARKET_ADDRESS set)
 startPunditAutoStake(); // autonomous pundit loop (off unless PUNDIT_AUTOSTAKE_ENABLED=true)
+startFanScoreSync(); // weekly batch-write of FanScore -> FanScoreRegistry (off unless HOOK_SYNC_ENABLED=true)
 
 app.get('/', (_req, res) => {
   res.json({
