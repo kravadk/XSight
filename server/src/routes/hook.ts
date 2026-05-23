@@ -1,9 +1,31 @@
 import { Router } from 'express';
-import { getAddress } from 'ethers';
+import { Contract, JsonRpcProvider, getAddress, id as keccakId } from 'ethers';
 import { getFanScore } from '../services/cupReputation.js';
 import { x402Log } from '../middleware/x402.js';
 
 export const hookRouter = Router();
+
+const X_LAYER_RPC = process.env.X_LAYER_RPC_URL ?? 'https://rpc.xlayer.tech';
+let cachedProvider: JsonRpcProvider | null = null;
+function provider(): JsonRpcProvider {
+  if (!cachedProvider) cachedProvider = new JsonRpcProvider(X_LAYER_RPC);
+  return cachedProvider;
+}
+
+const CUP_SIDE_POT_ABI = [
+  'function token() view returns (address)',
+  'function currentWeekId() view returns (uint256)',
+  'function startedAt() view returns (uint256)',
+  'function weekPot(uint256 weekId) view returns (uint256)',
+  'function settled(uint256 weekId) view returns (bool)',
+  'function sharePerWinner(uint256 weekId) view returns (uint256)',
+  'function winnersCount(uint256 weekId) view returns (uint256)',
+];
+
+const ERC20_BAL_ABI = ['function balanceOf(address) view returns (uint256)'];
+
+// Topic-0 hash of FanFeeHook.FeeApplied(bytes32,address,uint8,uint24).
+const FEE_APPLIED_TOPIC = keccakId('FeeApplied(bytes32,address,uint8,uint24)');
 
 /**
  * Single source of truth for the tier->fee table used by the Hook frontend.
@@ -180,4 +202,124 @@ hookRouter.get('/backtest', async (_req, res) => {
     })),
     note: 'Synthetic backtest using x402 calls as a fee-event proxy. Real numbers will come from Universal Router swap events once liquidity lands in the pool.',
   });
+});
+
+/**
+ * GET /api/hook/pot
+ *
+ * Live on-chain state of CupSidePot: current week id, pot balance for current
+ * + previous week, and the most-recent settled week's payout share.
+ * No-op-friendly when HOOK_CUP_SIDE_POT is not set yet.
+ */
+hookRouter.get('/pot', async (_req, res) => {
+  const potAddress = (process.env.HOOK_CUP_SIDE_POT ?? '').trim();
+  if (!potAddress) {
+    res.json({ deployed: false });
+    return;
+  }
+  try {
+    const pot = new Contract(potAddress, CUP_SIDE_POT_ABI, provider());
+    const [tokenAddress, currentWeekId, startedAt]: [string, bigint, bigint] = await Promise.all([
+      pot.token(),
+      pot.currentWeekId(),
+      pot.startedAt(),
+    ]);
+
+    // Pull current + previous 3 weeks of pot data in parallel.
+    const cw = Number(currentWeekId);
+    const weeks = [cw, cw - 1, cw - 2, cw - 3].filter((w) => w >= 1);
+    const weekStates = await Promise.all(
+      weeks.map(async (weekId) => {
+        const [potAmount, settled, share, winners]: [bigint, boolean, bigint, bigint] =
+          await Promise.all([
+            pot.weekPot(weekId),
+            pot.settled(weekId),
+            pot.sharePerWinner(weekId),
+            pot.winnersCount(weekId),
+          ]);
+        return {
+          weekId,
+          potAmount: potAmount.toString(),
+          settled,
+          sharePerWinner: share.toString(),
+          winnersCount: Number(winners),
+        };
+      }),
+    );
+
+    // Live token balance held by the pot.
+    const erc20 = new Contract(tokenAddress, ERC20_BAL_ABI, provider());
+    const tokenBalance: bigint = await erc20.balanceOf(potAddress);
+
+    res.json({
+      deployed: true,
+      potAddress,
+      payoutToken: tokenAddress,
+      currentWeekId: cw,
+      startedAt: Number(startedAt),
+      tokenBalance: tokenBalance.toString(),
+      weeks: weekStates,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'pot read failed' });
+  }
+});
+
+/**
+ * GET /api/hook/discounts
+ *
+ * Last N FeeApplied events emitted by FanFeeHook on X Layer mainnet.
+ * Decoded shape:
+ *   [{ blockNumber, txHash, swapper, poolId, tier, feeBps }, ...]
+ *
+ * Default lookback = last 50_000 blocks (~1 day on X Layer). Cap at 50 events.
+ */
+hookRouter.get('/discounts', async (req, res) => {
+  const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
+  if (!hookAddress) {
+    res.json({ deployed: false, events: [] });
+    return;
+  }
+  const lookback = Math.min(Number(req.query.lookback ?? 50_000), 200_000);
+  const limit = Math.min(Number(req.query.limit ?? 25), 50);
+
+  try {
+    const p = provider();
+    const tip = await p.getBlockNumber();
+    const fromBlock = Math.max(tip - lookback, 0);
+    const logs = await p.getLogs({
+      address: hookAddress,
+      topics: [FEE_APPLIED_TOPIC],
+      fromBlock,
+      toBlock: tip,
+    });
+
+    const events = logs.slice(-limit).reverse().map((log) => {
+      // topics[1] = poolId (indexed bytes32), topics[2] = swapper (indexed address)
+      const poolId = log.topics[1];
+      const swapper = '0x' + log.topics[2].slice(-40);
+      // data = abi.encode(uint8 tier, uint24 feeBps) => 32+32 bytes
+      const data = log.data.slice(2);
+      const tier = parseInt(data.slice(0, 64), 16);
+      const feeBps = parseInt(data.slice(64, 128), 16);
+      return {
+        blockNumber: log.blockNumber,
+        txHash: log.transactionHash,
+        swapper: getAddress(swapper),
+        poolId,
+        tier,
+        feeBps,
+      };
+    });
+
+    res.json({
+      deployed: true,
+      hookAddress,
+      lookbackBlocks: lookback,
+      tipBlock: tip,
+      events,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'log query failed' });
+  }
 });
