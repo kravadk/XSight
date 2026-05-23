@@ -9,6 +9,7 @@ import { api, ApiError } from '../../api/client';
 import { toast } from '../../store/toastStore';
 import { QRCode } from '../common/QRCode';
 import { CipherScramble } from '../common/CipherScramble';
+import { explorerAddress } from '../../config/links';
 
 type ModalKind = 'receive' | 'deposit' | null;
 
@@ -23,7 +24,7 @@ export function PortfolioActionsBar() {
   const [refreshing, setRefreshing] = useState(false);
 
   const displayAddr = address;
-  const explorerUrl = address ? `https://www.oklink.com/xlayer/address/${address}` : '';
+  const explorerUrl = address ? explorerAddress(address) : '';
 
   const copyAddr = () => {
     void navigator.clipboard.writeText(displayAddr).then(

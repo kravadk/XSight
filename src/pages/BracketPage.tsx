@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Network, Bot, Award } from 'lucide-react';
+import { Network, Bot, Award, ExternalLink } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
+import { useUiStore } from '../store/uiStore';
 import { toast } from '../store/toastStore';
 import { celebrate } from '../store/celebrateStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
+import { explorerAddress } from '../config/links';
 
 type Outcome = 'HOME' | 'DRAW' | 'AWAY';
 
 export function BracketPage() {
-  const { connected, address, connect, sendTx } = useWalletStore();
+  const { connected, address, sendTx } = useWalletStore();
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const markets = useApi(() => api.markets(), []);
   const saved = useApi(
     () => (connected && address ? api.cupBracket(address) : Promise.resolve(null)),
@@ -108,9 +111,16 @@ export function BracketPage() {
               Bracket NFT mints once the contract is deployed to X Layer.
             </span>
           ) : nft.data.mintedTokenId > 0 ? (
-            <span className="text-xs text-stadium-text">
+            <a
+              href={explorerAddress(nft.data.metadata.address)}
+              target="_blank"
+              rel="noreferrer"
+              title="View the BracketNFT contract on X Layer explorer"
+              className="inline-flex items-center gap-1.5 text-xs text-stadium-text hover:text-pitch hover:underline"
+            >
               <span className="font-bold">Bracket NFT minted</span> · #{nft.data.mintedTokenId}
-            </span>
+              <ExternalLink className="h-3 w-3 opacity-60" />
+            </a>
           ) : connected && nft.data.mintTx ? (
             <button
               onClick={() => void mintNft()}
@@ -127,7 +137,7 @@ export function BracketPage() {
 
       {!connected && (
         <button
-          onClick={() => void connect()}
+          onClick={() => setConnectModalOpen(true)}
           className="mb-4 w-full rounded-xl bg-pitch py-2.5 text-sm font-bold text-stadium-base"
         >
           Connect wallet to save your bracket

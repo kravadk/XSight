@@ -4,6 +4,7 @@ import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
 import { useUiStore } from '../store/uiStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
+import { explorerAddress } from '../config/links';
 import { cn } from '../utils/format';
 import { useState } from 'react';
 import { LeaguesPanel } from '../components/cup/LeaguesPanel';
@@ -123,9 +124,19 @@ export function LeaderboardPage() {
                     ) : (
                       <User className="h-4 w-4 text-stadium-text-muted" />
                     )}
-                    <span className="font-mono text-xs text-stadium-text">
-                      {r.isHermes ? 'Hermes' : shortWallet(r.wallet)}
-                    </span>
+                    {r.isHermes ? (
+                      <span className="font-mono text-xs text-stadium-text">Hermes</span>
+                    ) : (
+                      <a
+                        href={explorerAddress(r.wallet)}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`View ${r.wallet} on X Layer explorer`}
+                        className="font-mono text-xs text-stadium-text hover:text-pitch hover:underline"
+                      >
+                        {shortWallet(r.wallet)}
+                      </a>
+                    )}
                   </div>
                   <span className="ml-auto font-mono text-sm font-bold text-pitch">{pct(r.accuracy)}</span>
                   <span className="w-20 text-right font-mono text-xs text-stadium-text-secondary">

@@ -1,9 +1,11 @@
-import { BadgeCheck, Wallet } from 'lucide-react';
+import { BadgeCheck, Wallet, ExternalLink } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useWalletStore } from '../store/walletStore';
+import { useUiStore } from '../store/uiStore';
 import { PageHeader, StatePanel } from '../components/cup/CupKit';
 import { InfoTip } from '../components/common/InfoTip';
+import { explorerAddress } from '../config/links';
 
 const BREAKDOWN_LABELS: Record<string, string> = {
   x402Usage: 'x402 usage',
@@ -14,7 +16,8 @@ const BREAKDOWN_LABELS: Record<string, string> = {
 };
 
 export function FanPassPage() {
-  const { connected, address, connect } = useWalletStore();
+  const { connected, address } = useWalletStore();
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const score = useApi(
     () => (connected && address ? api.cupFanScore(address) : Promise.resolve(null)),
     [connected, address],
@@ -32,7 +35,7 @@ export function FanPassPage() {
           <Wallet className="h-7 w-7 text-pitch" />
           <div className="text-sm font-semibold text-stadium-text">Connect your wallet to view your FanPass</div>
           <button
-            onClick={() => void connect()}
+            onClick={() => setConnectModalOpen(true)}
             className="rounded-xl bg-pitch px-5 py-2 text-sm font-bold text-stadium-base hover:bg-pitch-bright glow-pitch"
           >
             Connect wallet
@@ -115,11 +118,25 @@ export function FanPassPage() {
                         : 'not eligible yet'}
                   </div>
                   <div className="mt-1 text-xs text-stadium-text-secondary">{sbt.data.reason}</div>
-                  <div className="mt-2 font-mono text-[10px] text-stadium-text-muted">
-                    {sbt.data.contract.address
-                      ? `Contract ${sbt.data.contract.address}`
-                      : 'SBT contract not deployed yet'}
-                    {sbt.data.eligible && !sbt.data.minted && ' · soulbound mint is operator-issued'}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 font-mono text-[10px] text-stadium-text-muted">
+                    {sbt.data.contract.address ? (
+                      <>
+                        <span>Contract</span>
+                        <a
+                          href={explorerAddress(sbt.data.contract.address)}
+                          target="_blank"
+                          rel="noreferrer"
+                          title={`View ${sbt.data.contract.address} on X Layer explorer`}
+                          className="inline-flex items-center gap-1 text-stadium-text hover:text-pitch hover:underline"
+                        >
+                          {sbt.data.contract.address}
+                          <ExternalLink className="h-3 w-3 opacity-60" />
+                        </a>
+                      </>
+                    ) : (
+                      <span>SBT contract not deployed yet</span>
+                    )}
+                    {sbt.data.eligible && !sbt.data.minted && <span>· soulbound mint is operator-issued</span>}
                   </div>
                 </div>
               </div>

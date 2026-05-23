@@ -3,7 +3,9 @@ import { Users, Plus, LogIn, Bot, User as UserIcon } from 'lucide-react';
 import { api } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
 import { useWalletStore } from '../../store/walletStore';
+import { useUiStore } from '../../store/uiStore';
 import { toast } from '../../store/toastStore';
+import { explorerAddress } from '../../config/links';
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`;
@@ -14,7 +16,8 @@ function shortWallet(w: string): string {
 
 /** Friend-leagues view: create, join by code, list your leagues, expand a league board. */
 export function LeaguesPanel() {
-  const { connected, address, connect } = useWalletStore();
+  const { connected, address } = useWalletStore();
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const leagues = useApi(
     () => (connected && address ? api.cupLeagues(address) : Promise.resolve({ leagues: [] })),
     [connected, address],
@@ -36,7 +39,7 @@ export function LeaguesPanel() {
           Connect your wallet to create or join a friend league.
         </div>
         <button
-          onClick={() => void connect()}
+          onClick={() => setConnectModalOpen(true)}
           className="rounded-xl bg-pitch px-4 py-2 text-sm font-bold text-stadium-base"
         >
           Connect wallet
@@ -152,9 +155,19 @@ export function LeaguesPanel() {
                     ) : (
                       <UserIcon className="h-4 w-4 text-stadium-text-muted" />
                     )}
-                    <span className="font-mono text-xs text-stadium-text">
-                      {r.isHermes ? 'Hermes' : shortWallet(r.wallet)}
-                    </span>
+                    {r.isHermes ? (
+                      <span className="font-mono text-xs text-stadium-text">Hermes</span>
+                    ) : (
+                      <a
+                        href={explorerAddress(r.wallet)}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={`View ${r.wallet} on X Layer explorer`}
+                        className="font-mono text-xs text-stadium-text hover:text-pitch hover:underline"
+                      >
+                        {shortWallet(r.wallet)}
+                      </a>
+                    )}
                     <span className="ml-auto font-mono text-xs font-bold text-pitch">{pct(r.accuracy)}</span>
                     <span className="w-16 text-right font-mono text-xs font-bold text-gold">{r.points} pts</span>
                   </div>

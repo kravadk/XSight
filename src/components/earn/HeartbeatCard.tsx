@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Heart, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { api } from '../../api/client';
+import { explorerTx } from '../../config/links';
 
 interface HeartbeatStatus {
   running: boolean;
@@ -95,7 +96,7 @@ export function HeartbeatCard() {
 
       {status?.lastTxHash && (
         <a
-          href={`https://www.okx.com/web3/explorer/xlayer/tx/${status.lastTxHash}`}
+          href={explorerTx(status.lastTxHash)}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 flex items-center gap-2 text-[10px] text-[#525252] hover:text-[#A3A3A3] transition-colors"

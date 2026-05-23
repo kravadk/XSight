@@ -8,6 +8,7 @@ import { useNotificationsStore, type Notification } from '../../store/notificati
 import { usePendingTxStore } from '../../store/pendingTxStore';
 import { MagneticButton } from '../common/MagneticButton';
 import { useUiStore, type Tab } from '../../store/uiStore';
+import { explorerAddress, explorerTx } from '../../config/links';
 
 export function TopBar() {
   const { connected, short, address, onXLayer, disconnect, ensureXLayer } = useWalletStore();
@@ -23,7 +24,7 @@ export function TopBar() {
   const clearNotifs = useNotificationsStore((s) => s.clear);
   const [notifOpen, setNotifOpen] = useState(false);
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const explorerAddressUrl = address ? `https://www.okx.com/web3/explorer/xlayer/address/${address}` : null;
+  const explorerAddressUrl = address ? explorerAddress(address) : null;
 
   const copyAddress = async () => {
     if (!address) return;
@@ -84,7 +85,7 @@ export function TopBar() {
           // pill disappears on its own once every tracked tx mines (or times
           // out at 2 min in autoDrainPending).
           <a
-            href={`https://www.okx.com/web3/explorer/xlayer/tx/${pendingTx[pendingTx.length - 1].hash}`}
+            href={explorerTx(pendingTx[pendingTx.length - 1].hash)}
             target="_blank"
             rel="noreferrer"
             title={pendingTx.map((t) => `${t.label}: ${t.hash}`).join('\n')}

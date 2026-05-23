@@ -2,6 +2,7 @@ import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { tokenMeta } from '../../config/tokens';
 import { TokenIcon } from '../common/TokenIcon';
 import { CipherScramble } from '../common/CipherScramble';
+import { explorerTx } from '../../config/links';
 
 interface Props {
   fromSymbol: string;
@@ -14,7 +15,7 @@ interface Props {
 export function TxSuccessCard({ fromSymbol, toSymbol, fromAmount, toAmount, hash }: Props) {
   const f = tokenMeta(fromSymbol);
   const t = tokenMeta(toSymbol);
-  const explorerUrl = `https://www.oklink.com/xlayer/tx/${hash}`;
+  const explorerUrl = explorerTx(hash);
   const shortHash = `${hash.slice(0, 10)}...${hash.slice(-6)}`;
   return (
     <div className="bg-[#161616] rounded-2xl border border-[rgba(34,197,94,0.2)] p-4 mt-1 w-full max-w-[360px]">

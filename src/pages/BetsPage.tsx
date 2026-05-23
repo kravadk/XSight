@@ -25,9 +25,10 @@ const STATUS: Record<MarketPositionDto['status'], { label: string; cls: string }
 };
 
 export function BetsPage() {
-  const { connected, address, connect, sendTx } = useWalletStore();
+  const { connected, address, sendTx } = useWalletStore();
   const openMarket = useUiStore((s) => s.openMarket);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const recentStakeAt = useUiStore((s) => s.recentStakeAt);
   const { data, loading, error, reload } = useApi(
     () => (connected && address ? api.marketPositions(address) : Promise.resolve({ wallet: '', positions: [] })),
@@ -71,7 +72,7 @@ export function BetsPage() {
           <Wallet className="h-7 w-7 text-pitch" />
           <div className="text-sm font-semibold text-stadium-text">Connect your wallet to see your bets</div>
           <button
-            onClick={() => void connect()}
+            onClick={() => setConnectModalOpen(true)}
             className="rounded-xl bg-pitch px-5 py-2 text-sm font-bold text-stadium-base hover:bg-pitch-bright glow-pitch"
           >
             Connect wallet

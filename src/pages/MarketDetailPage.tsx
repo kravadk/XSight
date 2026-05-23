@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Wallet, ExternalLink } from 'lucide-react';
 import { api } from '../api/client';
 import { useApi } from '../hooks/useApi';
 import { useUiStore } from '../store/uiStore';
@@ -11,6 +11,7 @@ import { FreePickPanel } from '../components/cup/FreePickPanel';
 import { PunditReadCard } from '../components/cup/PunditReadCard';
 import { InfoTip } from '../components/common/InfoTip';
 import { readErc20Balance, readErc20Allowance } from '../lib/erc20';
+import { explorerAddress } from '../config/links';
 
 const OUTCOME_COLORS_3 = [
   'var(--color-outcome-home)',
@@ -50,7 +51,8 @@ function extractApproveSpender(approveData: string): string {
 export function MarketDetailPage() {
   const matchId = useUiStore((s) => s.marketDetailId);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
-  const { connected, connect, sendTx, waitForTx, address, onXLayer } = useWalletStore();
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
+  const { connected, sendTx, waitForTx, address, onXLayer } = useWalletStore();
   const { data, loading, error, reload } = useApi(
     () => (matchId ? api.market(matchId) : Promise.resolve(null)),
     [matchId],
@@ -282,7 +284,7 @@ export function MarketDetailPage() {
                   </div>
                   {!connected ? (
                     <button
-                      onClick={() => void connect()}
+                      onClick={() => setConnectModalOpen(true)}
                       className="mt-3 w-full rounded-xl bg-pitch py-2.5 text-sm font-bold text-stadium-base hover:bg-pitch-bright glow-pitch"
                     >
                       Connect wallet to stake
@@ -353,11 +355,26 @@ export function MarketDetailPage() {
                   bond. Lying costs money, so the posted result is the honest one.
                 </InfoTip>
               </span>
-              <span className="font-mono text-stadium-text">
-                {data.oracleContract?.name ?? 'CupOracle'}
-                {data.oracleContract?.bonded ? ' · bonded' : ''}
-                {data.oracle?.registered ? ` · state ${data.oracle.state ?? 0}` : ' · awaiting registration'}
-              </span>
+              {data.oracleContract?.address ? (
+                <a
+                  href={explorerAddress(data.oracleContract.address)}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={`View ${data.oracleContract.address} on X Layer explorer`}
+                  className="flex items-center gap-1.5 font-mono text-stadium-text hover:text-pitch hover:underline"
+                >
+                  {data.oracleContract.name ?? 'CupOracle'}
+                  {data.oracleContract.bonded ? ' · bonded' : ''}
+                  {data.oracle?.registered ? ` · state ${data.oracle.state ?? 0}` : ' · awaiting registration'}
+                  <ExternalLink className="h-3 w-3 opacity-60" />
+                </a>
+              ) : (
+                <span className="font-mono text-stadium-text">
+                  {data.oracleContract?.name ?? 'CupOracle'}
+                  {data.oracleContract?.bonded ? ' · bonded' : ''}
+                  {data.oracle?.registered ? ` · state ${data.oracle.state ?? 0}` : ' · awaiting registration'}
+                </span>
+              )}
             </div>
           </div>
         )}

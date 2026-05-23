@@ -2,6 +2,7 @@ import { Terminal, Globe, Shield, Database, ExternalLink, Copy } from 'lucide-re
 import { CodeBlock } from '../components/common/CodeBlock';
 import { X402_ENDPOINTS } from '../config/endpoints';
 import { toast } from '../store/toastStore';
+import { explorerAddress } from '../config/links';
 
 const BASE_URL = typeof window !== 'undefined' ? `${window.location.origin}/api/v1` : '/api/v1';
 
@@ -200,7 +201,7 @@ export function BuildPage() {
                     <Copy className="w-3 h-3" />
                   </button>
                   <a
-                    href={`https://www.okx.com/web3/explorer/xlayer/address/${c.address}`}
+                    href={explorerAddress(c.address)}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={`Open ${c.name} in explorer`}

@@ -3,6 +3,7 @@ import { Gift } from 'lucide-react';
 import { api } from '../../api/client';
 import { useApi } from '../../hooks/useApi';
 import { useWalletStore } from '../../store/walletStore';
+import { useUiStore } from '../../store/uiStore';
 import { toast } from '../../store/toastStore';
 import { cn } from '../../utils/format';
 
@@ -17,7 +18,8 @@ const OUTCOMES = [
  * fixture is still open the pick can be changed; once it locks the result is shown.
  */
 export function FreePickPanel({ matchId, locked }: { matchId: string; locked: boolean }) {
-  const { connected, address, connect } = useWalletStore();
+  const { connected, address } = useWalletStore();
+  const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const { data, reload } = useApi(
     () => (connected && address ? api.freePicks({ wallet: address, matchId }) : Promise.resolve({ picks: [] })),
     [connected, address, matchId],
@@ -69,7 +71,7 @@ export function FreePickPanel({ matchId, locked }: { matchId: string; locked: bo
         )
       ) : !connected ? (
         <button
-          onClick={() => void connect()}
+          onClick={() => setConnectModalOpen(true)}
           className="w-full rounded-xl border border-stadium-line-strong py-2 text-sm font-bold text-stadium-text hover:bg-[rgba(255,255,255,0.05)]"
         >
           Connect wallet to make a free pick
