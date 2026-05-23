@@ -39,20 +39,35 @@ forge snapshot           # Day 4 gas profile for README
 
 ## X Layer V4 deployment addresses (chain 196)
 
+**Uniswap V4 infrastructure** (verified 2026-05-23 via
+https://developers.uniswap.org/contracts/v4/deployments):
+
 - **PoolManager:** `0x360e68faccca8ca495c1b759fd9eee466db9fb32`
 - **PositionManager:** `0xcf1eafc6928dc385a342e7c6491d371d2871458b`
 - **StateView:** `0x76fd297e2d437cd7f76d50f01afe6160f86e9990`
 - **Universal Router 2.1.1:** `0x8b844f885672f333bc0042cb669255f93a4c1e6b`
 - **Permit2:** `0x000000000022D473030F116dDEE9F6B43aC78BA3`
 
-Source: https://developers.uniswap.org/contracts/v4/deployments (verified 2026-05-23).
+**Our contracts** (deployed 2026-05-23 on X Layer mainnet):
+
+- **FanFeeHook:** [`0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0`](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0)
+  — last byte `0xC0` matches BEFORE_SWAP_FLAG | AFTER_SWAP_FLAG permission bits
+- **FanScoreRegistry:** [`0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820`](https://www.okx.com/web3/explorer/xlayer/address/0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820)
+- **CupSidePot:** [`0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504`](https://www.okx.com/web3/explorer/xlayer/address/0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504)
+- **Reads from FanPassSBT:** [`0x74F75532428A99E613a865C97D1084b7f38241BD`](https://www.okx.com/web3/explorer/xlayer/address/0x74F75532428A99E613a865C97D1084b7f38241BD)
+- **Operator (writes scores, settles pot):** `0x82736f84Ad234566180F902237e2Fb4c35177bDB`
+
+On-chain verification (read-only `cast call`):
+- `FanScoreRegistry.operator()` → `0x82736f...bDB` ✓
+- `CupSidePot.token()` → USDC `0x74b7F1...d22` ✓
+- `FanFeeHook.feeOf(<unknown wallet>)` → `3000` = 30 bps ✓
 
 ## Status
 
 | Day | Goal | State |
 |---|---|---|
 | 1 (Sat 23) | Foundry workspace, V4 deps, FanFeeHook stub compiles | ✅ done |
-| 2 (Sun 24) | tier→fee logic, FanScoreRegistry, CupSidePot, fuzz tests | pending |
-| 3 (Mon 25) | HookMiner + deploy to X Layer mainnet + pool init | pending |
-| 4 (Tue 26) | side-pot weekly settle, backtest | pending |
+| 2 (Sun 24) | tier→fee logic, FanScoreRegistry, CupSidePot, 55 tests | ✅ done |
+| 3 (Mon 25) | HookMiner deploy + 3 contracts live on X Layer mainnet | ✅ done |
+| 4 (Tue 26) | init test pool, side-pot weekly settle, backtest | pending |
 | 5 (Wed 27) | demo video, Twitter, submission form | pending |

@@ -15,18 +15,16 @@ apps/hook/
     └── pages/HookPage.tsx   live dashboard surfaced inside the XSight site
 ```
 
-## Status
+## Status — Day 3 complete (deployed on X Layer mainnet)
 
-Day-1 scaffold complete (2026-05-23):
-
-- [x] **V4 confirmed on X Layer mainnet** — PoolManager `0x360e68fa…fb32`,
-      Universal Router 2.1.1 `0x8b844f88…1e6b`
-- [x] Foundry workspace + remappings + v4-core/v4-periphery/OZ hooks installed
-- [x] `FanFeeHook.sol` stub compiles (`forge build` green)
-- [x] Sanity test passes (`forge test` green)
-- [ ] Day 2: `_beforeSwap` tier→fee logic + `FanScoreRegistry` + `CupSidePot`
-- [ ] Day 3: HookMiner + deploy on X Layer mainnet + pool init
-- [ ] Day 4: side-pot weekly settle loop + backtest
+- [x] Day 1: V4 confirmed on X Layer, Foundry workspace, stub compiles
+- [x] Day 2: tier→fee logic, FanScoreRegistry, CupSidePot (55 tests, 91% coverage)
+- [x] **Day 3: 3 contracts LIVE on X Layer mainnet** ([explorer](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0))
+  - FanFeeHook `0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0`
+  - FanScoreRegistry `0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820`
+  - CupSidePot `0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504`
+- [x] Day 3: HookPage live dashboard + `/api/hook/*` routes
+- [ ] Day 4: init USDC/USDT pool with hook + side-pot weekly settle + backtest
 - [ ] Day 5: demo video + Twitter + submission form
 
 ## Architecture (FanFeeHook)
