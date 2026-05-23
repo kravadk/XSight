@@ -19,5 +19,9 @@ contracts/artifacts/
 contracts/out/
 contracts/cache/
 
+# Foundry forge install — re-install via `forge install` instead of committing
+contracts/lib/
+contracts/broadcast/
+
 # TypeScript build info
 *.tsbuildinfo

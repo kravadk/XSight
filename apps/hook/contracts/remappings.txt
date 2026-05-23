@@ -1,0 +1,7 @@
+@openzeppelin/uniswap-hooks/=lib/uniswap-hooks/src/
+@uniswap/v4-core/=lib/uniswap-hooks/lib/v4-core/
+@uniswap/v4-periphery/=lib/uniswap-hooks/lib/v4-periphery/
+v4-core/=lib/uniswap-hooks/lib/v4-core/src/
+v4-periphery/=lib/uniswap-hooks/lib/v4-periphery/src/
+forge-std/=lib/forge-std/src/
+solmate/=lib/uniswap-hooks/lib/v4-core/lib/solmate/src/

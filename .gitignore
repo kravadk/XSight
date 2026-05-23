@@ -21,6 +21,12 @@ contracts/artifacts-hh/
 contracts/cache-hh/
 contracts/artifacts/
 
+# Foundry V4 hook workspace — deps via `forge install`, not committed
+apps/hook/contracts/lib/
+apps/hook/contracts/out/
+apps/hook/contracts/cache/
+apps/hook/contracts/broadcast/
+
 # Agent / skills tooling — not part of the project
 .agents/
 .claude/

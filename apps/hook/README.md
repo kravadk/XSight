@@ -17,19 +17,51 @@ apps/hook/
 
 ## Status
 
-In progress — repo will fill out during the hackathon week:
+Day-1 scaffold complete (2026-05-23):
 
-- [ ] V4 hook contract (Solidity 0.8.x)
-- [ ] Foundry / Hardhat test suite
-- [ ] Deployment script for X Layer mainnet
-- [ ] Dashboard: live hook activity + pool stats + tx links
-- [ ] Submission writeup
+- [x] **V4 confirmed on X Layer mainnet** — PoolManager `0x360e68fa…fb32`,
+      Universal Router 2.1.1 `0x8b844f88…1e6b`
+- [x] Foundry workspace + remappings + v4-core/v4-periphery/OZ hooks installed
+- [x] `FanFeeHook.sol` stub compiles (`forge build` green)
+- [x] Sanity test passes (`forge test` green)
+- [ ] Day 2: `_beforeSwap` tier→fee logic + `FanScoreRegistry` + `CupSidePot`
+- [ ] Day 3: HookMiner + deploy on X Layer mainnet + pool init
+- [ ] Day 4: side-pot weekly settle loop + backtest
+- [ ] Day 5: demo video + Twitter + submission form
+
+## Architecture (FanFeeHook)
+
+```
+swap → V4 PoolManager → FanFeeHook.beforeSwap
+                          ├─ read FanPassSBT.balanceOf(swapper)
+                          ├─ read FanScoreRegistry.scoreOf(swapper)
+                          ├─ compute tier → dynamic fee (5/10/20/30 bps)
+                          └─ return (LPFeeLibrary.OVERRIDE_FEE_FLAG | fee)
+                        FanFeeHook.afterSwap
+                          └─ route extra spread → CupSidePot.depositFor
+                                                  ↓ weekly settle
+                                                  ↓ reads CupOracleV3 + BracketNFT picks
+                                                  → payout to correct pickers
+```
 
 ## Develop
 
 This product lives inside the [XSight monorepo](https://github.com/kravadk/XSight).
-The dashboard page renders inside the unified site; the V4 contracts live in
-`apps/hook/contracts/` and are tested standalone.
+Frontend dashboard renders at `?product=hook`; V4 contracts live in
+[`contracts/`](contracts/) as a Foundry workspace.
+
+### V4 contracts (Foundry)
+
+```bash
+cd apps/hook/contracts
+forge install Uniswap/v4-core --no-git
+forge install Uniswap/v4-periphery --no-git
+forge install OpenZeppelin/uniswap-hooks --no-git
+forge build
+forge test --gas-report
+```
+
+`lib/` is git-ignored — re-install on clone via `forge install`.
 
 ## Repo
 
