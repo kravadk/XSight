@@ -17,6 +17,7 @@ import { createLeague, joinLeague, leaguesForWallet, leagueLeaderboard } from '.
 import { bracketScoreboard, saveBracket } from '../services/bracketService.js';
 import { bracketNftMetadata, readMintedBy, buildBracketMintTx } from '../services/bracketNftContract.js';
 import { env } from '../config/env.js';
+import { getProvider } from '../services/wallet.js';
 import {
   challengeCupOracleResult,
   cupOracleMetadata,
@@ -193,11 +194,41 @@ cupRouter.get('/resolver', (_req: Request, res: Response) => {
 });
 
 /**
+ * Operator OKB balance — cached for 60s so /health is cheap to poll.
+ * Used to raise an alert (DESIGN §12) before the signer runs out of gas for
+ * `createMarket` / `proposeResult` / `finalizeResult`.
+ */
+const OPERATOR_OKB_LOW_WEI = 50_000_000_000_000_000n; // 0.05 OKB
+let operatorBalanceCache: { value: bigint | null; checkedAt: number; error: string | null } = {
+  value: null,
+  checkedAt: 0,
+  error: null,
+};
+
+async function getOperatorBalance(): Promise<{ value: bigint | null; error: string | null }> {
+  const now = Date.now();
+  if (now - operatorBalanceCache.checkedAt < 60_000) {
+    return { value: operatorBalanceCache.value, error: operatorBalanceCache.error };
+  }
+  try {
+    const balance = await getProvider().getBalance(env.agenticWalletAddress);
+    operatorBalanceCache = { value: balance, checkedAt: now, error: null };
+    return { value: balance, error: null };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'rpc error';
+    operatorBalanceCache = { value: null, checkedAt: now, error: msg };
+    return { value: null, error: msg };
+  }
+}
+
+/**
  * Settlement-stack health (HARDENING-PLAN Phase 5). Aggregates the oracle, the market
  * indexer and the last resolver pass into one snapshot, and raises an alert if any
  * result is challenged on-chain, a resolver step errored, or the indexer is behind.
+ * Also surfaces operator OKB so the on-call sees a "top up gas" warning before
+ * the resolver actually fails to mine its next tx.
  */
-cupRouter.get('/health', (_req: Request, res: Response) => {
+cupRouter.get('/health', async (_req: Request, res: Response) => {
   const oracle = cupOracleMetadata();
   const resolver = getResolverStatus();
   const indexer = getIndexerStatus();
@@ -206,11 +237,20 @@ cupRouter.get('/health', (_req: Request, res: Response) => {
   const challenged = steps.filter((s) => s.onchainState === 2).length;
   const stepErrors = steps.filter((s) => Boolean(s.error)).length;
 
+  const operatorBalance = await getOperatorBalance();
+
   const alerts: string[] = [];
   if (oracle.status !== 'deployed') alerts.push('settlement oracle is not deployed');
   if (challenged > 0) alerts.push(`${challenged} match(es) challenged on-chain — arbiter ruling required`);
   if (stepErrors > 0) alerts.push(`${stepErrors} resolver step(s) errored on the last pass`);
   if (indexer.deployed && !indexer.backfilled) alerts.push('market indexer has not finished backfilling');
+  if (operatorBalance.value !== null && operatorBalance.value < OPERATOR_OKB_LOW_WEI) {
+    const okb = (Number(operatorBalance.value) / 1e18).toFixed(4);
+    alerts.push(`operator wallet OKB low (${okb}) — top up to keep the resolver and createMarket running`);
+  }
+  if (operatorBalance.error) {
+    alerts.push(`operator balance check failed: ${operatorBalance.error}`);
+  }
 
   res.json({
     status: alerts.length === 0 ? 'ok' : 'attention',
@@ -234,6 +274,11 @@ cupRouter.get('/health', (_req: Request, res: Response) => {
       proposedAwaiting,
       challenged,
       errors: stepErrors,
+    },
+    operator: {
+      address: env.agenticWalletAddress,
+      okbBalance: operatorBalance.value !== null ? (Number(operatorBalance.value) / 1e18).toFixed(6) : null,
+      okbBalanceWei: operatorBalance.value !== null ? operatorBalance.value.toString() : null,
     },
     alerts,
   });

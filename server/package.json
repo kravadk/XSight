@@ -14,6 +14,7 @@
     "deploy:cup-oracle-v3": "tsx scripts/deploy-cup-oracle-v3.ts",
     "deploy:fanpass-sbt": "tsx scripts/deploy-fanpass-sbt.ts",
     "deploy:bracket-nft": "tsx scripts/deploy-bracket-nft.ts",
+    "deploy:arbiter-multisig": "tsx scripts/deploy-arbiter-multisig.ts",
     "deploy:parimutuel": "tsx scripts/deploy-parimutuel-market.ts",
     "ensure:markets": "tsx scripts/ensure-markets.ts",
     "seed:cup-oracle": "tsx scripts/seed-cup-oracle.ts",

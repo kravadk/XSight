@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { OKXUniversalConnectUI } from '@okxconnect/ui';
 import { useNotificationsStore } from './notificationsStore';
+import { usePendingTxStore } from './pendingTxStore';
 
 const X_LAYER_CHAIN_ID = 196;
 const X_LAYER_HEX = '0xc4';
@@ -54,6 +55,26 @@ async function getOkxUi(): Promise<OKXUniversalConnectUI> {
     },
   });
   return okxUi;
+}
+
+/**
+ * Background drain for pending-tx entries — most callers `await sendTx(…)`
+ * without an explicit `waitForTx`, so without this the pill would grow
+ * forever. Polls the receipt for up to 2 minutes, then removes the entry no
+ * matter what (so a never-mined tx is not stuck pending forever). Idempotent
+ * with `waitForTx` — both end up calling `remove(hash)`, second is a no-op.
+ */
+async function autoDrainPending(hash: string): Promise<void> {
+  for (let i = 0; i < 60; i++) {
+    try {
+      const receipt = await walletRpc<{ status?: string } | null>('eth_getTransactionReceipt', [hash]);
+      if (receipt) break;
+    } catch {
+      /* swallow — the next tick will retry */
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  usePendingTxStore.getState().remove(hash);
 }
 
 /**
@@ -231,6 +252,10 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     // Notifications are an ambient session feed, not history — clear them so
     // a new wallet (or just-disconnected user) starts from a blank tray.
     useNotificationsStore.getState().clear();
+    // In-flight tx tracking belonged to that session too — the user can still
+    // see receipts on the explorer if they reconnect; clearing the pill
+    // prevents a stale "N pending" lingering after disconnect.
+    usePendingTxStore.getState().clear();
   },
 
   ensureXLayer: async () => {
@@ -265,22 +290,34 @@ export const useWalletStore = create<WalletState>((set, get) => ({
     const { address } = get();
     if (!address) throw new Error('Wallet not connected');
     if (!(await get().ensureXLayer())) throw new Error('Switch your wallet to X Layer to continue');
-    return walletRpc<string>('eth_sendTransaction', [{ from: address, to, data, value: value ?? '0x0' }]);
+    const hash = await walletRpc<string>('eth_sendTransaction', [{ from: address, to, data, value: value ?? '0x0' }]);
+    // Surface every submitted tx through the pending-tx pill so the user
+    // sees a live count instead of staring at a "Submitted" toast for a
+    // minute. waitForTx drains the same store on receipt or timeout; for
+    // callers that don't await waitForTx, autoDrainPending guarantees the
+    // entry is removed once the receipt lands (or after a 2-minute ceiling).
+    usePendingTxStore.getState().add(hash);
+    void autoDrainPending(hash);
+    return hash;
   },
 
   waitForTx: async (hash) => {
-    // X Layer blocks are ~1-2s; poll up to ~90s.
-    for (let i = 0; i < 45; i++) {
-      const receipt = await walletRpc<{ status?: string } | null>('eth_getTransactionReceipt', [hash]);
-      if (receipt) {
-        if (receipt.status && Number(receipt.status) === 0) {
-          throw new Error(`Transaction reverted (${hash.slice(0, 10)}…)`);
+    try {
+      // X Layer blocks are ~1-2s; poll up to ~90s.
+      for (let i = 0; i < 45; i++) {
+        const receipt = await walletRpc<{ status?: string } | null>('eth_getTransactionReceipt', [hash]);
+        if (receipt) {
+          if (receipt.status && Number(receipt.status) === 0) {
+            throw new Error(`Transaction reverted (${hash.slice(0, 10)}…)`);
+          }
+          return;
         }
-        return;
+        await new Promise((r) => setTimeout(r, 2000));
       }
-      await new Promise((r) => setTimeout(r, 2000));
+      throw new Error(`Transaction not mined in time (${hash.slice(0, 10)}…)`);
+    } finally {
+      usePendingTxStore.getState().remove(hash);
     }
-    throw new Error(`Transaction not mined in time (${hash.slice(0, 10)}…)`);
   },
 
   setPortfolio: ({ address, network, tokens, totalUsd }) =>

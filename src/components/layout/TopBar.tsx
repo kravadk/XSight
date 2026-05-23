@@ -1,10 +1,11 @@
-import { Bell, Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink, Settings, HelpCircle } from 'lucide-react';
+import { Bell, Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink, Settings, HelpCircle, Loader2 } from 'lucide-react';
 import { useWalletStore } from '../../store/walletStore';
 import { toast } from '../../store/toastStore';
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { CipherScramble } from '../common/CipherScramble';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
+import { usePendingTxStore } from '../../store/pendingTxStore';
 import { MagneticButton } from '../common/MagneticButton';
 import { useUiStore, type Tab } from '../../store/uiStore';
 
@@ -16,6 +17,7 @@ export function TopBar() {
   const setHelpOpen = useUiStore((s) => s.setHelpOpen);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
   const notifications = useNotificationsStore((s) => s.items);
+  const pendingTx = usePendingTxStore((s) => s.items);
   const markAllRead = useNotificationsStore((s) => s.markAllRead);
   const markRead = useNotificationsStore((s) => s.markRead);
   const clearNotifs = useNotificationsStore((s) => s.clear);
@@ -76,6 +78,23 @@ export function TopBar() {
         >
           <Settings className="h-5 w-5" />
         </button>
+        {pendingTx.length > 0 && (
+          // Live pending-tx pill — clicking it opens the most recent submitted
+          // tx on the X Layer explorer so the user can watch it confirm. The
+          // pill disappears on its own once every tracked tx mines (or times
+          // out at 2 min in autoDrainPending).
+          <a
+            href={`https://www.okx.com/web3/explorer/xlayer/tx/${pendingTx[pendingTx.length - 1].hash}`}
+            target="_blank"
+            rel="noreferrer"
+            title={pendingTx.map((t) => `${t.label}: ${t.hash}`).join('\n')}
+            className="flex h-9 items-center gap-1.5 rounded-full border border-gold-border bg-gold-bg px-2.5 text-[11px] font-bold text-gold transition-colors hover:bg-[rgba(231,184,79,0.18)]"
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            {pendingTx.length}
+            <span className="hidden md:inline">pending</span>
+          </a>
+        )}
         <button
           onClick={() => setNotifOpen(true)}
           title="Notifications"
