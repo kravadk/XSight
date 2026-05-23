@@ -199,3 +199,23 @@ export async function setIndexerCursor(contract: string, block: number): Promise
 export function isMarketStoreConfigured(): boolean {
   return Boolean(env.databaseUrl);
 }
+
+/** Number of on-chain stakes recorded for a wallet across all markets. Used by FanPass scoring. */
+export async function countStakesByWallet(wallet: string): Promise<number> {
+  const db = getPool();
+  if (!db) return 0;
+  await ensureMarketSchema(db);
+  const result = await db.query('select count(*)::int as n from cup_stakes where wallet = $1', [wallet.toLowerCase()]);
+  const row = result.rows[0] as { n: number } | undefined;
+  return row?.n ?? 0;
+}
+
+/** Number of on-chain claim/payout events recorded for a wallet. Used by FanPass scoring. */
+export async function countClaimsByWallet(wallet: string): Promise<number> {
+  const db = getPool();
+  if (!db) return 0;
+  await ensureMarketSchema(db);
+  const result = await db.query('select count(*)::int as n from cup_claims where wallet = $1', [wallet.toLowerCase()]);
+  const row = result.rows[0] as { n: number } | undefined;
+  return row?.n ?? 0;
+}

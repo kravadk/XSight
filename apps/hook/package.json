@@ -1,0 +1,19 @@
+{
+  "name": "xhook",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Hook — Uniswap V4 hook submission for OKX «Build with Hook» hackathon (22-28 May 2026). Frontend dashboard + V4 hook contracts. Mirrored from kravadk/XSight monorepo.",
+  "scripts": {
+    "comment": "This is a product slice inside the XSight monorepo. Run dev/build from the umbrella repo root."
+  },
+  "dependencies": {
+    "lucide-react": "^0.546.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.28.6",
+    "typescript": "^5.6.3"
+  }
+}

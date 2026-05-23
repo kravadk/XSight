@@ -60,6 +60,13 @@ export function clearLeagues(): void {
   save();
 }
 
+/** Number of leagues a wallet is a member of (owner counts because owner is auto-added to `members`). */
+export function countLeaguesByMember(wallet: string): number {
+  load();
+  const lower = wallet.toLowerCase();
+  return leagues.filter((l) => l.members.includes(lower)).length;
+}
+
 function load(): void {
   if (loaded) return;
   loaded = true;

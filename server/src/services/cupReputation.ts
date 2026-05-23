@@ -2,6 +2,10 @@ import { getAddress } from 'ethers';
 import { x402Log } from '../middleware/x402.js';
 import { recordActivity } from './activityTracker.js';
 import { getProvider } from './wallet.js';
+import { getBracket } from './bracketStore.js';
+import { listFreePicks } from './freePickStore.js';
+import { countLeaguesByMember } from './leagueStore.js';
+import { countStakesByWallet, countClaimsByWallet } from './marketStore.js';
 
 export interface FanScore {
   wallet: string;
@@ -18,6 +22,18 @@ export interface FanScore {
   verdict: string;
 }
 
+/**
+ * FanPass score. Every dimension is driven by observable user activity so the
+ * five axes actually move. Caps keep the score bounded:
+ *
+ *   x402Usage          (0–20)  paid x402 calls from this wallet         → 4 pts each
+ *   cupInteractions    (0–40)  bracket picks + free picks + leagues     → see below
+ *   onchainActivity    (0–20)  X Layer tx count + balance>0 bonus
+ *   consistency        (0–10)  +5 if x402+onchain both >0; +5 if cup-interaction+onchain both >0
+ *   oracleParticipation (0–30) on-chain pari-mutuel stakes + claims     → 5/3 pts each
+ *
+ *   total max 120, clamped to 100. Threshold for FanPass SBT is 35.
+ */
 export async function getFanScore(rawWallet: string): Promise<FanScore | null> {
   let wallet: string;
   try {
@@ -27,7 +43,9 @@ export async function getFanScore(rawWallet: string): Promise<FanScore | null> {
   }
 
   recordActivity('cup.fanScore', wallet.slice(0, 10));
-  const paidCalls = x402Log.filter((c) => c.status === 'paid' && c.caller.toLowerCase() === wallet.toLowerCase()).length;
+  const walletLower = wallet.toLowerCase();
+  const paidCalls = x402Log.filter((c) => c.status === 'paid' && c.caller.toLowerCase() === walletLower).length;
+
   let txCount = 0;
   let balanceWei = 0n;
   try {
@@ -41,12 +59,39 @@ export async function getFanScore(rawWallet: string): Promise<FanScore | null> {
     balanceWei = 0n;
   }
 
-  const x402Usage = Math.min(30, paidCalls * 4);
-  const cupScore = 0;
-  const oracleParticipation = 0;
-  const onchainActivity = Math.min(34, txCount * 2 + (balanceWei > 0n ? 4 : 0));
-  const consistency = paidCalls > 0 && txCount > 0 ? 12 : 0;
-  const score = Math.min(100, Math.round(x402Usage + cupScore + onchainActivity + consistency + oracleParticipation));
+  // Cup interactions: count product-engagement signals (off-chain product data).
+  const bracket = getBracket(walletLower);
+  const bracketPicks = bracket ? Object.keys(bracket.picks).length : 0;
+  const freePicks = listFreePicks({ wallet: walletLower }).length;
+  const leagues = countLeaguesByMember(walletLower);
+
+  // Oracle participation: on-chain stake/claim events from the indexer.
+  let onchainStakes = 0;
+  let onchainClaims = 0;
+  try {
+    [onchainStakes, onchainClaims] = await Promise.all([
+      countStakesByWallet(walletLower),
+      countClaimsByWallet(walletLower),
+    ]);
+  } catch {
+    onchainStakes = 0;
+    onchainClaims = 0;
+  }
+
+  const x402Usage = Math.min(20, paidCalls * 4);
+  const cupInteractions = Math.min(
+    40,
+    Math.min(24, bracketPicks * 2) + Math.min(10, freePicks * 1) + Math.min(20, leagues * 10),
+  );
+  const onchainActivity = Math.min(20, txCount * 2 + (balanceWei > 0n ? 4 : 0));
+  const oracleParticipation = Math.min(30, Math.min(20, onchainStakes * 5) + Math.min(10, onchainClaims * 3));
+  const consistency =
+    (x402Usage > 0 && onchainActivity > 0 ? 5 : 0) + (cupInteractions > 0 && onchainActivity > 0 ? 5 : 0);
+
+  const score = Math.min(
+    100,
+    Math.round(x402Usage + cupInteractions + onchainActivity + consistency + oracleParticipation),
+  );
   const level = score >= 82 ? 'oracle-grade' : score >= 64 ? 'trusted' : score >= 28 ? 'active' : 'unknown';
 
   return {
@@ -55,7 +100,7 @@ export async function getFanScore(rawWallet: string): Promise<FanScore | null> {
     level,
     breakdown: {
       x402Usage,
-      cupInteractions: cupScore,
+      cupInteractions,
       onchainActivity,
       consistency,
       oracleParticipation,
