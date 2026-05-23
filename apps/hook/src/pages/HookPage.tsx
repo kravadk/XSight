@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Anchor, ExternalLink, Github, Sparkles, Wallet, Activity, Trophy } from 'lucide-react';
+import { Anchor, ExternalLink, Github, Sparkles, Wallet, Activity, Trophy, TrendingDown } from 'lucide-react';
 import { useWalletStore } from '@shared/store/walletStore';
 import { useUiStore } from '@shared/store/uiStore';
 import { explorerAddress } from '@shared/config/links';
@@ -29,6 +29,16 @@ interface TierInfo {
   verdict: string;
 }
 
+interface Backtest {
+  windowDays: number;
+  paidCalls: number;
+  uniqueWallets: number;
+  totalVolume: number;
+  totalSaved: number;
+  byTier: { tier: number; label: string; bps: number; wallets: number; saved: number }[];
+  note: string;
+}
+
 const TIER_COLOR: Record<number, string> = {
   0: 'text-stadium-text-muted',
   1: 'text-outcome-away',
@@ -55,13 +65,18 @@ export function HookPage() {
   const [state, setState] = useState<HookState | null>(null);
   const [tier, setTier] = useState<TierInfo | null>(null);
   const [tierLoading, setTierLoading] = useState(false);
+  const [backtest, setBacktest] = useState<Backtest | null>(null);
 
-  // Fetch global hook state once
+  // Fetch global hook state + backtest once
   useEffect(() => {
     fetch('/api/hook/state')
       .then((r) => r.json() as Promise<HookState>)
       .then(setState)
       .catch(() => setState(null));
+    fetch('/api/hook/backtest')
+      .then((r) => r.json() as Promise<Backtest>)
+      .then(setBacktest)
+      .catch(() => setBacktest(null));
   }, []);
 
   // Fetch per-wallet tier whenever address changes
@@ -164,6 +179,40 @@ export function HookPage() {
         </div>
       )}
 
+      {/* 7-day backtest */}
+      {backtest && backtest.paidCalls > 0 && (
+        <div className="stadium-card p-5">
+          <div className="mb-3 flex items-center gap-2 text-micro text-pitch">
+            <TrendingDown className="h-3 w-3" /> 7-day backtest — what FanFeeHook would have saved
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-lg border border-stadium-line bg-[rgba(255,255,255,0.03)] p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">saved</div>
+              <div className="font-display text-xl text-pitch">${backtest.totalSaved.toFixed(2)}</div>
+            </div>
+            <div className="rounded-lg border border-stadium-line bg-[rgba(255,255,255,0.03)] p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">wallets</div>
+              <div className="font-display text-xl text-stadium-text">{backtest.uniqueWallets}</div>
+            </div>
+            <div className="rounded-lg border border-stadium-line bg-[rgba(255,255,255,0.03)] p-3 text-center">
+              <div className="text-[10px] uppercase tracking-wider text-stadium-text-muted">events</div>
+              <div className="font-display text-xl text-stadium-text">{backtest.paidCalls}</div>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-col gap-1 text-[10px]">
+            {backtest.byTier.filter((t) => t.wallets > 0).map((t) => (
+              <div key={t.tier} className="flex items-center justify-between text-stadium-text-secondary">
+                <span>
+                  T{t.tier} {t.label} — {t.wallets} wallet{t.wallets > 1 ? 's' : ''} × {t.bps} bps
+                </span>
+                <span className="font-mono text-stadium-text">${t.saved.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-[10px] italic text-stadium-text-muted">{backtest.note}</div>
+        </div>
+      )}
+
       {/* Side pot teaser */}
       <div className="stadium-card flex items-start gap-3.5 p-5">
         <Trophy className="mt-0.5 h-5 w-5 shrink-0 text-gold" />
@@ -201,6 +250,12 @@ export function HookPage() {
               fallback="pending Day-3 deploy"
             />
           </div>
+          {state.poolId && (
+            <div className="mt-3 rounded-lg border border-pitch-border bg-pitch-bg p-3 font-mono text-[10px]">
+              <div className="text-[9px] uppercase tracking-wider text-pitch">USDT/USDC pool · live</div>
+              <div className="mt-1 break-all text-stadium-text">{state.poolId}</div>
+            </div>
+          )}
         </div>
       )}
 

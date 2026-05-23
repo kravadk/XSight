@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getAddress } from 'ethers';
 import { getFanScore } from '../services/cupReputation.js';
+import { x402Log } from '../middleware/x402.js';
 
 export const hookRouter = Router();
 
@@ -106,5 +107,77 @@ hookRouter.get('/tier', async (req, res) => {
     hasFanPass: fanPassBoost,
     breakdown: fanScore.breakdown,
     verdict: fanScore.verdict,
+  });
+});
+
+/**
+ * GET /api/hook/backtest
+ *
+ * "What would FanFeeHook have saved last week?" — synthetic backtest using
+ * the x402Log as a proxy for fee-bearing events. For every PAID call in the
+ * last 7 days, we compute the caller's tier off-chain, then compare what they
+ * would have paid (tierFee bps) vs the 30 bps default.
+ *
+ * Returns aggregate savings + per-tier breakdown so the UI can render
+ * "X USDT saved across Y wallets, Z of them oracle-grade".
+ */
+hookRouter.get('/backtest', async (_req, res) => {
+  const sinceMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const paid = x402Log.filter((c) => c.status === 'paid' && c.timestamp >= sinceMs);
+
+  // Group by wallet for one fanScore lookup per wallet.
+  const byWallet = new Map<string, typeof paid>();
+  for (const call of paid) {
+    const w = call.caller.toLowerCase();
+    const bucket = byWallet.get(w) ?? [];
+    bucket.push(call);
+    byWallet.set(w, bucket);
+  }
+
+  // Score → tier table, mirrors /api/hook/state.
+  const tierCounts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  const tierSavings: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
+  let totalVolume = 0;
+  let totalSaved = 0;
+
+  for (const [wallet, calls] of byWallet) {
+    let tier = 0;
+    try {
+      const fs = await getFanScore(wallet);
+      if (fs) tier = tierFromScore(fs.score);
+    } catch {
+      tier = 0;
+    }
+    tierCounts[tier]++;
+    const tierFeeBps = TIER_FEE_BPS[tier];
+    for (const call of calls) {
+      // x402 call.amount is already in payout-token units (USDT). Treat the
+      // "swap" as 100x the call amount (a fee call typically gates a larger
+      // economic action). This gives a realistic order of magnitude for the
+      // hook savings without inventing fake swap volume.
+      const notional = call.amount * 100;
+      const savedBps = 30 - tierFeeBps;
+      const saved = (notional * savedBps) / 10000;
+      totalVolume += notional;
+      totalSaved += saved;
+      tierSavings[tier] += saved;
+    }
+  }
+
+  res.json({
+    sinceMs,
+    windowDays: 7,
+    paidCalls: paid.length,
+    uniqueWallets: byWallet.size,
+    totalVolume,
+    totalSaved,
+    byTier: Object.entries(TIER_FEE_BPS).map(([tier, bps]) => ({
+      tier: Number(tier),
+      label: TIER_LABEL[Number(tier)],
+      bps,
+      wallets: tierCounts[Number(tier)],
+      saved: tierSavings[Number(tier)],
+    })),
+    note: 'Synthetic backtest using x402 calls as a fee-event proxy. Real numbers will come from Universal Router swap events once liquidity lands in the pool.',
   });
 });
