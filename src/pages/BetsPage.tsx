@@ -6,6 +6,7 @@ import { useWalletStore } from '../store/walletStore';
 import { useUiStore } from '../store/uiStore';
 import { toast } from '../store/toastStore';
 import { celebrate } from '../store/celebrateStore';
+import { useRetryUntil } from '../hooks/useRetryUntil';
 import { MatchupHeader, PageHeader, StatePanel, fromBaseUnits } from '../components/cup/CupKit';
 import { cn } from '../utils/format';
 
@@ -27,6 +28,7 @@ export function BetsPage() {
   const { connected, address, connect, sendTx } = useWalletStore();
   const openMarket = useUiStore((s) => s.openMarket);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
+  const recentStakeAt = useUiStore((s) => s.recentStakeAt);
   const { data, loading, error, reload } = useApi(
     () => (connected && address ? api.marketPositions(address) : Promise.resolve({ wallet: '', positions: [] })),
     [connected, address],
@@ -34,6 +36,15 @@ export function BetsPage() {
   const [claiming, setClaiming] = useState<string | null>(null);
 
   const positions = data?.positions ?? [];
+
+  // When a fresh stake just landed (signal from MarketDetailPage), retry the
+  // position fetch a few times so the user does not see "No bets yet" while
+  // the backend indexer is still 5-15s behind the chain.
+  useRetryUntil(
+    recentStakeAt,
+    () => reload(),
+    () => (data?.positions?.length ?? 0) > 0,
+  );
 
   async function claim(p: Position) {
     setClaiming(p.market.id);

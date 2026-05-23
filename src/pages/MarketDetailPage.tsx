@@ -10,6 +10,7 @@ import { cn } from '../utils/format';
 import { FreePickPanel } from '../components/cup/FreePickPanel';
 import { PunditReadCard } from '../components/cup/PunditReadCard';
 import { InfoTip } from '../components/common/InfoTip';
+import { readErc20Balance, readErc20Allowance } from '../lib/erc20';
 
 const OUTCOME_COLORS_3 = [
   'var(--color-outcome-home)',
@@ -35,10 +36,21 @@ function toUnits(amountStr: string, decimals: number): string {
   return (BigInt(whole || '0') * 10n ** BigInt(decimals) + BigInt(fracPadded || '0')).toString();
 }
 
+/**
+ * Pull the spender address out of an `approve(spender, amount)` calldata blob.
+ * Layout: `0x` + 4-byte selector + 32-byte spender slot + 32-byte amount slot.
+ * The address sits in the last 20 bytes of the spender slot (chars 34..74).
+ * Used by the stake pre-flight to read the user's allowance against the exact
+ * market the backend is about to ask them to spend to.
+ */
+function extractApproveSpender(approveData: string): string {
+  return '0x' + approveData.slice(34, 74).toLowerCase();
+}
+
 export function MarketDetailPage() {
   const matchId = useUiStore((s) => s.marketDetailId);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
-  const { connected, connect, sendTx, waitForTx, address } = useWalletStore();
+  const { connected, connect, sendTx, waitForTx, address, onXLayer } = useWalletStore();
   const { data, loading, error, reload } = useApi(
     () => (matchId ? api.market(matchId) : Promise.resolve(null)),
     [matchId],
@@ -86,14 +98,37 @@ export function MarketDetailPage() {
   }
 
   async function handleStake() {
-    if (!data || amountNum <= 0) return;
+    if (!data || amountNum <= 0 || !address) return;
     setBusy('stake');
     try {
-      const { stakeTx } = await api.marketStakeTx(matchId!, outcome, toBaseUnits(amountNum));
+      const usdt = STAKE_TOKENS[0];
+      const amountUnits = BigInt(toBaseUnits(amountNum));
+      const { approveTx, stakeTx } = await api.marketStakeTx(matchId!, outcome, amountUnits.toString());
+      const market = extractApproveSpender(approveTx.data);
+      // Pre-flight directly against the chain so we can refuse to open the
+      // wallet popup (with a clear toast) instead of letting the wallet's
+      // simulator throw a generic "Execution error" for missing balance or
+      // allowance — the most common reason for a failed first stake attempt.
+      const [balance, allowance] = await Promise.all([
+        readErc20Balance(usdt.address, address),
+        readErc20Allowance(usdt.address, address, market),
+      ]);
+      if (balance < amountUnits) {
+        const have = (Number(balance) / 10 ** usdt.decimals).toFixed(2);
+        toast.error(`Not enough USDT — you have ${have}, need ${amountNum.toFixed(2)}`);
+        return;
+      }
+      if (allowance < amountUnits) {
+        toast.error('Approve USDT first — press "1 · Approve" and wait for the confirmation toast');
+        return;
+      }
       const hash = await sendTx(stakeTx);
       toast.success(`Stake submitted · ${hash.slice(0, 10)}…`);
       setAmount('');
-      reload();
+      // Cue My Bets to ride out the indexer lag so the new position appears
+      // shortly even without a manual refresh.
+      useUiStore.getState().bumpRecentStake();
+      void reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : 'Stake failed');
     } finally {
@@ -109,6 +144,7 @@ export function MarketDetailPage() {
     const tok = STAKE_TOKENS.find((t) => t.symbol === stakeToken);
     if (!data || amountNum <= 0 || !address || !tok) return;
     setBusy('stake');
+    let stepsCompleted = 0;
     try {
       const { steps, minUsdt } = await api.marketSwapStakeTx(matchId!, {
         fromToken: tok.address,
@@ -120,12 +156,26 @@ export function MarketDetailPage() {
       for (const step of steps) {
         const hash = await sendTx({ to: step.to, data: step.data, value: step.value });
         await waitForTx(hash);
+        stepsCompleted += 1;
       }
       toast.success(`Staked ≈${(Number(minUsdt) / 1e6).toFixed(2)} USDT via OKX DEX`);
       setAmount('');
-      reload();
+      useUiStore.getState().bumpRecentStake();
+      void reload();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Swap & stake failed');
+      const reason = e instanceof Error ? e.message : 'unknown error';
+      if (stepsCompleted > 0) {
+        // Partial failure mid-pipeline: the swap leg likely succeeded, so USDT
+        // is now sitting in the user's wallet. Switch the token picker back to
+        // USDT so a retry takes the direct approve+stake path — no second
+        // swap, no leftover dust, just finish the stake they already paid for.
+        setStakeToken('USDT');
+        toast.error(
+          `Swap may have succeeded — USDT is in your wallet. Next step failed: ${reason}. Press "1 · Approve" then "2 · Stake" to finish.`,
+        );
+      } else {
+        toast.error(reason);
+      }
     } finally {
       setBusy(null);
     }
@@ -241,14 +291,14 @@ export function MarketDetailPage() {
                     <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
                         onClick={() => void handleApprove()}
-                        disabled={busy !== null || amountNum <= 0}
+                        disabled={busy !== null || amountNum <= 0 || !onXLayer}
                         className="rounded-xl border border-stadium-line-strong py-2.5 text-sm font-bold text-stadium-text hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-50"
                       >
                         {busy === 'approve' ? 'Approving…' : '1 · Approve'}
                       </button>
                       <button
                         onClick={() => void handleStake()}
-                        disabled={busy !== null || amountNum <= 0}
+                        disabled={busy !== null || amountNum <= 0 || !onXLayer}
                         className="rounded-xl bg-pitch py-2.5 text-sm font-bold text-stadium-base hover:bg-pitch-bright disabled:opacity-50"
                       >
                         {busy === 'stake' ? 'Staking…' : '2 · Stake'}
@@ -257,11 +307,16 @@ export function MarketDetailPage() {
                   ) : (
                     <button
                       onClick={() => void handleSwapStake()}
-                      disabled={busy !== null || amountNum <= 0}
+                      disabled={busy !== null || amountNum <= 0 || !onXLayer}
                       className="mt-3 w-full rounded-xl bg-pitch py-2.5 text-sm font-bold text-stadium-base hover:bg-pitch-bright disabled:opacity-50 glow-pitch"
                     >
                       {busy === 'stake' ? 'Swapping & staking…' : `Swap ${stakeToken} → USDT & stake`}
                     </button>
+                  )}
+                  {connected && !onXLayer && (
+                    <p className="mt-2 text-[11px] font-semibold text-outcome-loss">
+                      Switch your wallet to X Layer (chain 196) to stake.
+                    </p>
                   )}
                   <p className="mt-2 text-[10px] text-stadium-text-muted">
                     {stakeToken === 'USDT'

@@ -26,6 +26,13 @@ export function BracketPage() {
   const [picks, setPicks] = useState<Record<string, Outcome>>({});
   const [busy, setBusy] = useState(false);
 
+  // Reset the local pick sheet on any wallet change (disconnect, account
+  // switch). Without this, picks made under wallet A would silently appear as
+  // wallet B's picks until its saved bracket finishes loading.
+  useEffect(() => {
+    setPicks({});
+  }, [address]);
+
   // Hydrate the local pick sheet from the saved bracket once it loads.
   useEffect(() => {
     if (saved.data?.bracket) setPicks(saved.data.bracket.picks);

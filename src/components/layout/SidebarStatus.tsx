@@ -33,7 +33,18 @@ export function SidebarStatus() {
             allOnline ? 'bg-[#BFFF00] animate-pulse' : 'bg-[#666]',
           )}
         />
-        <span className="text-[11px] font-bold text-[#F5F5F5] flex-1">{network || 'X Layer'}</span>
+        <span className="text-[11px] font-bold text-[#F5F5F5] flex-1 truncate">{network || 'X Layer'}</span>
+        {!backendOnline && (
+          // Explicit "backend unreachable" badge — the indicator dot above can
+          // mean either RPC or backend; this names it when it is the API that
+          // is down, so the user knows the live data is stale, not the chain.
+          <span
+            className="rounded bg-[rgba(239,68,68,0.12)] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#FCA5A5]"
+            title="Backend API unreachable — data may be stale"
+          >
+            API ↓
+          </span>
+        )}
         {latencyMs != null && (
           <span className={cn('text-[10px] tabular font-mono', latencyColor)}>
             <span className="text-[#666]">RPC </span>

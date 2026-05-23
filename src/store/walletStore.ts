@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { OKXUniversalConnectUI } from '@okxconnect/ui';
+import { useNotificationsStore } from './notificationsStore';
 
 const X_LAYER_CHAIN_ID = 196;
 const X_LAYER_HEX = '0xc4';
@@ -55,15 +56,32 @@ async function getOkxUi(): Promise<OKXUniversalConnectUI> {
   return okxUi;
 }
 
-/** Route a JSON-RPC request through whichever wallet mode is active. */
+/**
+ * Route a JSON-RPC request through whichever wallet mode is active. Also acts as
+ * a backstop for wallet-side disconnects: if the provider answers with EIP-1193
+ * codes 4900 (`Disconnected`) or 4901 (`Chain Disconnected`), we mirror that
+ * into our store so the UI doesn't pretend the wallet is still connected.
+ */
 async function walletRpc<T>(method: string, params?: unknown[] | object): Promise<T> {
-  if (mode === 'okxconnect') {
-    if (!okxUi) throw new Error('Wallet not connected');
-    return okxUi.request<T>({ method, params }, EIP155_X_LAYER);
+  try {
+    if (mode === 'okxconnect') {
+      if (!okxUi) throw new Error('Wallet not connected');
+      return await okxUi.request<T>({ method, params }, EIP155_X_LAYER);
+    }
+    const provider = getProvider();
+    if (!provider) throw new Error('No wallet found');
+    return (await provider.request({ method, params })) as T;
+  } catch (err) {
+    const code = (err as { code?: number } | undefined)?.code;
+    if (code === 4900 || code === 4901) {
+      try {
+        useWalletStore.getState().disconnect();
+      } catch {
+        /* defensive — disconnect already idempotent */
+      }
+    }
+    throw err;
   }
-  const provider = getProvider();
-  if (!provider) throw new Error('No wallet found');
-  return provider.request({ method, params }) as Promise<T>;
 }
 
 export interface WalletToken {
@@ -142,12 +160,25 @@ export const useWalletStore = create<WalletState>((set, get) => ({
         if (!listenersBound && injected.on) {
           injected.on('accountsChanged', (...args: unknown[]) => {
             const next = (args[0] as string[] | undefined)?.[0];
-            if (!next) get().disconnect();
-            else set({ address: next, short: shorten(next) });
+            if (!next) {
+              // Wallet returned an empty account list — treat as full disconnect.
+              get().disconnect();
+            } else if (next.toLowerCase() !== get().address.toLowerCase()) {
+              // Account switched in-wallet — adopt the new address and reset the
+              // session-level notification feed so the previous account's
+              // ambient events don't leak into this one.
+              set({ address: next, short: shorten(next) });
+              useNotificationsStore.getState().clear();
+            }
           });
           injected.on('chainChanged', (...args: unknown[]) => {
             const id = Number.parseInt(String(args[0]), 16);
             set({ chainId: id, onXLayer: id === X_LAYER_CHAIN_ID });
+          });
+          // Wallet-side disconnect (extension locked, mobile session ended,
+          // dApp permissions revoked) — sync our UI to that.
+          injected.on('disconnect', () => {
+            get().disconnect();
           });
           listenersBound = true;
         }
@@ -181,7 +212,25 @@ export const useWalletStore = create<WalletState>((set, get) => ({
 
   disconnect: () => {
     if (mode === 'okxconnect' && okxUi) void okxUi.disconnect().catch(() => undefined);
-    set({ connected: false, address: '', short: '', onXLayer: false });
+    // Full session reset — wipe every personal field so nothing from the
+    // previous wallet (tokens, balances, errors, chain hints) leaks into the
+    // disconnected state or into a different wallet that connects next.
+    set({
+      connected: false,
+      address: '',
+      short: '',
+      network: 'X Layer Mainnet',
+      chainId: 196,
+      onXLayer: false,
+      connecting: false,
+      tokens: [],
+      totalUsd: 0,
+      loading: false,
+      error: null,
+    });
+    // Notifications are an ambient session feed, not history — clear them so
+    // a new wallet (or just-disconnected user) starts from a blank tray.
+    useNotificationsStore.getState().clear();
   },
 
   ensureXLayer: async () => {

@@ -48,6 +48,12 @@ interface UiState {
   settingsOpen: boolean;
   /** Welcome walkthrough — re-openable from the TopBar "?" after first run. */
   helpOpen: boolean;
+  /**
+   * Wall-clock timestamp of the last successful on-chain stake. My Bets watches
+   * this to trigger a short auto-retry chain — the indexer can lag the chain by
+   * 5-15s, so a single `reload()` right after a stake often returns nothing.
+   */
+  recentStakeAt: number;
   setProduct: (product: Product) => void;
   setActiveTab: (tab: Tab) => void;
   setActiveSubTab: (subTab: SubTab) => void;
@@ -56,6 +62,8 @@ interface UiState {
   setConnectModalOpen: (open: boolean) => void;
   setSettingsOpen: (open: boolean) => void;
   setHelpOpen: (open: boolean) => void;
+  /** Record that a stake just landed — used to nudge dependent screens. */
+  bumpRecentStake: () => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -66,11 +74,26 @@ export const useUiStore = create<UiState>((set) => ({
   connectModalOpen: false,
   settingsOpen: false,
   helpOpen: false,
-  setProduct: (product) => set({ product, activeTab: DEFAULT_TAB[product] }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
+  recentStakeAt: 0,
+  // Switching product or tab also dismisses any open overlay (Help, Settings,
+  // Connect modal). They are fixed-position panels in App.tsx, so without this
+  // they would linger over the new page and block clicks.
+  setProduct: (product) =>
+    set({ product, activeTab: DEFAULT_TAB[product], helpOpen: false, settingsOpen: false, connectModalOpen: false }),
+  setActiveTab: (tab) =>
+    set({ activeTab: tab, helpOpen: false, settingsOpen: false, connectModalOpen: false }),
   setActiveSubTab: (subTab) => set({ activeSubTab: subTab }),
-  openMarket: (matchId) => set({ marketDetailId: matchId, activeTab: 'market-detail', product: 'xcup' }),
+  openMarket: (matchId) =>
+    set({
+      marketDetailId: matchId,
+      activeTab: 'market-detail',
+      product: 'xcup',
+      helpOpen: false,
+      settingsOpen: false,
+      connectModalOpen: false,
+    }),
   setConnectModalOpen: (connectModalOpen) => set({ connectModalOpen }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setHelpOpen: (helpOpen) => set({ helpOpen }),
+  bumpRecentStake: () => set({ recentStakeAt: Date.now() }),
 }));

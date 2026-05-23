@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { TeamLogo } from './TeamLogo';
 import { cn } from '../../utils/format';
 import type { MarketStatusDto } from '../../api/client';
+import { useSyncStore } from '../../store/syncStore';
 
 /* ---- formatting helpers ---- */
 
@@ -56,6 +57,35 @@ export function PageHeader({ kicker, title, sub, action }: { kicker: string; tit
   );
 }
 
+/**
+ * Skeleton grid + an after-the-fact "backend warming up" banner. Render shows
+ * skeletons immediately on every load, but if the backend takes more than ~8s
+ * and is also reporting unreachable, we add an explainer so the user knows the
+ * blank screen is a Render cold start, not a broken site.
+ */
+function LoadingState() {
+  const backendOnline = useSyncStore((s) => s.online);
+  const [coldStart, setColdStart] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setColdStart(true), 8_000);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex flex-col gap-3">
+      {coldStart && !backendOnline && (
+        <div className="rounded-xl border border-[rgba(56,189,248,0.20)] bg-[rgba(56,189,248,0.06)] p-3 text-xs leading-relaxed text-[#9DA89C]">
+          Backend is warming up — first load after an idle period usually takes ~30 seconds…
+        </div>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="skeleton h-44 w-full rounded-2xl" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function StatePanel({
   loading,
   error,
@@ -75,13 +105,7 @@ export function StatePanel({
   children: ReactNode;
 }) {
   if (loading) {
-    return (
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="skeleton h-44 w-full rounded-2xl" />
-        ))}
-      </div>
-    );
+    return <LoadingState />;
   }
   if (error) {
     return (
