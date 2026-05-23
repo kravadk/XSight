@@ -38,6 +38,23 @@ apps/hook/
 | LP NFT tokenId | `3128` (held by deployer) |
 | **Demo swap tx (hook fired)** | [`0x757c0c75…8fca7`](https://www.okx.com/web3/explorer/xlayer/tx/0x757c0c75a1f65d2cc675b8f750a713e7ec90e6073716405fd4117eb12a68fca7) |
 
+### Multi-tier proof — same wallet, 4 different fees (X Layer mainnet)
+
+One wallet (`0x82736f…7bDB`) is walked through every tier by the operator
+writing different scores to FanScoreRegistry between swaps. Each row is a
+real `FeeApplied` event emitted by FanFeeHook on the same USDT/USDC pool:
+
+| Tier | Score in registry | Fee charged | Swap tx |
+|---|---|---|---|
+| 0 (unknown)      | 0  | **30 bps** | [`0xaf6a0165…2c4a`](https://www.okx.com/web3/explorer/xlayer/tx/0xaf6a0165d3cfb68611e0e9b4200193656203c26ba13f86b642aea264842c2c4a) |
+| 1 (active)       | 30 | **20 bps** | [`0xcdfa2e93…1e1b`](https://www.okx.com/web3/explorer/xlayer/tx/0xcdfa2e93635e3921e09332415600cd267a934baa2c2c784cf95a7d3bcf6a1e1b) |
+| 2 (trusted)      | 70 | **10 bps** | [`0x05f1c62d…e2d1`](https://www.okx.com/web3/explorer/xlayer/tx/0x05f1c62d2f3e8aabd886d586b2157a9e9b580b47de57fa764c0658f670e0e2d1) |
+| 3 (oracle-grade) | 90 | **5 bps**  | [`0x34c4ac12…6de9`](https://www.okx.com/web3/explorer/xlayer/tx/0x34c4ac12738fb60e1d308616eafb32436846d4f7100559ff44da40f111666de9) |
+
+→ Identical wallet, identical pool, same swap direction. The only thing
+that changes between rows is the on-chain reputation score → and the LP fee
+moves from 30 bps to 5 bps. **6× cheaper swap for the top tier.**
+
 ### CupSidePot live lifecycle (also on mainnet)
 
 | Step | Tx hash |
