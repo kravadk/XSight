@@ -21,3 +21,16 @@ contracts/artifacts/
 .agents/
 .claude/
 skills-lock.json
+
+# Internal docs / plans — kept local, not exposed on GitHub. Only the root
+# README.md is the public face. `src/config/docsContent.md` is source code
+# (imported via Vite ?raw) so it is intentionally not under docs/ and stays
+# tracked.
+docs/
+TEST-SCENARIOS.md
+TESTING.md
+server/README.md
+
+# Ad-hoc smoke / diagnostic scripts (created during sessions, then deleted)
+smoke-*.tmp.mjs
+*.tmp.mjs

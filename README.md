@@ -17,7 +17,7 @@
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.24-363636?style=flat-square)](contracts/)
 [![License](https://img.shields.io/badge/license-MIT-EAB308?style=flat-square)](LICENSE)
 
-**[✨ Highlights](#why-x-cup-stands-out)** &nbsp;·&nbsp; **[🏆 Hackathon fit](#one-product-five-hackathon-tracks)** &nbsp;·&nbsp; **[⛓ Live contracts](#live-on-x-layer-mainnet)** &nbsp;·&nbsp; **[🚀 Run it](#run-it-locally)** &nbsp;·&nbsp; **[📖 Docs](#documentation)**
+**[✨ Highlights](#why-x-cup-stands-out)** &nbsp;·&nbsp; **[🏆 Hackathon fit](#one-product-five-hackathon-tracks)** &nbsp;·&nbsp; **[⛓ Live contracts](#live-on-x-layer-mainnet)** &nbsp;·&nbsp; **[🚀 Run it](#run-it-locally)**
 
 </div>
 
@@ -48,7 +48,6 @@
 [Run it locally](#run-it-locally) ·
 [Testing](#testing) ·
 [Project structure](#project-structure) ·
-[Documentation](#documentation) ·
 [Roadmap](#roadmap) ·
 [Principles](#principles)
 
@@ -146,8 +145,7 @@ the product works:
 
 Every stake, bond, settlement and payout is an on-chain transaction a judge can
 open and verify directly. The pre-hardening `CupOracleV2` and its market are
-superseded. Full registry, explorer links and verification inputs in
-[`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
+superseded.
 
 **Want to run it?** → [Run it locally](#run-it-locally) · **Want the test proof?** → [Testing](#testing)
 
@@ -243,7 +241,7 @@ All three settle from the **same agreed final score**. Knockout fixtures are
 handled with care: a knockout match cannot end in a draw, so if the feeds only
 carry a level regulation score the resolver **holds** the Match Result market
 for operator settlement rather than ever publishing a wrong "Draw". The full
-rule set is published in [`SETTLEMENT-RULES.md`](docs/xcup/SETTLEMENT-RULES.md).
+settlement rulebook is committed on-chain as `rulesHash` on every match.
 
 ### Stake with any token
 
@@ -290,7 +288,7 @@ Additional guarantees: every match commits a `rulesHash`, `sourceHash`,
 `evidenceHash` and `evidenceUri` **on-chain**; a guarded `flag()` + safety
 **timelock** replaces any one-key emergency override; the arbiter address is
 timelock-upgradeable so the signer panel can grow without redeploying the
-oracle. Design rationale in [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md).
+oracle.
 
 ### Multi-source result quorum
 
@@ -430,8 +428,7 @@ fees, refunds, re-entrancy, dust) and 19 for `CupOracleV3` / `ArbiterMultisig`
 lifecycle against the oracle).
 
 Mainnet deploy + verification are **user-gated** steps:
-`npm --prefix server run deploy:cup-oracle-v3`, then `deploy:parimutuel` — see
-[`docs/xcup/CONTRACTS.md`](docs/xcup/CONTRACTS.md).
+`npm --prefix server run deploy:cup-oracle-v3`, then `deploy:parimutuel`.
 
 ---
 
@@ -443,22 +440,7 @@ contracts/      CupOracleV3 · ArbiterMultisig · ParimutuelMarket · FanPassSBT
 server/         Express API — ingestion, bonded resolver, market service + indexer,
                 AI pundit, x402 + MCP; deploy scripts under server/scripts/
 src/            React + Vite frontend — 8 X Cup screens + XSight copilot surface
-docs/xcup/      product, architecture and contract documentation
 ```
-
----
-
-## Documentation
-
-| Doc | What's inside |
-|---|---|
-| [`GUIDE.md`](docs/xcup/GUIDE.md) | How to use X Cup as a fan, build on it as a developer, and a FAQ. |
-| [`DESIGN.md`](docs/xcup/DESIGN.md) | Full system architecture and data flows. |
-| [`CONTRACTS.md`](docs/xcup/CONTRACTS.md) | Contract registry, addresses, explorer links, verification inputs. |
-| [`SETTLEMENT-RULES.md`](docs/xcup/SETTLEMENT-RULES.md) | The published settlement rulebook the on-chain `rulesHash` commits to. |
-| [`HARDENING-PLAN.md`](docs/xcup/HARDENING-PLAN.md) | The bonded-oracle design and rationale. |
-| [`UI-SPEC.md`](docs/xcup/UI-SPEC.md) | Per-tab UI spec — expected content and error behaviour. |
-| [`BUILD-STATUS.md`](docs/xcup/BUILD-STATUS.md) | What is built, deployed and outstanding. |
 
 ---
 
