@@ -24,12 +24,16 @@ skills-lock.json
 
 # Markdown is private-by-default — every .md added anywhere is auto-hidden from
 # GitHub. Only the explicit allow-list below stays public:
-#   - the root README.md  (the public face)
-#   - src/config/docsContent.md  (source code — imported via Vite ?raw)
+#   - the root README.md  (the umbrella face)
+#   - per-product READMEs in apps/*  (each mirrored to its own GitHub repo)
+#   - packages/shared/config/docsContent.md  (source code — imported via Vite ?raw)
 # To publish any other .md, add another `!/path/to/file.md` line below.
 *.md
 !/README.md
-!/src/config/docsContent.md
+!/apps/xsight/README.md
+!/apps/xcup/README.md
+!/apps/hook/README.md
+!/packages/shared/config/docsContent.md
 
 # Whole docs/ tree — covers non-markdown artefacts too (screenshots, diagrams).
 docs/

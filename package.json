@@ -22,7 +22,11 @@
     "contracts:compile": "hardhat compile",
     "contracts:test": "cross-env FORK=1 hardhat test contracts/test/ParimutuelMarket.test.cjs contracts/test/CupOracleV3.test.cjs",
     "contracts:test:oracle-v3": "cross-env FORK=1 hardhat test contracts/test/CupOracleV3.test.cjs",
-    "contracts:test:bracket-nft": "hardhat test contracts/test/BracketNFT.test.cjs"
+    "contracts:test:bracket-nft": "hardhat test contracts/test/BracketNFT.test.cjs",
+    "mirror:xsight": "git subtree push --prefix=apps/xsight xsight-mirror main",
+    "mirror:xcup": "git subtree push --prefix=apps/xcup xcup-mirror main",
+    "mirror:hook": "git subtree push --prefix=apps/hook hook-mirror main",
+    "mirror": "npm run mirror:xsight && npm run mirror:xcup && npm run mirror:hook"
   },
   "dependencies": {
     "@okxconnect/ui": "^1.9.1",
