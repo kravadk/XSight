@@ -1,7 +1,7 @@
 import { Anchor, ExternalLink, Github } from 'lucide-react';
 
 const HACKATHON_URL = 'https://web3.okx.com/xlayer/build-x-hackathon/hook';
-const HOOK_REPO_URL = 'https://github.com/kravadk/Hook';
+const HOOK_REPO_URL = 'https://github.com/kravadk/XHook';
 
 /**
  * Hook hackathon landing — Uniswap V4 Hook submission for OKX «Build with Hook»

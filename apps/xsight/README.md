@@ -38,5 +38,6 @@ npm run dev    # then open ?product=xsight
 
 ## Repo
 
-This folder is mirrored to [`github.com/kravadk/XSight-AI`](https://github.com/kravadk/XSight-AI)
-via `git subtree`. Edits land in the umbrella; the mirror is read-only.
+XSight lives in the umbrella repo itself —
+[`github.com/kravadk/XSight`](https://github.com/kravadk/XSight) — since the
+umbrella is named after this product. No separate mirror.

@@ -33,5 +33,5 @@ The dashboard page renders inside the unified site; the V4 contracts live in
 
 ## Repo
 
-Mirrored to [`github.com/kravadk/Hook`](https://github.com/kravadk/Hook) via
+Mirrored to [`github.com/kravadk/XHook`](https://github.com/kravadk/XHook) via
 `git subtree`. Edits land in the umbrella; the mirror is read-only.
