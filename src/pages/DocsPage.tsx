@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Compass, Layers, Plug, Code2 } from 'lucide-react';
-import { DOC_TABS, type DocIconName } from '../config/docsContent';
-import { PageHeader } from '../components/cup/CupKit';
-import { DocsMarkdown } from '../components/docs/DocsMarkdown';
-import { StateBlock } from '../components/common/StateBlock';
-import { cn } from '../utils/format';
+import { DOC_TABS, type DocIconName } from '@shared/config/docsContent';
+import { PageHeader } from '@xcup/components/cup/CupKit';
+import { DocsMarkdown } from '@shared/docs/DocsMarkdown';
+import { StateBlock } from '@shared/common/StateBlock';
+import { cn } from '@shared/utils/format';
 
 const TAB_ICON: Record<DocIconName, typeof Compass> = {
   compass: Compass,

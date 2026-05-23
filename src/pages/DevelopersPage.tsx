@@ -1,8 +1,8 @@
 import { ExternalLink, Boxes, Radio, Plug, Bot, ScrollText } from 'lucide-react';
-import { api } from '../api/client';
-import { useApi } from '../hooks/useApi';
-import { PageHeader } from '../components/cup/CupKit';
-import { cn } from '../utils/format';
+import { api } from '@shared/api/client';
+import { useApi } from '@shared/hooks/useApi';
+import { PageHeader } from '@xcup/components/cup/CupKit';
+import { cn } from '@shared/utils/format';
 
 /**
  * The complete MCP tool catalog the XSight server exposes to Claude-powered agents

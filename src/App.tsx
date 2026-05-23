@@ -1,43 +1,55 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { AnimatePresence, motion, MotionConfig } from 'motion/react';
-import { Sidebar } from './components/layout/Sidebar';
-import { TopBar } from './components/layout/TopBar';
-import { BottomTabBar } from './components/layout/BottomTabBar';
-import { SettingsPanel } from './components/layout/SettingsPanel';
-import { ToastHost } from './components/common/ToastHost';
-import { CommandPalette } from './components/common/CommandPalette';
-import { ErrorBoundary } from './components/common/ErrorBoundary';
-import { Onboarding } from './components/common/Onboarding';
-import { ConnectModal } from './components/common/ConnectModal';
-import { DemoBanner } from './components/common/DemoBanner';
-import { Confetti } from './components/common/Confetti';
-import { useUiStore } from './store/uiStore';
-import { usePrefsStore } from './store/prefsStore';
-import { useBackendSync } from './hooks/useBackendSync';
+import { Sidebar } from '@shared/layout/Sidebar';
+import { TopBar } from '@shared/layout/TopBar';
+import { BottomTabBar } from '@shared/layout/BottomTabBar';
+import { SettingsPanel } from '@shared/layout/SettingsPanel';
+import { ToastHost } from '@shared/common/ToastHost';
+import { CommandPalette } from '@shared/common/CommandPalette';
+import { ErrorBoundary } from '@shared/common/ErrorBoundary';
+import { Onboarding } from '@shared/common/Onboarding';
+import { ConnectModal } from '@shared/common/ConnectModal';
+import { DemoBanner } from '@shared/common/DemoBanner';
+import { Confetti } from '@shared/common/Confetti';
+import { useUiStore, type Product } from '@shared/store/uiStore';
+import { usePrefsStore } from '@shared/store/prefsStore';
+import { useBackendSync } from '@shared/hooks/useBackendSync';
 
 // XSight copilot
-const PortfolioPage = lazy(() => import('./pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })));
-const ChatPage = lazy(() => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })));
-const ApiPage = lazy(() => import('./pages/ApiPage').then((m) => ({ default: m.ApiPage })));
-const EarnPage = lazy(() => import('./pages/EarnPage').then((m) => ({ default: m.EarnPage })));
-const GuidePage = lazy(() => import('./pages/GuidePage').then((m) => ({ default: m.GuidePage })));
-const BuildPage = lazy(() => import('./pages/BuildPage').then((m) => ({ default: m.BuildPage })));
+const PortfolioPage = lazy(() => import('@xsight/pages/PortfolioPage').then((m) => ({ default: m.PortfolioPage })));
+const ChatPage = lazy(() => import('@xsight/pages/ChatPage').then((m) => ({ default: m.ChatPage })));
+const ApiPage = lazy(() => import('@xsight/pages/ApiPage').then((m) => ({ default: m.ApiPage })));
+const EarnPage = lazy(() => import('@xsight/pages/EarnPage').then((m) => ({ default: m.EarnPage })));
+const GuidePage = lazy(() => import('@xsight/pages/GuidePage').then((m) => ({ default: m.GuidePage })));
+const BuildPage = lazy(() => import('@xsight/pages/BuildPage').then((m) => ({ default: m.BuildPage })));
 
 // X Cup prediction market
-const MarketsPage = lazy(() => import('./pages/MarketsPage').then((m) => ({ default: m.MarketsPage })));
-const MarketDetailPage = lazy(() => import('./pages/MarketDetailPage').then((m) => ({ default: m.MarketDetailPage })));
-const BetsPage = lazy(() => import('./pages/BetsPage').then((m) => ({ default: m.BetsPage })));
-const BracketPage = lazy(() => import('./pages/BracketPage').then((m) => ({ default: m.BracketPage })));
-const LeaderboardPage = lazy(() => import('./pages/LeaderboardPage').then((m) => ({ default: m.LeaderboardPage })));
-const PunditPage = lazy(() => import('./pages/PunditPage').then((m) => ({ default: m.PunditPage })));
-const FanPassPage = lazy(() => import('./pages/FanPassPage').then((m) => ({ default: m.FanPassPage })));
+const MarketsPage = lazy(() => import('@xcup/pages/MarketsPage').then((m) => ({ default: m.MarketsPage })));
+const MarketDetailPage = lazy(() => import('@xcup/pages/MarketDetailPage').then((m) => ({ default: m.MarketDetailPage })));
+const BetsPage = lazy(() => import('@xcup/pages/BetsPage').then((m) => ({ default: m.BetsPage })));
+const BracketPage = lazy(() => import('@xcup/pages/BracketPage').then((m) => ({ default: m.BracketPage })));
+const LeaderboardPage = lazy(() => import('@xcup/pages/LeaderboardPage').then((m) => ({ default: m.LeaderboardPage })));
+const PunditPage = lazy(() => import('@xcup/pages/PunditPage').then((m) => ({ default: m.PunditPage })));
+const FanPassPage = lazy(() => import('@xcup/pages/FanPassPage').then((m) => ({ default: m.FanPassPage })));
+
+// Hook hackathon
+const HookPage = lazy(() => import('@hook/pages/HookPage').then((m) => ({ default: m.HookPage })));
+
+// Shared
 const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((m) => ({ default: m.DevelopersPage })));
 const DocsPage = lazy(() => import('./pages/DocsPage').then((m) => ({ default: m.DocsPage })));
 
 export default function App() {
   const { product, activeTab } = useUiStore();
+  const setProduct = useUiStore((s) => s.setProduct);
   const reducedMotion = usePrefsStore((s) => s.reducedMotion);
   useBackendSync();
+
+  // Deep-link entry from product-specific README links (e.g. ?product=hook).
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get('product');
+    if (p === 'xsight' || p === 'xcup' || p === 'hook') setProduct(p as Product);
+  }, [setProduct]);
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
@@ -73,11 +85,14 @@ export default function App() {
                 {activeTab === 'leaderboard' && <LeaderboardPage />}
                 {activeTab === 'pundit' && <PunditPage />}
                 {activeTab === 'fanpass' && <FanPassPage />}
+                {/* Hook */}
+                {activeTab === 'hook' && <HookPage />}
+                {/* Shared */}
                 {activeTab === 'developers' && <DevelopersPage />}
                 {activeTab === 'docs' && <DocsPage />}
                 {/* fallback for any unrouted tab */}
                 {['cup', 'agentbet', 'files', 'rewards'].includes(activeTab) &&
-                  (product === 'xcup' ? <MarketsPage /> : <ChatPage />)}
+                  (product === 'xcup' ? <MarketsPage /> : product === 'hook' ? <HookPage /> : <ChatPage />)}
               </Suspense>
               </ErrorBoundary>
             </motion.div>

@@ -16,7 +16,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["packages/shared/*"],
+      "@xsight/*": ["apps/xsight/src/*"],
+      "@xcup/*": ["apps/xcup/src/*"],
+      "@hook/*": ["apps/hook/src/*"]
+    }
   },
-  "include": ["src"]
+  "include": ["src", "apps/xsight/src", "apps/xcup/src", "apps/hook/src", "packages/shared"]
 }
