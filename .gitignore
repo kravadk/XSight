@@ -43,8 +43,9 @@ skills-lock.json
 !/apps/xcup/server/README.md
 !/packages/shared/config/docsContent.md
 
-# Whole docs/ tree — covers non-markdown artefacts too (screenshots, diagrams).
-docs/
+# Root-level docs/ tree — covers non-markdown artefacts too (screenshots, diagrams).
+# Anchored to root so per-product apps/*/docs/ stays tracked (e.g. apps/xcup/docs/screenshots).
+/docs/
 
 # Ad-hoc smoke / diagnostic scripts (created during sessions, then deleted)
 smoke-*.tmp.mjs

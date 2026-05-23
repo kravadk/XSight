@@ -1,0 +1,23 @@
+# Mirror-local gitignore for kravadk/XHook. The umbrella .gitignore covers the
+# monorepo; this one runs when the mirror is cloned standalone.
+
+node_modules
+dist
+.vite
+.DS_Store
+*.log
+*.local
+
+# env / secrets
+.env
+.env.local
+
+# Hardhat / Foundry build output (when the V4 hook lands)
+contracts/artifacts-hh/
+contracts/cache-hh/
+contracts/artifacts/
+contracts/out/
+contracts/cache/
+
+# TypeScript build info
+*.tsbuildinfo
