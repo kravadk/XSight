@@ -1,9 +1,5 @@
 # Hook — Uniswap V4 hackathon submission
 
-<p align="center">
-  <img src="docs/cover.svg" alt="FanFeeHook — identity-gated swap fees on X Layer" width="100%"/>
-</p>
-
 OKX «Build with Hook» hackathon entry — **22–28 May 2026**, 14,000 USDT
 prize pool. [Hackathon page](https://web3.okx.com/xlayer/build-x-hackathon/hook).
 
