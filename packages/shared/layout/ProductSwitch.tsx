@@ -122,7 +122,7 @@ export function ProductSwitch() {
                 {p.label}
               </div>
               <div
-                className="text-[11px] leading-tight mt-1 truncate font-semibold"
+                className="text-[11px] leading-tight mt-1 font-semibold"
                 style={{ color: active ? `${p.accent}cc` : '#9DA89C' }}
               >
                 {p.subtitle}
