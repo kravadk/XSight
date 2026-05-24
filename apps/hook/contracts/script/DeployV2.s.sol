@@ -14,7 +14,7 @@ import {CupSidePotV2} from "../src/CupSidePotV2.sol";
  *         alongside the live v1 deployment. v2 contracts share the existing
  *         FanScoreRegistry (no need to redeploy scores). The new pool +
  *         liquidity migration are intentionally NOT part of this script —
- *         v2 lives on-chain so judges can read source + adapters can fork it
+ *         v2 lives on-chain so anyone can read source + adapters can fork it
  *         without waiting for liquidity migration.
  *
  *  Reads from env:

@@ -49,7 +49,6 @@ skills-lock.json
 !/apps/xcup/server/README.md
 !/apps/hook/contracts/SECURITY.md
 !/apps/hook/docs/pitch-deck.md
-!/apps/hook/docs/JUDGE-WALKTHROUGH.md
 !/apps/hook/docs/INTEGRATION-GUIDE.md
 !/apps/hook/docs/COMPETITIVE-ANALYSIS.md
 !/apps/hook/docs/RENDER-ENV.md

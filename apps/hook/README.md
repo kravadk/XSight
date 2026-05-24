@@ -166,18 +166,6 @@ swap → V4 PoolManager → FanFeeHook.beforeSwap
                                                   → payout to correct pickers
 ```
 
-## For judges + auditors
-
-- **[`docs/JUDGE-WALKTHROUGH.md`](docs/JUDGE-WALKTHROUGH.md)** — verify
-  every claim above in 5 minutes using `cast` + public RPC. Read any
-  wallet's tier on-chain, trigger a real swap, decode the `FeeApplied`
-  event — no UI trust required.
-- **Fresh wallet, instant discount** — open
-  [`?product=hook`](https://x-sight.vercel.app/?product=hook), connect
-  a brand-new address, click "Claim starter score · free" → backend
-  grants score 35 (Active tier, 20 bps) → next swap is **1.5×
-  cheaper** than the default 30 bps.
-
 ## For other protocols building on FanFeeHook
 
 - **[`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md)** —

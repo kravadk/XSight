@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Github, Wallet, Activity } from 'lucide-react';
 import { useWalletStore } from '@shared/store/walletStore';
 import { useUiStore, type Tab } from '@shared/store/uiStore';
-import { toast } from '@shared/store/toastStore';
 import { explorerAddress } from '@shared/config/links';
 import { SegmentedTabs } from '@shared/common/SegmentedTabs';
 import { SwapWidget } from '../components/SwapWidget';
@@ -157,37 +156,6 @@ export function HookPage() {
     void refetchTier(address);
   }, [connected, address]);
 
-  const [claiming, setClaiming] = useState(false);
-  const claimStarterScore = async () => {
-    if (!address || claiming) return;
-    setClaiming(true);
-    try {
-      const resp = await fetch('/api/hook/claim-starter-score', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ address }),
-      });
-      const json = (await resp.json()) as
-        | { claimed: true; score: number; tier: number; txHash: string }
-        | { alreadyClaimed: true; currentScore: number }
-        | { error: string };
-      if ('error' in json) {
-        toast.error(json.error);
-        return;
-      }
-      if ('alreadyClaimed' in json) {
-        toast.info(`Already scored · ${json.currentScore}/100`);
-      } else {
-        toast.success(`Starter score granted · ${json.score}/100 · tier ACTIVE`);
-      }
-      await refetchTier(address);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'claim failed');
-    } finally {
-      setClaiming(false);
-    }
-  };
-
   // Derived mini-widget data
   const savedSeries = useMemo(() => {
     if (!backtest) return [];
@@ -250,15 +218,6 @@ export function HookPage() {
                 <div className="mt-1 text-[10px] text-stadium-text-secondary">
                   vs <span className="font-mono">30 bps</span> default
                 </div>
-                {tier.tier === 0 && (
-                  <button
-                    onClick={() => void claimStarterScore()}
-                    disabled={claiming}
-                    className="mt-3 inline-flex items-center justify-center gap-1.5 rounded-lg btn-premium-gold px-3 py-1.5 text-[11px]"
-                  >
-                    {claiming ? 'Claiming…' : 'Claim starter score · free'}
-                  </button>
-                )}
               </>
             )}
           </div>

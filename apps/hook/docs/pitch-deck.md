@@ -96,11 +96,11 @@ every loyalty product. The hook is reusable infrastructure.
   for holding FanPass.
 - **External audit** via UFSF security subsidy.
 
-## One-liner for judges
+## One-liner
 
 > *Loyalty programs don't exist in DeFi. We built the first identity-gated
 > swap fee on Uniswap V4 — real fans pay 5 bps, strangers pay 30. Live on
-> X Layer mainnet, 14+ proof events, every tier verified.*
+> X Layer mainnet, 20+ proof events, every tier verified.*
 
 ---
 

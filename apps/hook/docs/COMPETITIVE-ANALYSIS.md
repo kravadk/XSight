@@ -69,7 +69,7 @@ How each project moves data between off-chain, on-chain, and UI.
 
 | Project | Off-chain → on-chain | On-chain read | Hook → external | Frontend ← API |
 |---|---|---|---|---|
-| **FanFeeHook** | `fanScoreSync` weekly cron + `claim-starter-score` one-shot endpoint | FanScoreRegistry + FanPassSBT.balanceOf | `CupSidePot.depositFor` from afterSwap (v2 path) | 7 endpoints: `/state`, `/tier`, `/pot`, `/discounts`, `/backtest`, `/encode-swap`, `/claim-starter-score` |
+| **FanFeeHook** | `fanScoreSync` weekly cron writes scores | FanScoreRegistry + FanPassSBT.balanceOf | `CupSidePot.depositFor` from afterSwap (v2 path) | 6 endpoints: `/state`, `/tier`, `/pot`, `/discounts`, `/backtest`, `/encode-swap` |
 | Bunni V2 | rebalancer bot | Aave/Yearn vault state | deposits/withdraws | bunni.xyz |
 | Arrakis Pro | fee-adjust bot | own inventory tracker | none | Arrakis app |
 | EulerSwap | none significant | Euler vault state | borrow/repay | Euler frontend |
@@ -89,7 +89,7 @@ private bots; our endpoints are public and documented.
 
 | Project | Contracts | Off-chain workers | Frontends | External deps |
 |---|---|---|---|---|
-| **FanFeeHook** | **6 deployed** (Hook v1, ScoreRegistry, Pot v1, DemoSwapRouter, Hook v2, Pot v2) + FanBoostHook | 2 (fanScoreSync, claim-starter handler) | 1 React dApp | FanPassSBT + CupOracleV3 + BracketNFT (X Cup) |
+| **FanFeeHook** | **6 deployed** (Hook v1, ScoreRegistry, Pot v1, DemoSwapRouter, Hook v2, Pot v2) + FanBoostHook | 1 (fanScoreSync cron) | 1 React dApp | FanPassSBT + CupOracleV3 + BracketNFT (X Cup) |
 | Bunni V2 | 5+ libs + Hook + AM-AMM + Rebalancer | 1 rebalancer | 1 | Aave + Yearn |
 | Arrakis Pro | 3 (Hook + Vault + Manager) | 1 | 1 | own router |
 | EulerSwap | 2 (Hook + Euler adapter) | 0 | 1 | Euler vaults |
@@ -104,7 +104,7 @@ every hackathon competitor**.
 
 ## 5. Code-level honesty audit (us)
 
-Self-audit shipped publicly so judges see we know our limits.
+Self-audit shipped publicly — every limitation is documented up-front.
 
 **🔴 Known centralization (documented in SECURITY.md):**
 - Operator-only `setScore` in FanScoreRegistry, `settle` in CupSidePot
@@ -161,7 +161,7 @@ coverage, documented limitations. We exceed that cohort in:
 - **Cross-product composition** (none of the cohort does this; we
   integrate XCup FanPass + Bracket UI cards with hook data)
 - **Adoption package** (3 ready adapters + 60-second integration snippet +
-  judge-walkthrough — none of the cohort ships this on day-one)
+  verifier-walkthrough — none of the cohort ships this on day-one)
 
 We **do not compete** with Bunni / Arrakis / EulerSwap on TVL or audit
 maturity. They are production protocols built over 12+ months with
