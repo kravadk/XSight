@@ -33,6 +33,7 @@ const FEE_APPLIED_TOPIC = keccakId('FeeApplied(bytes32,address,uint8,uint24)');
  * Tolerates a few chunk failures (rate limit) by returning whatever succeeded.
  */
 const LOG_CHUNK_SIZE = 100;
+const LOG_PARALLELISM = 10; // concurrent eth_getLogs in flight
 async function getLogsChunked(
   p: JsonRpcProvider,
   address: string,
@@ -40,11 +41,22 @@ async function getLogsChunked(
   fromBlock: number,
   toBlock: number,
 ): Promise<Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }>> {
-  const out: Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }> = [];
+  // Build all chunk ranges, then fetch in parallel batches.
+  const ranges: Array<{ start: number; end: number }> = [];
   for (let start = fromBlock; start <= toBlock; start += LOG_CHUNK_SIZE) {
-    const end = Math.min(start + LOG_CHUNK_SIZE - 1, toBlock);
-    try {
-      const logs = await p.getLogs({ address, topics, fromBlock: start, toBlock: end });
+    ranges.push({ start, end: Math.min(start + LOG_CHUNK_SIZE - 1, toBlock) });
+  }
+  const out: Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }> = [];
+  for (let i = 0; i < ranges.length; i += LOG_PARALLELISM) {
+    const batch = ranges.slice(i, i + LOG_PARALLELISM);
+    const results = await Promise.all(
+      batch.map((r) =>
+        p
+          .getLogs({ address, topics, fromBlock: r.start, toBlock: r.end })
+          .catch(() => [] as Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }>),
+      ),
+    );
+    for (const logs of results) {
       for (const log of logs) {
         out.push({
           blockNumber: log.blockNumber,
@@ -53,8 +65,6 @@ async function getLogsChunked(
           data: log.data,
         });
       }
-    } catch {
-      // swallow per-chunk failures; partial result is better than total 500
     }
   }
   return out;
@@ -448,9 +458,9 @@ hookRouter.get('/discounts', async (req, res) => {
     res.json({ deployed: false, events: [] });
     return;
   }
-  // X Layer RPC has a 100-block max per getLogs call; we chunk.
-  // Default 20k blocks (~11h @ 2s blocks); cap 50k (~27h).
-  const lookback = Math.min(Number(req.query.lookback ?? 20_000), 50_000);
+  // X Layer RPC has a 100-block max per getLogs call; we chunk + parallelize.
+  // Default 10k blocks (~5.5h @ 2s blocks); cap 30k (~16h).
+  const lookback = Math.min(Number(req.query.lookback ?? 10_000), 30_000);
   const limit = Math.min(Number(req.query.limit ?? 25), 50);
   const versionFilter = String(req.query.version ?? '').toLowerCase(); // 'v1' | 'v2' | ''
 
