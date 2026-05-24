@@ -24,7 +24,7 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     id: 'xcup',
-    label: 'XCup',
+    label: 'XStriker',
     subtitle: 'Football markets',
     icon: Trophy,
     accent: '#E7B84F',
@@ -33,8 +33,8 @@ const PRODUCTS: ProductDef[] = [
   },
   {
     id: 'hook',
-    label: 'XHook',
-    subtitle: 'V4 swap-fee hook',
+    label: 'XTariff',
+    subtitle: 'V4 identity-gated fee',
     icon: Anchor,
     accent: '#4AA8E0',
     accentBg: 'rgba(74,168,224,0.10)',
