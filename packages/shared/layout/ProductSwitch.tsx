@@ -48,7 +48,7 @@ export function ProductSwitch() {
   const setProduct = useUiStore((s) => s.setProduct);
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {PRODUCTS.map((p) => {
         const active = product === p.id;
         const Icon = p.icon;
@@ -57,43 +57,72 @@ export function ProductSwitch() {
             key={p.id}
             onClick={() => setProduct(p.id)}
             className={cn(
-              'group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-all',
-              active ? 'border-transparent' : 'border-stadium-line bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)]',
+              'group relative flex items-center gap-3 overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all duration-200',
+              !active && 'hover:scale-[1.01]',
             )}
             style={
               active
                 ? {
-                    background: p.accentBg,
-                    borderColor: p.accentBorder,
-                    boxShadow: `inset 3px 0 0 ${p.accent}, 0 0 18px ${p.accent}22`,
+                    background: `linear-gradient(135deg, ${p.accent}28 0%, ${p.accent}0A 100%)`,
+                    borderColor: p.accent,
+                    boxShadow: `inset 4px 0 0 ${p.accent}, 0 0 24px ${p.accent}38, 0 4px 12px rgba(0,0,0,0.3)`,
                   }
-                : undefined
+                : {
+                    background: `linear-gradient(180deg, ${p.accent}0F 0%, rgba(255,255,255,0.01) 100%)`,
+                    borderColor: `${p.accent}38`,
+                  }
             }
           >
+            {/* Subtle glow layer on active */}
+            {active && (
+              <div
+                className="absolute -right-4 -top-4 h-16 w-16 rounded-full pointer-events-none blur-2xl"
+                style={{ background: `${p.accent}44` }}
+              />
+            )}
+
             <div
-              className={cn(
-                'flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg transition-colors',
-                active ? '' : 'bg-[rgba(255,255,255,0.04)]',
-              )}
-              style={active ? { background: `${p.accent}22`, boxShadow: `0 0 12px ${p.accent}44` } : undefined}
+              className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-all"
+              style={{
+                background: active ? `${p.accent}33` : `${p.accent}1A`,
+                border: `1px solid ${active ? p.accent : `${p.accent}40`}`,
+                boxShadow: active ? `0 0 16px ${p.accent}66` : `0 0 8px ${p.accent}22`,
+              }}
             >
-              <Icon className="h-4 w-4" style={{ color: active ? p.accent : '#9DA89C' }} />
+              <Icon
+                className="h-4.5 w-4.5"
+                style={{ color: p.accent, width: 18, height: 18, filter: active ? `drop-shadow(0 0 4px ${p.accent}aa)` : 'none' }}
+              />
             </div>
+
             <div className="min-w-0 flex-1">
               <div
-                className="font-display text-[13px] leading-tight"
-                style={{ fontWeight: 700, color: active ? p.accent : '#EFF4EC' }}
+                className="font-display text-[14px] leading-tight tracking-tight"
+                style={{ fontWeight: 800, color: active ? p.accent : '#EFF4EC' }}
               >
                 {p.label}
               </div>
-              <div className="text-[10px] text-stadium-text-muted leading-tight mt-0.5 truncate">
+              <div
+                className="text-[10px] leading-tight mt-0.5 truncate font-medium"
+                style={{ color: active ? `${p.accent}cc` : '#9DA89C' }}
+              >
                 {p.subtitle}
               </div>
             </div>
-            {active && (
+
+            {active ? (
               <span
-                className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-                style={{ background: p.accent, boxShadow: `0 0 8px ${p.accent}` }}
+                className="h-2 w-2 rounded-full flex-shrink-0"
+                style={{
+                  background: p.accent,
+                  boxShadow: `0 0 12px ${p.accent}, 0 0 4px ${p.accent}`,
+                  animation: 'pulse-dot 1.6s ease-in-out infinite',
+                }}
+              />
+            ) : (
+              <span
+                className="h-1.5 w-1.5 rounded-full flex-shrink-0 opacity-40"
+                style={{ background: p.accent }}
               />
             )}
           </button>
