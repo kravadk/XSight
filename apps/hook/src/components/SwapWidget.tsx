@@ -118,7 +118,7 @@ export function SwapWidget({ feeBps, tierLabel }: Props) {
         {!connected ? (
           <button
             onClick={() => setConnectModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-xl bg-pitch px-4 py-3 text-sm font-bold text-stadium-base hover:bg-pitch-bright glow-pitch"
+            className="flex items-center justify-center gap-2 rounded-xl btn-premium-pitch px-4 py-3 text-sm"
           >
             <Wallet className="h-4 w-4" /> Connect wallet
           </button>
