@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ExternalLink, Github, Wallet, Activity } from 'lucide-react';
 import { useWalletStore } from '@shared/store/walletStore';
-import { useUiStore } from '@shared/store/uiStore';
+import { useUiStore, type Tab } from '@shared/store/uiStore';
 import { explorerAddress } from '@shared/config/links';
 import { SegmentedTabs } from '@shared/common/SegmentedTabs';
 import { SwapWidget } from '../components/SwapWidget';
@@ -88,11 +88,32 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'contracts', label: 'Contracts' },
 ];
 
+// Map between global Tab (hook-*) and local TabId (Overview/Swap/...).
+// Canonical 'hook' → 'overview' for back-compat with old deep-links.
+const GLOBAL_TO_LOCAL: Record<string, TabId> = {
+  hook: 'overview',
+  'hook-swap': 'swap',
+  'hook-pot': 'pot',
+  'hook-activity': 'activity',
+  'hook-contracts': 'contracts',
+};
+const LOCAL_TO_GLOBAL: Record<TabId, Tab> = {
+  overview: 'hook',
+  swap: 'hook-swap',
+  pot: 'hook-pot',
+  activity: 'hook-activity',
+  contracts: 'hook-contracts',
+};
+
 export function HookPage() {
   const { connected, address } = useWalletStore();
   const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
+  const globalTab = useUiStore((s) => s.activeTab);
+  const setGlobalTab = useUiStore((s) => s.setActiveTab);
 
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  // Sidebar drives the tab; SegmentedTabs in the hero band mirrors it.
+  const activeTab: TabId = GLOBAL_TO_LOCAL[globalTab] ?? 'overview';
+  const setActiveTab = (id: TabId) => setGlobalTab(LOCAL_TO_GLOBAL[id]);
   const [state, setState] = useState<HookState | null>(null);
   const [tier, setTier] = useState<TierInfo | null>(null);
   const [tierLoading, setTierLoading] = useState(false);

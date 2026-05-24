@@ -1,6 +1,7 @@
 import {
   Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2,
-  Briefcase, MessageSquare, Plug, Coins, BookOpen, Anchor,
+  Briefcase, MessageSquare, Plug, Coins, BookOpen,
+  LayoutGrid, ArrowDownUp, Trophy, Activity, FileCode,
 } from 'lucide-react';
 import { useUiStore, type Tab } from '@shared/store/uiStore';
 import { cn } from '@shared/utils/format';
@@ -61,9 +62,13 @@ const XCUP_NAV: NavGroup[] = [
 
 const HOOK_NAV: NavGroup[] = [
   {
-    label: 'Uniswap V4',
+    label: 'FanFeeHook',
     items: [
-      { id: 'hook', label: 'Hook', icon: Anchor, badge: 'live' },
+      { id: 'hook', label: 'Overview', icon: LayoutGrid, badge: 'live' },
+      { id: 'hook-swap', label: 'Swap', icon: ArrowDownUp },
+      { id: 'hook-pot', label: 'Side pot', icon: Trophy },
+      { id: 'hook-activity', label: 'Activity', icon: Activity },
+      { id: 'hook-contracts', label: 'Contracts', icon: FileCode },
     ],
   },
 ];

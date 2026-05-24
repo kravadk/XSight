@@ -1,6 +1,7 @@
 import {
   Swords, Ticket, Network, Crown, Bot, BadgeCheck, Code2,
-  Briefcase, MessageSquare, Plug, Coins, BookOpen, MoreHorizontal, X, Anchor,
+  Briefcase, MessageSquare, Plug, Coins, BookOpen, MoreHorizontal, X,
+  LayoutGrid, ArrowDownUp, Trophy, Activity, FileCode,
 } from 'lucide-react';
 import { useUiStore, type Tab, type Product } from '@shared/store/uiStore';
 import { cn } from '@shared/utils/format';
@@ -39,9 +40,14 @@ const NAV: Record<Product, { main: Item[]; more: Item[] }> = {
   },
   hook: {
     main: [
-      { id: 'hook', label: 'Hook', icon: Anchor },
+      { id: 'hook', label: 'Overview', icon: LayoutGrid },
+      { id: 'hook-swap', label: 'Swap', icon: ArrowDownUp },
+      { id: 'hook-pot', label: 'Pot', icon: Trophy },
+      { id: 'hook-activity', label: 'Activity', icon: Activity },
     ],
-    more: [],
+    more: [
+      { id: 'hook-contracts', label: 'Contracts', icon: FileCode },
+    ],
   },
 };
 

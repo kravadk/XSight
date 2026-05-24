@@ -18,8 +18,12 @@ export type Tab =
   | 'fanpass'
   | 'developers'
   | 'docs'
-  // Hook hackathon
+  // Hook hackathon — Overview is canonical 'hook'; sub-sections promoted to sidebar
   | 'hook'
+  | 'hook-swap'
+  | 'hook-pot'
+  | 'hook-activity'
+  | 'hook-contracts'
   // XSight copilot
   | 'portfolio'
   | 'dashboard'

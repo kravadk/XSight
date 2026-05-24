@@ -85,8 +85,8 @@ export default function App() {
                 {activeTab === 'leaderboard' && <LeaderboardPage />}
                 {activeTab === 'pundit' && <PunditPage />}
                 {activeTab === 'fanpass' && <FanPassPage />}
-                {/* Hook */}
-                {activeTab === 'hook' && <HookPage />}
+                {/* Hook — all hook-* sub-tabs render HookPage, which reads activeTab to switch in-page view */}
+                {activeTab.startsWith('hook') && <HookPage />}
                 {/* Shared */}
                 {activeTab === 'developers' && <DevelopersPage />}
                 {activeTab === 'docs' && <DocsPage />}
