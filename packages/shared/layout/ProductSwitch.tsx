@@ -48,7 +48,27 @@ export function ProductSwitch() {
   const setProduct = useUiStore((s) => s.setProduct);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div
+      className="relative overflow-hidden rounded-2xl border border-stadium-line p-2.5"
+      style={{
+        background:
+          'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 100%), #0E140C',
+        boxShadow:
+          'inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.35)',
+      }}
+    >
+      {/* atmospheric haze behind the group */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-60"
+        style={{
+          background:
+            'radial-gradient(60% 60% at 0% 0%, rgba(52,193,114,0.10) 0%, transparent 70%),' +
+            'radial-gradient(60% 60% at 100% 50%, rgba(231,184,79,0.08) 0%, transparent 70%),' +
+            'radial-gradient(60% 60% at 0% 100%, rgba(74,168,224,0.10) 0%, transparent 70%)',
+        }}
+      />
+
+      <div className="relative flex flex-col gap-2">
       {PRODUCTS.map((p) => {
         const active = product === p.id;
         const Icon = p.icon;
@@ -82,7 +102,7 @@ export function ProductSwitch() {
             )}
 
             <div
-              className="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg transition-all"
+              className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition-all"
               style={{
                 background: active ? `${p.accent}33` : `${p.accent}1A`,
                 border: `1px solid ${active ? p.accent : `${p.accent}40`}`,
@@ -90,20 +110,19 @@ export function ProductSwitch() {
               }}
             >
               <Icon
-                className="h-4.5 w-4.5"
-                style={{ color: p.accent, width: 18, height: 18, filter: active ? `drop-shadow(0 0 4px ${p.accent}aa)` : 'none' }}
+                style={{ color: p.accent, width: 20, height: 20, filter: active ? `drop-shadow(0 0 4px ${p.accent}aa)` : 'none' }}
               />
             </div>
 
             <div className="min-w-0 flex-1">
               <div
-                className="font-display text-[14px] leading-tight tracking-tight"
+                className="font-display text-[17px] leading-tight tracking-tight"
                 style={{ fontWeight: 800, color: active ? p.accent : '#EFF4EC' }}
               >
                 {p.label}
               </div>
               <div
-                className="text-[10px] leading-tight mt-0.5 truncate font-medium"
+                className="text-[11px] leading-tight mt-1 truncate font-semibold"
                 style={{ color: active ? `${p.accent}cc` : '#9DA89C' }}
               >
                 {p.subtitle}
@@ -128,6 +147,7 @@ export function ProductSwitch() {
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
