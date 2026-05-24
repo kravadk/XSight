@@ -211,5 +211,5 @@ forge test --gas-report
 
 ## Repo
 
-Mirrored to [`github.com/kravadk/XHook`](https://github.com/kravadk/XHook) via
+Mirrored to [`github.com/kravadk/XTariff`](https://github.com/kravadk/XTariff) via
 `git subtree`. Edits land in the umbrella; the mirror is read-only.

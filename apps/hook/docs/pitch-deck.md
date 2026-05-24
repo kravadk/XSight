@@ -105,5 +105,5 @@ every loyalty product. The hook is reusable infrastructure.
 ---
 
 **Live dashboard:** https://x-sight.vercel.app?product=hook
-**GitHub:** https://github.com/kravadk/XHook
+**GitHub:** https://github.com/kravadk/XTariff
 **Twitter:** @xcup_hook

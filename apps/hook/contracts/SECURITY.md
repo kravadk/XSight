@@ -112,5 +112,5 @@ fee charged. Users can avoid the pool by not swapping through it.
 ## 5. Responsible disclosure
 
 If you find an issue: open a private GitHub Security Advisory on
-[kravadk/XHook](https://github.com/kravadk/XHook/security/advisories) or
+[kravadk/XTariff](https://github.com/kravadk/XTariff/security/advisories) or
 email `dkravchuk680@gmail.com`. We will respond within 72 hours.

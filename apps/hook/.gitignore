@@ -1,4 +1,4 @@
-# Mirror-local gitignore for kravadk/XHook. The umbrella .gitignore covers the
+# Mirror-local gitignore for kravadk/XTariff. The umbrella .gitignore covers the
 # monorepo; this one runs when the mirror is cloned standalone.
 
 node_modules

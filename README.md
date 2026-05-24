@@ -10,15 +10,15 @@ has its own GitHub repository, README and release cadence.
 | Product | Surface | GitHub | Deep link |
 |---|---|---|---|
 | **XSight** — AI trading copilot | [`apps/xsight/`](apps/xsight/) | [kravadk/XSight](https://github.com/kravadk/XSight) *(this repo)* | [`?product=xsight`](https://x-sight.vercel.app?product=xsight) |
-| **X Cup** — World Cup 2026 prediction market on X Layer | [`apps/xcup/`](apps/xcup/) | [kravadk/XCup](https://github.com/kravadk/XCup) | [`?product=xcup`](https://x-sight.vercel.app?product=xcup) |
-| **Hook** — Uniswap V4 hook for OKX «Build with Hook» (May 2026) | [`apps/hook/`](apps/hook/) | [kravadk/XHook](https://github.com/kravadk/XHook) | [`?product=hook`](https://x-sight.vercel.app?product=hook) |
+| **X Cup** — World Cup 2026 prediction market on X Layer | [`apps/xcup/`](apps/xcup/) | [kravadk/XStriker](https://github.com/kravadk/XStriker) | [`?product=xcup`](https://x-sight.vercel.app?product=xcup) |
+| **Hook** — Uniswap V4 hook for OKX «Build with Hook» (May 2026) | [`apps/hook/`](apps/hook/) | [kravadk/XTariff](https://github.com/kravadk/XTariff) | [`?product=hook`](https://x-sight.vercel.app?product=hook) |
 
 ## Layout
 
 ```
 apps/xsight/         XSight pages + components  (lives in this repo — XSight = umbrella)
-apps/xcup/           X Cup pages + components   (mirrored → kravadk/XCup)
-apps/hook/           Hook page + V4 contracts   (mirrored → kravadk/XHook)
+apps/xcup/           X Cup pages + components   (mirrored → kravadk/XStriker)
+apps/hook/           Hook page + V4 contracts   (mirrored → kravadk/XTariff)
 packages/shared/     wallet, layout, common UI, stores, config, hooks
 server/              one Express backend serving all three products
 contracts/           X Cup Solidity (Parimutuel, Oracle, FanPass, BracketNFT)

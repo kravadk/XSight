@@ -141,7 +141,7 @@ The hook is chain-agnostic. To deploy on a different EVM chain that has
 Uniswap V4 PoolManager:
 
 ```bash
-git clone https://github.com/kravadk/XHook
+git clone https://github.com/kravadk/XTariff
 cd XHook && forge install
 cp .env.example .env       # fill POOL_MANAGER, USDC, OPERATOR, etc.
 forge script script/DeployFanFeeHook.s.sol --rpc-url <your-rpc> --broadcast
@@ -157,7 +157,7 @@ examples for BrightID / Gitcoin Passport / Optimism Attestation are in
 
 ## Source code
 
-- Repo: <https://github.com/kravadk/XHook> (mirror) ·
+- Repo: <https://github.com/kravadk/XTariff> (mirror) ·
   <https://github.com/kravadk/XSight> (umbrella)
 - Foundry tests: `apps/hook/contracts/test/` — 55 tests, 91% line coverage
   on the hook + score registry path.

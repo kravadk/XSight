@@ -18,13 +18,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Push apps/xcup subtree -> kravadk/XCup
+      - name: Push apps/xcup subtree -> kravadk/XStriker
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git config user.name "kravadk-mirror"
           git config user.email "mirror@kravadk.local"
-          git remote add xcup-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XCup.git"
+          git remote add xcup-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XStriker.git"
           git subtree push --prefix=apps/xcup xcup-mirror main
 
   mirror-hook:
@@ -34,11 +34,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Push apps/hook subtree -> kravadk/XHook
+      - name: Push apps/hook subtree -> kravadk/XTariff
         env:
           MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
           git config user.name "kravadk-mirror"
           git config user.email "mirror@kravadk.local"
-          git remote add hook-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XHook.git"
+          git remote add hook-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XTariff.git"
           git subtree push --prefix=apps/hook hook-mirror main

@@ -78,7 +78,7 @@ network, deploy, and pass its address as `fanScoreRegistry` to a fresh
 ## One-command fork
 
 ```bash
-git clone https://github.com/kravadk/XHook
+git clone https://github.com/kravadk/XTariff
 cd XHook
 forge install Uniswap/v4-core --no-git
 forge install Uniswap/v4-periphery --no-git

@@ -15,7 +15,7 @@ import { HookActivityChart } from '../components/HookActivityChart';
 import { HookPotHero } from '../components/HookPotHero';
 
 const HACKATHON_URL = 'https://web3.okx.com/xlayer/build-x-hackathon/hook';
-const HOOK_REPO_URL = 'https://github.com/kravadk/XHook';
+const HOOK_REPO_URL = 'https://github.com/kravadk/XTariff';
 
 interface HookState {
   deployed: boolean;
