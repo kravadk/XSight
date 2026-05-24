@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Contract, Interface, JsonRpcProvider, getAddress, id as keccakId } from 'ethers';
+import { Contract, Interface, JsonRpcProvider, Wallet, getAddress, id as keccakId, isAddress } from 'ethers';
 import { getFanScore } from '../services/cupReputation.js';
 import { x402Log } from '../middleware/x402.js';
 
@@ -478,5 +478,74 @@ hookRouter.post('/encode-swap', (req, res) => {
     res.json({ calldata });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'encode failed' });
+  }
+});
+
+/**
+ * POST /api/hook/claim-starter-score
+ *
+ * Bootstraps a fresh wallet into FanFeeHook's tier-1 (Active = 20 bps) so a
+ * judge or first-time visitor can immediately experience the 1.5× discount
+ * without waiting for a weekly score sync.
+ *
+ * Operator (DEPLOYER_PRIVATE_KEY) writes score=35 to FanScoreRegistry.
+ * One-shot per address (re-claim returns alreadyClaimed=true).
+ * Per-IP throttle prevents bulk-claim abuse.
+ *
+ * Body: { address: string }
+ * Returns: { claimed: true, score, tier, txHash } | { alreadyClaimed: true, currentScore }
+ */
+const REGISTRY_WRITE_ABI = [
+  'function scoreOf(address wallet) view returns (uint256)',
+  'function setScore(address wallet, uint256 score) external',
+];
+const STARTER_SCORE = 35;
+const STARTER_TIER = 1; // Active per FanFeeHook tier thresholds (28/64/82)
+const ipClaimLog = new Map<string, number>();
+const IP_THROTTLE_MS = 24 * 60 * 60 * 1000;
+
+hookRouter.post('/claim-starter-score', async (req, res) => {
+  const body = (req.body ?? {}) as { address?: string };
+  const raw = (body.address ?? '').trim();
+  if (!isAddress(raw)) {
+    res.status(400).json({ error: 'invalid address' });
+    return;
+  }
+  const address = getAddress(raw);
+
+  // Per-IP throttle (one claim every 24h to prevent bulk-claim abuse).
+  const ipRaw = (req.headers['x-forwarded-for'] as string | undefined) ?? req.ip ?? 'unknown';
+  const ip = ipRaw.split(',')[0].trim();
+  const last = ipClaimLog.get(ip);
+  if (last && Date.now() - last < IP_THROTTLE_MS) {
+    res.status(429).json({ error: 'rate-limited · try again later' });
+    return;
+  }
+
+  const registryAddress = (process.env.HOOK_FAN_SCORE_REGISTRY ?? '').trim();
+  const privateKey = (process.env.DEPLOYER_PRIVATE_KEY ?? '').trim();
+  if (!registryAddress || !privateKey) {
+    res.status(503).json({ error: 'starter-score endpoint not configured on this deployment' });
+    return;
+  }
+
+  try {
+    const p = provider();
+    const readContract = new Contract(registryAddress, REGISTRY_WRITE_ABI, p);
+    const currentScore = Number(await readContract.scoreOf(address));
+    if (currentScore > 0) {
+      res.json({ alreadyClaimed: true, currentScore });
+      return;
+    }
+
+    const signer = new Wallet(privateKey, p);
+    const writeContract = new Contract(registryAddress, REGISTRY_WRITE_ABI, signer);
+    const tx = await writeContract.setScore(address, STARTER_SCORE);
+    await tx.wait();
+    ipClaimLog.set(ip, Date.now());
+
+    res.json({ claimed: true, score: STARTER_SCORE, tier: STARTER_TIER, txHash: tx.hash });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'claim failed' });
   }
 });
