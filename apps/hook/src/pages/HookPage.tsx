@@ -41,6 +41,7 @@ interface TierInfo {
 
 interface Backtest {
   windowDays: number;
+  dataSource?: 'onchain' | 'projection';
   paidCalls: number;
   uniqueWallets: number;
   totalVolume: number;
@@ -261,10 +262,11 @@ export function HookPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <HookMiniWidget
           variant="saved"
-          label="Saved · 7d"
+          label={backtest?.dataSource === 'onchain' ? 'Saved · live' : 'Saved · proj'}
           value={backtest?.totalSaved ?? 0}
           prefix="$"
           series={savedSeries}
+          footer={backtest?.dataSource === 'onchain' ? 'real FeeApplied events' : '$1/event projection'}
           loading={!backtest}
         />
         <HookMiniWidget
@@ -428,14 +430,26 @@ export function HookPage() {
             </div>
             {backtest && backtest.paidCalls > 0 && (
               <div className="stadium-card p-5">
-                <div className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold mb-3">Backtest breakdown by tier</div>
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold">Backtest breakdown by tier</div>
+                  {backtest.dataSource === 'onchain' ? (
+                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-pitch-bg border border-pitch-border text-pitch tracking-wider uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-pitch" style={{ animation: 'pulse-dot 1.6s ease-in-out infinite' }} />
+                      Real on-chain events
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gold-bg border border-gold-border text-gold tracking-wider uppercase">
+                      $1/event projection
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-col gap-2">
                   {backtest.byTier.filter((t) => t.wallets > 0).map((t) => (
                     <div key={t.tier} className="flex items-center justify-between text-[12px] text-stadium-text-secondary">
                       <span>
-                        <span className={`font-bold ${TIER_COLOR[t.tier]}`}>T{t.tier}</span> · {t.label} · {t.wallets} wallet{t.wallets > 1 ? 's' : ''} × {t.bps} bps
+                        <span className={`font-bold ${TIER_COLOR[t.tier]}`}>T{t.tier}</span> · {t.label} · {t.wallets} {backtest.dataSource === 'onchain' ? 'event' : 'wallet'}{t.wallets > 1 ? 's' : ''} × {t.bps} bps
                       </span>
-                      <span className="font-mono text-stadium-text">${t.saved.toFixed(2)}</span>
+                      <span className="font-mono text-stadium-text">${t.saved.toFixed(4)}</span>
                     </div>
                   ))}
                 </div>

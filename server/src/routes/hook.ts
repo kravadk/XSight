@@ -190,52 +190,94 @@ hookRouter.get('/tier', async (req, res) => {
  */
 hookRouter.get('/backtest', async (_req, res) => {
   const sinceMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const paid = x402Log.filter((c) => c.status === 'paid' && c.timestamp >= sinceMs);
-
-  // Group by wallet for one fanScore lookup per wallet.
-  const byWallet = new Map<string, typeof paid>();
-  for (const call of paid) {
-    const w = call.caller.toLowerCase();
-    const bucket = byWallet.get(w) ?? [];
-    bucket.push(call);
-    byWallet.set(w, bucket);
-  }
-
-  // Score → tier table, mirrors /api/hook/state.
   const tierCounts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
   const tierSavings: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0 };
   let totalVolume = 0;
   let totalSaved = 0;
+  let dataSource: 'onchain' | 'projection' = 'projection';
+  let note =
+    'No live FeeApplied events found yet. Numbers below are a projection from x402 fee-bearing calls — each modelled as a $1 swap so the magnitudes are honest demo figures, not real volume.';
 
-  for (const [wallet, calls] of byWallet) {
-    let tier = 0;
+  // Prefer REAL on-chain FeeApplied events when the hook is deployed.
+  const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
+  let onChainEvents = 0;
+  const onChainWallets = new Set<string>();
+  if (hookAddress) {
     try {
-      const fs = await getFanScore(wallet);
-      if (fs) tier = tierFromScore(fs.score);
+      const p = provider();
+      const tip = await p.getBlockNumber();
+      const fromBlock = Math.max(tip - 5_000, 0);
+      const logs = await getLogsChunked(p, hookAddress, [FEE_APPLIED_TOPIC], fromBlock, tip);
+      // Per-swap notional: the live demo pool uses 0.005 USDC trades, so a
+      // $1-per-event projection is the most conservative honest scaling for
+      // the savings number. Real volume would be summed from Universal
+      // Router events; we don't have that depth yet on X Layer.
+      const HONEST_PER_EVENT_NOTIONAL = 1;
+      for (const log of logs) {
+        const data = log.data.slice(2);
+        const tier = parseInt(data.slice(0, 64), 16);
+        const feeBpsPip = parseInt(data.slice(64, 128), 16);
+        const feeBps = feeBpsPip / 100;
+        const swapper = ('0x' + log.topics[2].slice(-40)).toLowerCase();
+        onChainWallets.add(swapper);
+        const saved = (HONEST_PER_EVENT_NOTIONAL * (30 - feeBps)) / 10000;
+        if (tierCounts[tier] !== undefined) tierCounts[tier]++;
+        if (tierSavings[tier] !== undefined) tierSavings[tier] += saved;
+        totalVolume += HONEST_PER_EVENT_NOTIONAL;
+        totalSaved += saved;
+        onChainEvents++;
+      }
+      if (onChainEvents > 0) {
+        dataSource = 'onchain';
+        note =
+          'Computed from real FeeApplied events emitted by FanFeeHook on X Layer mainnet. Each event modelled as a $1 notional swap (the live demo pool uses 0.005 USDC trades) — savings = (30 − feeBps) × $1 / 10000.';
+      }
     } catch {
-      tier = 0;
+      // fall through to projection
     }
-    tierCounts[tier]++;
-    const tierFeeBps = TIER_FEE_BPS[tier];
-    for (const call of calls) {
-      // x402 call.amount is already in payout-token units (USDT). Treat the
-      // "swap" as 100x the call amount (a fee call typically gates a larger
-      // economic action). This gives a realistic order of magnitude for the
-      // hook savings without inventing fake swap volume.
-      const notional = call.amount * 100;
-      const savedBps = 30 - tierFeeBps;
-      const saved = (notional * savedBps) / 10000;
-      totalVolume += notional;
-      totalSaved += saved;
-      tierSavings[tier] += saved;
+  }
+
+  // Fallback projection from x402 calls when no on-chain events exist yet.
+  let paidCalls = onChainEvents;
+  let uniqueWallets = onChainWallets.size;
+  if (dataSource === 'projection') {
+    const paid = x402Log.filter((c) => c.status === 'paid' && c.timestamp >= sinceMs);
+    const byWallet = new Map<string, typeof paid>();
+    for (const call of paid) {
+      const w = call.caller.toLowerCase();
+      const bucket = byWallet.get(w) ?? [];
+      bucket.push(call);
+      byWallet.set(w, bucket);
     }
+    for (const [wallet, calls] of byWallet) {
+      let tier = 0;
+      try {
+        const fs = await getFanScore(wallet);
+        if (fs) tier = tierFromScore(fs.score);
+      } catch {
+        tier = 0;
+      }
+      tierCounts[tier]++;
+      const tierFeeBps = TIER_FEE_BPS[tier];
+      for (const _call of calls) {
+        const notional = 1; // honest $1 per call projection (not call.amount × 100)
+        const savedBps = 30 - tierFeeBps;
+        const saved = (notional * savedBps) / 10000;
+        totalVolume += notional;
+        totalSaved += saved;
+        tierSavings[tier] += saved;
+      }
+    }
+    paidCalls = paid.length;
+    uniqueWallets = byWallet.size;
   }
 
   res.json({
     sinceMs,
     windowDays: 7,
-    paidCalls: paid.length,
-    uniqueWallets: byWallet.size,
+    dataSource,
+    paidCalls,
+    uniqueWallets,
     totalVolume,
     totalSaved,
     byTier: Object.entries(TIER_FEE_BPS).map(([tier, bps]) => ({
@@ -245,7 +287,7 @@ hookRouter.get('/backtest', async (_req, res) => {
       wallets: tierCounts[Number(tier)],
       saved: tierSavings[Number(tier)],
     })),
-    note: 'Synthetic backtest using x402 calls as a fee-event proxy. Real numbers will come from Universal Router swap events once liquidity lands in the pool.',
+    note,
   });
 });
 
@@ -453,10 +495,13 @@ hookRouter.post('/encode-swap', (req, res) => {
   }
   const direction = Boolean(zeroForOne);
   const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
-  const token0 = (process.env.POOL_TOKEN0 ?? '0x1E4a5963aBFD975d8c9021ce480b42188849D41d').trim();
-  const token1 = (process.env.POOL_TOKEN1 ?? '0x74b7F16337b8972027F6196A17a631aC6dE26d22').trim();
-  if (!hookAddress) {
-    res.status(503).json({ error: 'HOOK_FAN_FEE_HOOK not configured' });
+  const token0 = (process.env.POOL_TOKEN0 ?? '').trim();
+  const token1 = (process.env.POOL_TOKEN1 ?? '').trim();
+  if (!hookAddress || !token0 || !token1) {
+    res.status(503).json({
+      error:
+        'pool not fully configured · expected HOOK_FAN_FEE_HOOK + POOL_TOKEN0 + POOL_TOKEN1 in env',
+    });
     return;
   }
 
