@@ -10,10 +10,13 @@ import { useUiStore } from '@shared/store/uiStore';
  */
 export function DemoBanner() {
   const connected = useWalletStore((s) => s.connected);
+  const product = useUiStore((s) => s.product);
   const setConnectModalOpen = useUiStore((s) => s.setConnectModalOpen);
   const setActiveTab = useUiStore((s) => s.setActiveTab);
 
   if (connected) return null;
+  // Banner copy + free-pick CTA are X-Cup-specific. Don't surface on other products.
+  if (product !== 'xcup') return null;
 
   return (
     <motion.div
