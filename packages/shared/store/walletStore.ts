@@ -50,7 +50,7 @@ async function getOkxUi(): Promise<OKXUniversalConnectUI> {
   const { OKXUniversalConnectUI } = await import('@okxconnect/ui');
   okxUi = await OKXUniversalConnectUI.init({
     dappMetaData: {
-      name: 'X Cup',
+      name: 'XCup',
       icon: typeof window !== 'undefined' ? `${window.location.origin}/favicon.ico` : '',
     },
   });
