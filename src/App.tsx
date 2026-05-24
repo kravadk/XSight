@@ -11,7 +11,7 @@ import { Onboarding } from '@shared/common/Onboarding';
 import { ConnectModal } from '@shared/common/ConnectModal';
 import { DemoBanner } from '@shared/common/DemoBanner';
 import { Confetti } from '@shared/common/Confetti';
-import { useUiStore, type Product } from '@shared/store/uiStore';
+import { useUiStore, type Product, type Tab } from '@shared/store/uiStore';
 import { usePrefsStore } from '@shared/store/prefsStore';
 import { useBackendSync } from '@shared/hooks/useBackendSync';
 
@@ -45,11 +45,39 @@ export default function App() {
   const reducedMotion = usePrefsStore((s) => s.reducedMotion);
   useBackendSync();
 
-  // Deep-link entry from product-specific README links (e.g. ?product=hook).
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
+
+  // Deep-link entry from product-specific README links (?product=hook&tab=...).
+  // Bidirectional sync: URL ↔ store. Initial mount reads URL; subsequent state
+  // changes write URL via replaceState (no history spam — back-button still
+  // exits the SPA cleanly, browser-level popstate restores state).
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search).get('product');
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('product');
+    const t = params.get('tab');
     if (p === 'xsight' || p === 'xcup' || p === 'hook') setProduct(p as Product);
-  }, [setProduct]);
+    if (t) setActiveTab(t as Tab);
+
+    const onPop = () => {
+      const sp = new URLSearchParams(window.location.search);
+      const pp = sp.get('product');
+      const tt = sp.get('tab');
+      if (pp === 'xsight' || pp === 'xcup' || pp === 'hook') setProduct(pp as Product);
+      if (tt) setActiveTab(tt as Tab);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [setProduct, setActiveTab]);
+
+  // Write URL whenever product or tab changes.
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('product', product);
+    url.searchParams.set('tab', activeTab);
+    if (url.search !== window.location.search) {
+      window.history.replaceState(null, '', url.toString());
+    }
+  }, [product, activeTab]);
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
