@@ -72,19 +72,37 @@ apps/hook/
 | LP NFT tokenId 3128 | burned post-demo · recovery tx [`0x1eb84a90…0824e`](https://www.okx.com/web3/explorer/xlayer/tx/0x1eb84a90b59d37aff5a532335f8ce9393017f33a8ee2fd025f43d51dee50824e) |
 | **Demo swap tx (hook fired)** | [`0x757c0c75…8fca7`](https://www.okx.com/web3/explorer/xlayer/tx/0x757c0c75a1f65d2cc675b8f750a713e7ec90e6073716405fd4117eb12a68fca7) |
 
-**v2 — Pausable + Merkle-claim + 30d stale-score fallback (deployed, awaiting LP migration):**
+**v2 — Pausable + Merkle-claim + 30d stale-score fallback (LIVE with own pool + LP):**
 
-| Contract / artifact | Address |
+| Contract / artifact | Address / hash |
 |---|---|
 | FanFeeHook v2 | [`0x956e…80c0`](https://www.okx.com/web3/explorer/xlayer/address/0x956e97658cd3ce67788b01b5f012954f782480c0) |
 | CupSidePot v2 | [`0x8d1d…d4Fa`](https://www.okx.com/web3/explorer/xlayer/address/0x8d1de90753889d57c709cbd77c5e5f3c56add4fa) |
 | FanScoreRegistry | reuses v1 (`0x9533…2820`) — no migration needed |
+| V2 USDT/USDC pool init | [`0x36a9e220…09ab`](https://www.okx.com/web3/explorer/xlayer/tx/0x36a9e2207e86c6a92dd05bac21f0fa4bab8c65bfe7dbff966a24b1b097ad09ab) |
+| V2 LP (0.3 USDT + 0.3 USDC) | minted to operator · `forge script BurnLp.s.sol` to redeem |
 
 v2 shares the existing score registry, so every wallet that earned a tier
-on v1 inherits it on v2 the moment a pool is initialized against the new
-hook. Source: [`contracts/src/FanFeeHookV2.sol`](contracts/src/FanFeeHookV2.sol)
-+ [`CupSidePotV2.sol`](contracts/src/CupSidePotV2.sol). See
-[`SECURITY.md`](contracts/SECURITY.md) for the v1→v2 mitigations.
+on v1 inherits it on v2 automatically. Source:
+[`contracts/src/FanFeeHookV2.sol`](contracts/src/FanFeeHookV2.sol),
+[`CupSidePotV2.sol`](contracts/src/CupSidePotV2.sol). See
+[`SECURITY.md`](contracts/SECURITY.md) for v1→v2 mitigations.
+
+**FanBoostHook (companion hook — `afterAddLiquidity` boost points):**
+
+| Contract | Address |
+|---|---|
+| FanBoostHook | [`0x1060…8400`](https://www.okx.com/web3/explorer/xlayer/address/0x10609f1a4a47dc78ea3cf21535b4edf8b6758400) |
+
+Deployed standalone to prove the architecture: FanFeeHook (beforeSwap +
+afterSwap, bits `0xC0`) and FanBoostHook (afterAddLiquidity, bit `0x400`)
+attach to the same pool simultaneously without bit collision. Source:
+[`contracts/src/FanBoostHook.sol`](contracts/src/FanBoostHook.sol).
+
+**Honest comparison vs the rest of the V4-hook ecosystem:**
+[`docs/COMPETITIVE-ANALYSIS.md`](docs/COMPETITIVE-ANALYSIS.md) — 14
+projects compared on 7 dimensions, code-level honesty audit, where we
+exceed and where we honestly don't.
 
 ### Multi-tier proof — same wallet, 4 different fees (X Layer mainnet)
 
