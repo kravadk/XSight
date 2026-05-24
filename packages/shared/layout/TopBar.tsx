@@ -1,4 +1,4 @@
-import { Bell, Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink, Settings, HelpCircle, Loader2 } from 'lucide-react';
+import { Wallet, LogOut, X, AlertTriangle, CheckCircle2, Info, Sparkles, Copy, ExternalLink, Settings, HelpCircle, Loader2 } from 'lucide-react';
 import { useWalletStore } from '@shared/store/walletStore';
 import { toast } from '@shared/store/toastStore';
 import { useState } from 'react';
@@ -96,20 +96,6 @@ export function TopBar() {
             <span className="hidden md:inline">pending</span>
           </a>
         )}
-        <button
-          onClick={() => setNotifOpen(true)}
-          title="Notifications"
-          aria-label="Open notifications"
-          className="relative grid h-9 w-9 place-items-center rounded-full text-stadium-text-secondary transition-colors hover:bg-[rgba(255,255,255,0.06)]"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute right-1.5 top-1.5 grid h-4 min-w-[16px] place-items-center rounded-full bg-pitch px-1 text-[9px] font-bold text-stadium-base">
-              {unreadCount > 99 ? '99+' : unreadCount}
-            </span>
-          )}
-        </button>
-
         {connected ? (
           <div className="flex items-center gap-1.5 rounded-xl border border-stadium-line bg-[rgba(255,255,255,0.03)] px-2.5 py-1.5">
             <CipherScramble text={short} mono className="text-sm font-semibold text-stadium-text" />
