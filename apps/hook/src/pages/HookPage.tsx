@@ -26,6 +26,10 @@ interface HookState {
   fanScoreRegistry: string;
   cupSidePot: string;
   poolId: string;
+  /** Optional v2 + companion addresses surfaced when env is set */
+  hookV2?: string | null;
+  cupSidePotV2?: string | null;
+  fanBoost?: string | null;
   tierFeeTable: { tier: number; label: string; bps: number }[];
 }
 
@@ -466,21 +470,70 @@ export function HookPage() {
         )}
 
         {activeTab === 'contracts' && state && (
-          <div className="stadium-card p-5 md:p-6">
-            <div className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold mb-3">
-              X Layer chain 196 · deployed contracts
+          <div className="flex flex-col gap-4">
+            <div className="stadium-card p-5 md:p-6">
+              <div className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold mb-3">
+                X Layer chain 196 · Uniswap V4 infra
+              </div>
+              <div className="flex flex-col gap-2 font-mono text-[12px]">
+                <ContractRow label="Uniswap V4 PoolManager" address={state.poolManager} />
+                <ContractRow label="Universal Router 2.1.1" address={state.universalRouter} />
+              </div>
             </div>
-            <div className="flex flex-col gap-2 font-mono text-[12px]">
-              <ContractRow label="Uniswap V4 PoolManager" address={state.poolManager} />
-              <ContractRow label="Universal Router 2.1.1" address={state.universalRouter} />
-              <ContractRow label="FanFeeHook (ours)" address={state.hook} fallback="pending deploy" />
-              <ContractRow label="FanScoreRegistry (ours)" address={state.fanScoreRegistry} fallback="pending deploy" />
-              <ContractRow label="CupSidePot (ours)" address={state.cupSidePot} fallback="pending deploy" />
+
+            <div className="stadium-card p-5 md:p-6">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <div className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold">
+                  Our v1 stack · production
+                </div>
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-pitch-bg border border-pitch-border text-pitch tracking-wider uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-pitch" style={{ animation: 'pulse-dot 1.6s ease-in-out infinite' }} />
+                  LIVE · fee-routed
+                </span>
+              </div>
+              <div className="flex flex-col gap-2 font-mono text-[12px]">
+                <ContractRow label="FanFeeHook v1" address={state.hook} fallback="pending deploy" />
+                <ContractRow label="FanScoreRegistry (shared by v1+v2)" address={state.fanScoreRegistry} fallback="pending deploy" />
+                <ContractRow label="CupSidePot v1" address={state.cupSidePot} fallback="pending deploy" />
+              </div>
+              {state.poolId && (
+                <div className="mt-4 rounded-xl border border-pitch-border bg-pitch-bg p-4 font-mono text-[11px]">
+                  <div className="text-[10px] uppercase tracking-wider text-pitch font-bold">USDT/USDC v1 pool · live</div>
+                  <div className="mt-1 break-all text-stadium-text">{state.poolId}</div>
+                </div>
+              )}
             </div>
-            {state.poolId && (
-              <div className="mt-4 rounded-xl border border-pitch-border bg-pitch-bg p-4 font-mono text-[11px]">
-                <div className="text-[10px] uppercase tracking-wider text-pitch font-bold">USDT/USDC pool · live</div>
-                <div className="mt-1 break-all text-stadium-text">{state.poolId}</div>
+
+            {(state.hookV2 || state.cupSidePotV2) && (
+              <div className="stadium-card p-5 md:p-6">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div className="text-gold text-[10px] tracking-[0.2em] uppercase font-bold">
+                    Our v2 stack · Pausable + Merkle + stale-score fallback
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-gold-bg border border-gold-border text-gold tracking-wider uppercase">
+                    LIVE · own pool + LP
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 font-mono text-[12px]">
+                  {state.hookV2 && <ContractRow label="FanFeeHook v2" address={state.hookV2} />}
+                  {state.cupSidePotV2 && <ContractRow label="CupSidePot v2" address={state.cupSidePotV2} />}
+                </div>
+              </div>
+            )}
+
+            {state.fanBoost && (
+              <div className="stadium-card p-5 md:p-6">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                  <div className="text-outcome-away text-[10px] tracking-[0.2em] uppercase font-bold">
+                    Companion hook · proves multi-hook composability
+                  </div>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-[rgba(74,168,224,0.10)] border border-[rgba(74,168,224,0.32)] text-outcome-away tracking-wider uppercase">
+                    afterAddLiquidity · 0x400
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 font-mono text-[12px]">
+                  <ContractRow label="FanBoostHook" address={state.fanBoost} />
+                </div>
               </div>
             )}
           </div>

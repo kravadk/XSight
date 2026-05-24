@@ -112,6 +112,11 @@ hookRouter.get('/state', (_req, res) => {
   const poolId = process.env.HOOK_POOL_ID ?? '';
   const deployed = Boolean(hookAddress && registryAddress && sidePotAddress);
 
+  // v2 + companion addresses (optional, surfaced only when set).
+  const hookV2 = process.env.HOOK_FAN_FEE_HOOK_V2 ?? '';
+  const sidePotV2 = process.env.HOOK_CUP_SIDE_POT_V2 ?? '';
+  const fanBoost = process.env.HOOK_FAN_BOOST ?? '';
+
   res.json({
     deployed,
     chainId: 196,
@@ -121,6 +126,11 @@ hookRouter.get('/state', (_req, res) => {
     fanScoreRegistry: registryAddress,
     cupSidePot: sidePotAddress,
     poolId,
+    // v2 stack — Pausable + Merkle + stale-score fallback. Reuses fanScoreRegistry.
+    hookV2: hookV2 || null,
+    cupSidePotV2: sidePotV2 || null,
+    // Companion hook (afterAddLiquidity boost points for FanPass-holding LPs).
+    fanBoost: fanBoost || null,
     tierFeeTable: Object.entries(TIER_FEE_BPS).map(([tier, bps]) => ({
       tier: Number(tier),
       label: TIER_LABEL[Number(tier)],

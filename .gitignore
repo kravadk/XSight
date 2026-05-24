@@ -52,6 +52,7 @@ skills-lock.json
 !/apps/hook/docs/JUDGE-WALKTHROUGH.md
 !/apps/hook/docs/INTEGRATION-GUIDE.md
 !/apps/hook/docs/COMPETITIVE-ANALYSIS.md
+!/apps/hook/docs/RENDER-ENV.md
 !/apps/hook/CONTRIBUTING.md
 !/packages/shared/config/docsContent.md
 
