@@ -432,42 +432,66 @@ hookRouter.get('/pot', async (_req, res) => {
  * Default lookback = last 50_000 blocks (~1 day on X Layer). Cap at 50 events.
  */
 hookRouter.get('/discounts', async (req, res) => {
-  const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
-  if (!hookAddress) {
+  const hookV1 = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
+  const hookV2 = (process.env.HOOK_FAN_FEE_HOOK_V2 ?? '').trim();
+  if (!hookV1 && !hookV2) {
     res.json({ deployed: false, events: [] });
     return;
   }
   // Capped at 5k blocks (~50 chunks @ X Layer 100-block limit ≈ 5-10s).
   const lookback = Math.min(Number(req.query.lookback ?? 3_000), 5_000);
   const limit = Math.min(Number(req.query.limit ?? 25), 50);
+  const versionFilter = String(req.query.version ?? '').toLowerCase(); // 'v1' | 'v2' | ''
 
   try {
     const p = provider();
     const tip = await p.getBlockNumber();
     const fromBlock = Math.max(tip - lookback, 0);
-    const logs = await getLogsChunked(p, hookAddress, [FEE_APPLIED_TOPIC], fromBlock, tip);
 
-    const events = logs.slice(-limit).reverse().map((log) => {
-      // topics[1] = poolId (indexed bytes32), topics[2] = swapper (indexed address)
-      const poolId = log.topics[1];
-      const swapper = '0x' + log.topics[2].slice(-40);
-      // data = abi.encode(uint8 tier, uint24 feeBps) => 32+32 bytes
-      const data = log.data.slice(2);
-      const tier = parseInt(data.slice(0, 64), 16);
-      const feeBps = parseInt(data.slice(64, 128), 16);
-      return {
-        blockNumber: log.blockNumber,
-        txHash: log.transactionHash,
-        swapper: getAddress(swapper),
-        poolId,
-        tier,
-        feeBps,
-      };
-    });
+    const sources: Array<{ version: 'v1' | 'v2'; address: string }> = [];
+    if (hookV1 && versionFilter !== 'v2') sources.push({ version: 'v1', address: hookV1 });
+    if (hookV2 && versionFilter !== 'v1') sources.push({ version: 'v2', address: hookV2 });
+
+    const all: Array<{
+      version: 'v1' | 'v2';
+      hookAddress: string;
+      blockNumber: number;
+      txHash: string;
+      swapper: string;
+      poolId: string;
+      tier: number;
+      feeBps: number;
+    }> = [];
+
+    for (const src of sources) {
+      const logs = await getLogsChunked(p, src.address, [FEE_APPLIED_TOPIC], fromBlock, tip);
+      for (const log of logs) {
+        const poolId = log.topics[1];
+        const swapper = '0x' + log.topics[2].slice(-40);
+        const data = log.data.slice(2);
+        const tier = parseInt(data.slice(0, 64), 16);
+        const feeBps = parseInt(data.slice(64, 128), 16);
+        all.push({
+          version: src.version,
+          hookAddress: src.address,
+          blockNumber: log.blockNumber,
+          txHash: log.transactionHash,
+          swapper: getAddress(swapper),
+          poolId,
+          tier,
+          feeBps,
+        });
+      }
+    }
+
+    // newest first, take limit
+    all.sort((a, b) => b.blockNumber - a.blockNumber);
+    const events = all.slice(0, limit);
 
     res.json({
       deployed: true,
-      hookAddress,
+      hookV1: hookV1 || null,
+      hookV2: hookV2 || null,
       lookbackBlocks: lookback,
       tipBlock: tip,
       events,

@@ -66,6 +66,9 @@ interface DiscountEvent {
   poolId: string;
   tier: number;
   feeBps: number;
+  /** 'v1' | 'v2' when backend surfaces both hook deployments */
+  version?: 'v1' | 'v2';
+  hookAddress?: string;
 }
 
 interface DiscountsResponse {
@@ -417,6 +420,9 @@ export function HookPage() {
                   >
                     <span className="flex items-center gap-2">
                       <span className={TIER_COLOR[e.tier]}>T{e.tier}</span>
+                      {e.version === 'v2' && (
+                        <span className="px-1 rounded text-[9px] font-bold bg-gold-bg border border-gold-border text-gold tracking-wider uppercase">v2</span>
+                      )}
                       <span className="text-stadium-text-muted">block {e.blockNumber}</span>
                       <span className="text-stadium-text-secondary">{e.swapper.slice(0, 6)}…{e.swapper.slice(-4)}</span>
                     </span>

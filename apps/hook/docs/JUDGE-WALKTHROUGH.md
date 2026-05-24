@@ -30,6 +30,17 @@
 > [`CupSidePotV2.sol`](../contracts/src/CupSidePotV2.sol). v2 mitigations
 > in [`SECURITY.md`](../contracts/SECURITY.md).
 
+**V2 multi-tier proof (4 real FeeApplied events on the new v2 pool):**
+
+| Tier | Fee | V2 swap tx |
+|---|---|---|
+| 0 | 30 bps | [view](https://www.okx.com/web3/explorer/xlayer/tx/0xf867e8fbb730fc6f8cad815de41c945a6966681c50bc69e4aacc9683e0653593) |
+| 1 | 20 bps | [view](https://www.okx.com/web3/explorer/xlayer/tx/0x87dac94f9dd668dcce41d380e094e260bdfee924a1e35a0a4e08ad6e2b14e927) |
+| 2 | 10 bps | [view](https://www.okx.com/web3/explorer/xlayer/tx/0x8131214311289d2aa0e691445ce75519345e319f06b6684e2ac45727a5b992e2) |
+| 3 | 5 bps | [view](https://www.okx.com/web3/explorer/xlayer/tx/0x3dc35df3a5e0587d9d734891a3a2426a1d3fa4a3485946e69070143007e51620) |
+
+> Verify on-chain: `cast logs --address 0x956e97658cd3ce67788b01b5f012954f782480c0 --topic 0xfafba968a35e2906f5d1d9bbfc74d55faab1a3856d10e65eabec2d0f4f35f720 --rpc-url https://rpc.xlayer.tech`
+
 **FanBoostHook (companion hook, `afterAddLiquidity`, bit `0x400`):**
 
 | Contract | Address | OKLink |

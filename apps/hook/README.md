@@ -72,7 +72,7 @@ apps/hook/
 | LP NFT tokenId 3128 | burned post-demo · recovery tx [`0x1eb84a90…0824e`](https://www.okx.com/web3/explorer/xlayer/tx/0x1eb84a90b59d37aff5a532335f8ce9393017f33a8ee2fd025f43d51dee50824e) |
 | **Demo swap tx (hook fired)** | [`0x757c0c75…8fca7`](https://www.okx.com/web3/explorer/xlayer/tx/0x757c0c75a1f65d2cc675b8f750a713e7ec90e6073716405fd4117eb12a68fca7) |
 
-**v2 — Pausable + Merkle-claim + 30d stale-score fallback (LIVE with own pool + LP):**
+**v2 — Pausable + Merkle-claim + 30d stale-score fallback (LIVE with own pool + LP + multi-tier proof):**
 
 | Contract / artifact | Address / hash |
 |---|---|
@@ -81,6 +81,19 @@ apps/hook/
 | FanScoreRegistry | reuses v1 (`0x9533…2820`) — no migration needed |
 | V2 USDT/USDC pool init | [`0x36a9e220…09ab`](https://www.okx.com/web3/explorer/xlayer/tx/0x36a9e2207e86c6a92dd05bac21f0fa4bab8c65bfe7dbff966a24b1b097ad09ab) |
 | V2 LP (0.3 USDT + 0.3 USDC) | minted to operator · `forge script BurnLp.s.sol` to redeem |
+
+**V2 multi-tier proof — same wallet (`0x82736f…7bDB`), 4 fees through FanFeeHookV2:**
+
+| Tier | Score | Fee | V2 swap tx |
+|---|---|---|---|
+| 0 (unknown) | 0 | 30 bps | [`0xf867e8fb…3593`](https://www.okx.com/web3/explorer/xlayer/tx/0xf867e8fbb730fc6f8cad815de41c945a6966681c50bc69e4aacc9683e0653593) |
+| 1 (active) | 30 | 20 bps | [`0x87dac94f…e927`](https://www.okx.com/web3/explorer/xlayer/tx/0x87dac94f9dd668dcce41d380e094e260bdfee924a1e35a0a4e08ad6e2b14e927) |
+| 2 (trusted) | 70 | 10 bps | [`0x8131214…92e2`](https://www.okx.com/web3/explorer/xlayer/tx/0x8131214311289d2aa0e691445ce75519345e319f06b6684e2ac45727a5b992e2) |
+| 3 (oracle-grade) | 90 | 5 bps | [`0x3dc35df3…1620`](https://www.okx.com/web3/explorer/xlayer/tx/0x3dc35df3a5e0587d9d734891a3a2426a1d3fa4a3485946e69070143007e51620) |
+
+→ v2 hook fires identical tier-fee logic as v1, on its own pool, with
+the same FanScoreRegistry reads. **8 multi-tier proof events across both
+hook versions.**
 
 v2 shares the existing score registry, so every wallet that earned a tier
 on v1 inherits it on v2 automatically. Source:
