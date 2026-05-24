@@ -448,8 +448,9 @@ hookRouter.get('/discounts', async (req, res) => {
     res.json({ deployed: false, events: [] });
     return;
   }
-  // Capped at 5k blocks (~50 chunks @ X Layer 100-block limit ≈ 5-10s).
-  const lookback = Math.min(Number(req.query.lookback ?? 3_000), 5_000);
+  // X Layer RPC has a 100-block max per getLogs call; we chunk.
+  // Default 20k blocks (~11h @ 2s blocks); cap 50k (~27h).
+  const lookback = Math.min(Number(req.query.lookback ?? 20_000), 50_000);
   const limit = Math.min(Number(req.query.limit ?? 25), 50);
   const versionFilter = String(req.query.version ?? '').toLowerCase(); // 'v1' | 'v2' | ''
 
