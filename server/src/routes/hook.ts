@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Contract, JsonRpcProvider, getAddress, id as keccakId } from 'ethers';
+import { Contract, Interface, JsonRpcProvider, getAddress, id as keccakId } from 'ethers';
 import { getFanScore } from '../services/cupReputation.js';
 import { x402Log } from '../middleware/x402.js';
 
@@ -26,6 +26,18 @@ const ERC20_BAL_ABI = ['function balanceOf(address) view returns (uint256)'];
 
 // Topic-0 hash of FanFeeHook.FeeApplied(bytes32,address,uint8,uint24).
 const FEE_APPLIED_TOPIC = keccakId('FeeApplied(bytes32,address,uint8,uint24)');
+
+// DemoSwapRouter ABI fragment for client-side swap calldata encoding.
+const DEMO_ROUTER_IFACE = new Interface([
+  'function swap((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(bool zeroForOne,int256 amountSpecified,uint160 sqrtPriceLimitX96) params) external',
+]);
+
+// V4 constants
+const DYNAMIC_FEE_FLAG = 0x800000;
+const TICK_SPACING = 60;
+// TickMath.MIN_SQRT_PRICE + 1 and MAX_SQRT_PRICE - 1
+const MIN_SQRT_PRICE_PLUS_1 = '4295128740';
+const MAX_SQRT_PRICE_MINUS_1 = '1461446703485210103287273052203988822378723970341';
 
 /**
  * Single source of truth for the tier->fee table used by the Hook frontend.
@@ -205,6 +217,80 @@ hookRouter.get('/backtest', async (_req, res) => {
 });
 
 /**
+ * GET /api/hook/backtest/real
+ *
+ * Real backtest computed from live FanFeeHook FeeApplied events on chain.
+ * For every swap event we know the chosen tier + actual fee bps emitted —
+ * "saved bps" = 30 (default) - feeBps. Multiplied by a notional swap size
+ * (~5x the demo amount so the dashboard shows realistic dollar savings).
+ *
+ * Falls back to deployed=false until HOOK_FAN_FEE_HOOK is populated.
+ */
+hookRouter.get('/backtest/real', async (req, res) => {
+  const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
+  if (!hookAddress) {
+    res.json({ deployed: false, events: 0 });
+    return;
+  }
+  const lookback = Math.min(Number(req.query.lookback ?? 200_000), 500_000);
+  const notionalPerEvent = Number(req.query.notional ?? 500); // 500 USDC per event for projection
+
+  try {
+    const p = provider();
+    const tip = await p.getBlockNumber();
+    const fromBlock = Math.max(tip - lookback, 0);
+    const logs = await p.getLogs({
+      address: hookAddress,
+      topics: [FEE_APPLIED_TOPIC],
+      fromBlock,
+      toBlock: tip,
+    });
+
+    const byTier: Record<number, { events: number; savedUsd: number }> = {
+      0: { events: 0, savedUsd: 0 },
+      1: { events: 0, savedUsd: 0 },
+      2: { events: 0, savedUsd: 0 },
+      3: { events: 0, savedUsd: 0 },
+    };
+    let totalSaved = 0;
+    const uniqueSwappers = new Set<string>();
+
+    for (const log of logs) {
+      const data = log.data.slice(2);
+      const tier = parseInt(data.slice(0, 64), 16);
+      const feeBps = parseInt(data.slice(64, 128), 16) / 100; // pip → bps
+      const swapper = '0x' + log.topics[2].slice(-40).toLowerCase();
+      uniqueSwappers.add(swapper);
+      const saved = (notionalPerEvent * (30 - feeBps)) / 10000;
+      if (byTier[tier]) {
+        byTier[tier].events++;
+        byTier[tier].savedUsd += saved;
+      }
+      totalSaved += saved;
+    }
+
+    res.json({
+      deployed: true,
+      tipBlock: tip,
+      lookbackBlocks: lookback,
+      events: logs.length,
+      uniqueSwappers: uniqueSwappers.size,
+      notionalPerEvent,
+      totalSaved,
+      byTier: Object.entries(byTier).map(([tier, v]) => ({
+        tier: Number(tier),
+        label: TIER_LABEL[Number(tier)],
+        events: v.events,
+        savedUsd: v.savedUsd,
+      })),
+      note: 'Computed from live FeeApplied events. Notional × (30 - feeBps) per event.',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'log query failed' });
+  }
+});
+
+/**
  * GET /api/hook/pot
  *
  * Live on-chain state of CupSidePot: current week id, pot balance for current
@@ -321,5 +407,51 @@ hookRouter.get('/discounts', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'log query failed' });
+  }
+});
+
+/**
+ * POST /api/hook/encode-swap
+ *
+ * Returns `calldata` for `DemoSwapRouter.swap(poolKey, params)` given a
+ * desired amountIn (in payout-token base units) and direction. Encoded
+ * server-side to keep the frontend bundle lean. Caller still signs the tx
+ * with their own wallet — no private keys leave the client.
+ *
+ * Body: `{ amountIn: number, zeroForOne: boolean }`
+ */
+hookRouter.post('/encode-swap', (req, res) => {
+  const { amountIn, zeroForOne } = req.body ?? {};
+  if (typeof amountIn !== 'number' || !Number.isFinite(amountIn) || amountIn <= 0) {
+    res.status(400).json({ error: 'amountIn must be a positive number' });
+    return;
+  }
+  const direction = Boolean(zeroForOne);
+  const hookAddress = (process.env.HOOK_FAN_FEE_HOOK ?? '').trim();
+  const token0 = (process.env.POOL_TOKEN0 ?? '0x1E4a5963aBFD975d8c9021ce480b42188849D41d').trim();
+  const token1 = (process.env.POOL_TOKEN1 ?? '0x74b7F16337b8972027F6196A17a631aC6dE26d22').trim();
+  if (!hookAddress) {
+    res.status(503).json({ error: 'HOOK_FAN_FEE_HOOK not configured' });
+    return;
+  }
+
+  try {
+    const poolKey = {
+      currency0: token0,
+      currency1: token1,
+      fee: DYNAMIC_FEE_FLAG,
+      tickSpacing: TICK_SPACING,
+      hooks: hookAddress,
+    };
+    const params = {
+      zeroForOne: direction,
+      // Exact-input → negative amountSpecified per V4 convention
+      amountSpecified: -BigInt(Math.floor(amountIn)),
+      sqrtPriceLimitX96: direction ? MIN_SQRT_PRICE_PLUS_1 : MAX_SQRT_PRICE_MINUS_1,
+    };
+    const calldata = DEMO_ROUTER_IFACE.encodeFunctionData('swap', [poolKey, params]);
+    res.json({ calldata });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'encode failed' });
   }
 });

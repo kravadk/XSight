@@ -3,6 +3,7 @@ import { Anchor, ExternalLink, Github, Sparkles, Wallet, Activity, Trophy, Trend
 import { useWalletStore } from '@shared/store/walletStore';
 import { useUiStore } from '@shared/store/uiStore';
 import { explorerAddress } from '@shared/config/links';
+import { SwapWidget } from '../components/SwapWidget';
 
 const HACKATHON_URL = 'https://web3.okx.com/xlayer/build-x-hackathon/hook';
 const HOOK_REPO_URL = 'https://github.com/kravadk/XHook';
@@ -127,10 +128,17 @@ export function HookPage() {
             weekly side-pot paid out to correct World Cup pickers.
           </div>
         </div>
-        <div className="hidden md:flex flex-col items-end gap-1 text-right">
+        <div className="flex shrink-0 flex-col items-end gap-1 text-right">
           <div className="text-[10px] text-stadium-text-muted">22-28 May 2026</div>
-          <div className="font-display text-gold">14 000 USDT</div>
+          <div className="font-display text-base md:text-lg text-gold">14k USDT</div>
         </div>
+      </div>
+
+      {/* Plain-English explainer for non-crypto judges */}
+      <div className="rounded-xl border border-pitch-border bg-pitch-bg p-3 text-xs text-stadium-text">
+        <span className="font-bold text-pitch">In plain English:</span>{' '}
+        the longer you've been a loyal X Cup fan, the lower your swap fee — automatically.
+        6× cheaper for top-tier holders. Same pool, just different identities.
       </div>
 
       {/* Live tier-fee for connected wallet */}
@@ -168,6 +176,9 @@ export function HookPage() {
           </div>
         )}
       </div>
+
+      {/* Interactive swap widget — lets judges fire a real swap */}
+      <SwapWidget feeBps={tier?.feeBps} tierLabel={tier?.tierLabel} />
 
       {/* Tier-fee table */}
       {state?.tierFeeTable && (

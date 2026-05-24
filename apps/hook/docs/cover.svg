@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#050a09"/>
+      <stop offset="1" stop-color="#0c1814"/>
+    </linearGradient>
+    <linearGradient id="goldGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#E7B84F"/>
+      <stop offset="1" stop-color="#B8902A"/>
+    </linearGradient>
+    <radialGradient id="pitchGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2EBD85" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#2EBD85" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="950" cy="180" r="320" fill="url(#pitchGlow)"/>
+
+  <g transform="translate(70 78)">
+    <rect x="-2" y="-22" rx="14" ry="14" width="290" height="36"
+          fill="rgba(231,184,79,0.10)" stroke="#E7B84F" stroke-width="1"/>
+    <text x="18" y="3" fill="#E7B84F" font-family="Helvetica, Arial, sans-serif"
+          font-size="14" font-weight="700" letter-spacing="2">
+      OKX × UNISWAP · BUILD WITH HOOK
+    </text>
+  </g>
+
+  <text x="70" y="200" fill="#F5F5F5" font-family="Helvetica, Arial, sans-serif"
+        font-size="86" font-weight="900" letter-spacing="-2">FanFeeHook</text>
+  <text x="70" y="246" fill="#A6B0B5" font-family="Helvetica, Arial, sans-serif"
+        font-size="22" font-weight="400">
+    Identity-gated swap fees on X Layer · Uniswap V4
+  </text>
+
+  <text x="70" y="338" fill="#2EBD85" font-family="Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="800" letter-spacing="-1">
+    Real fans pay 5 bps.
+  </text>
+  <text x="70" y="388" fill="#F5F5F5" font-family="Helvetica, Arial, sans-serif"
+        font-size="46" font-weight="800" letter-spacing="-1">
+    Strangers pay 30 bps.
+  </text>
+  <text x="70" y="428" fill="#A6B0B5" font-family="Helvetica, Arial, sans-serif"
+        font-size="22" font-weight="500">
+    Same pool. Same wallet. 6× cheaper swap.
+  </text>
+
+  <g transform="translate(70 478)">
+    <g>
+      <rect x="0" y="0" rx="10" ry="10" width="180" height="68"
+            fill="rgba(255,255,255,0.04)" stroke="#2A2F33"/>
+      <text x="14" y="24" fill="#A6B0B5" font-size="11" font-weight="700" letter-spacing="2">T0 UNKNOWN</text>
+      <text x="14" y="56" fill="#A6B0B5" font-size="32" font-weight="900">30 bps</text>
+    </g>
+    <g transform="translate(200 0)">
+      <rect x="0" y="0" rx="10" ry="10" width="180" height="68"
+            fill="rgba(74,168,224,0.10)" stroke="#4AA8E0"/>
+      <text x="14" y="24" fill="#4AA8E0" font-size="11" font-weight="700" letter-spacing="2">T1 ACTIVE</text>
+      <text x="14" y="56" fill="#4AA8E0" font-size="32" font-weight="900">20 bps</text>
+    </g>
+    <g transform="translate(400 0)">
+      <rect x="0" y="0" rx="10" ry="10" width="180" height="68"
+            fill="rgba(46,189,133,0.12)" stroke="#2EBD85"/>
+      <text x="14" y="24" fill="#2EBD85" font-size="11" font-weight="700" letter-spacing="2">T2 TRUSTED</text>
+      <text x="14" y="56" fill="#2EBD85" font-size="32" font-weight="900">10 bps</text>
+    </g>
+    <g transform="translate(600 0)">
+      <rect x="0" y="0" rx="10" ry="10" width="180" height="68"
+            fill="rgba(231,184,79,0.14)" stroke="url(#goldGlow)" stroke-width="2"/>
+      <text x="14" y="24" fill="#E7B84F" font-size="11" font-weight="700" letter-spacing="2">T3 ORACLE-GRADE</text>
+      <text x="14" y="56" fill="#E7B84F" font-size="32" font-weight="900">5 bps</text>
+    </g>
+  </g>
+
+  <g transform="translate(820 130)">
+    <rect x="0" y="0" rx="20" ry="20" width="320" height="280"
+          fill="rgba(255,255,255,0.04)" stroke="rgba(46,189,133,0.35)"/>
+    <text x="24" y="38" fill="#2EBD85" font-size="12" font-weight="700" letter-spacing="2">LIVE ON X LAYER · CHAIN 196</text>
+    <text x="24" y="78" fill="#F5F5F5" font-size="18" font-weight="700">FanFeeHook</text>
+    <text x="24" y="100" fill="#A6B0B5" font-size="12" font-family="Menlo, Consolas, monospace">0xE667…C0c0</text>
+    <text x="24" y="132" fill="#F5F5F5" font-size="18" font-weight="700">FanScoreRegistry</text>
+    <text x="24" y="154" fill="#A6B0B5" font-size="12" font-family="Menlo, Consolas, monospace">0x9533…2820</text>
+    <text x="24" y="186" fill="#F5F5F5" font-size="18" font-weight="700">CupSidePot</text>
+    <text x="24" y="208" fill="#A6B0B5" font-size="12" font-family="Menlo, Consolas, monospace">0x9104…F504</text>
+    <text x="24" y="248" fill="#E7B84F" font-size="14" font-weight="700">5+ on-chain proof swaps</text>
+    <text x="24" y="266" fill="#A6B0B5" font-size="12">tier 0 → 1 → 2 → 3 verified</text>
+  </g>
+
+  <g transform="translate(70 580)">
+    <text x="0" y="0" fill="#525a5e" font-family="Helvetica, Arial, sans-serif" font-size="14">
+      github.com/kravadk/XHook · x-sight.vercel.app?product=hook
+    </text>
+  </g>
+</svg>

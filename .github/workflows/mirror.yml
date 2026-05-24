@@ -1,0 +1,44 @@
+name: Mirror apps to product repos
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/xcup/**'
+      - 'apps/hook/**'
+
+permissions:
+  contents: read
+
+jobs:
+  mirror-xcup:
+    runs-on: ubuntu-latest
+    if: ${{ contains(toJson(github.event.commits), 'apps/xcup/') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push apps/xcup subtree -> kravadk/XCup
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          git config user.name "kravadk-mirror"
+          git config user.email "mirror@kravadk.local"
+          git remote add xcup-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XCup.git"
+          git subtree push --prefix=apps/xcup xcup-mirror main
+
+  mirror-hook:
+    runs-on: ubuntu-latest
+    if: ${{ contains(toJson(github.event.commits), 'apps/hook/') }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Push apps/hook subtree -> kravadk/XHook
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+        run: |
+          git config user.name "kravadk-mirror"
+          git config user.email "mirror@kravadk.local"
+          git remote add hook-mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/kravadk/XHook.git"
+          git subtree push --prefix=apps/hook hook-mirror main

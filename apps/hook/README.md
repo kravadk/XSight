@@ -1,9 +1,41 @@
 # Hook — Uniswap V4 hackathon submission
 
+<p align="center">
+  <img src="docs/cover.svg" alt="FanFeeHook — identity-gated swap fees on X Layer" width="100%"/>
+</p>
+
 OKX «Build with Hook» hackathon entry — **22–28 May 2026**, 14,000 USDT
 prize pool. [Hackathon page](https://web3.okx.com/xlayer/build-x-hackathon/hook).
 
 **Live:** [x-sight.vercel.app?product=hook](https://x-sight.vercel.app?product=hook)
+
+## Where FanFeeHook sits among production V4 hooks
+
+| Hook | Mechanic | Mainnet | Identity-gated | Side mechanic | Audit / pause |
+|---|---|---|---|---|---|
+| **FanFeeHook (this submission)** | tier→fee from SBT score | ✅ X Layer | ✅ FanPass SBT + 0-100 score | ✅ CupSidePot weekly settle | 91% Foundry · v2 pause designed |
+| Bunni V2 | rehypothecation (fee + lending APY) | ✅ Eth · Base | ❌ | ❌ | ✅ UFSF audit · ✅ pause |
+| Arrakis Pro | inventory-responsive dynamic fee | ✅ 5 chains | ❌ | ❌ | ✅ audit · ✅ pause |
+| EulerSwap | DEX over Euler lending pool | ✅ Ethereum | ❌ | yield stacking | ✅ audit · ✅ pause |
+| Smart Liquidity Hook | 30 % pool + 70 % Aave | testnet (PCS Hookathon 1st) | ❌ | yield | tests only |
+| Watchtower | one-time hooks for sale | testnet (ETHGlobal Taipei 1st UF) | ❌ | meta-mechanic | tests only |
+| DetoxHook | MEV → LP via Pyth | testnet (ETHGlobal UF) | ❌ | MEV redistribution | tests only |
+
+**Our unique column:** the only V4 hook that reads an on-chain reputation
+SBT and modulates fee per swap. No production peer occupies this slot.
+
+## OKX ecosystem integrations
+
+FanFeeHook is designed to plug into every OKX-side composable surface
+without forcing the user out of the dashboard:
+
+| OKX surface | How FanFeeHook uses it | Status |
+|---|---|---|
+| **X Layer chain 196** | Native deploy target — V4 PoolManager, Universal Router, our 3 contracts all live here | ✅ shipped |
+| **OKX Wallet SDK** | Connect via `useWalletStore` (OKX injected provider preferred over generic EIP-1193) | ✅ shipped (shared across XSight + XCup + Hook) |
+| **OnchainOS DEX aggregator** | Fallback router pattern: when the FanFeeHook pool lacks depth, route a portion through OnchainOS aggregator multi-hop, then settle the discount-bearing leg through our hook | 📐 design-only (see `CONTRIBUTING.md` extension guide) |
+| **X402 paid endpoints** | Hook analytics + per-wallet tier history exposed via `/api/v1/cup/fan-edge` (existing X Cup x402 stack) — paid in USDT, no off-chain auth | ✅ shipped (existing X Cup tier; FanFeeHook scores read by it) |
+| **OKX Explorer (OKLink)** | Every contract deploy + swap tx clickable from the dashboard's contract panel | ✅ shipped |
 
 ## What's here
 

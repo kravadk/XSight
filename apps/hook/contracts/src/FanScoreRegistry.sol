@@ -46,6 +46,8 @@ contract FanScoreRegistry {
         _;
     }
 
+    /// @notice Deploys the registry with the caller as owner.
+    /// @param initialOperator Address that will be allowed to write scores.
     constructor(address initialOperator) {
         if (initialOperator == address(0)) revert ZeroAddress();
         owner = msg.sender;
@@ -54,12 +56,16 @@ contract FanScoreRegistry {
         emit OperatorChanged(address(0), initialOperator);
     }
 
+    /// @notice Hand ownership to a new address.
+    /// @param  nextOwner New owner; must be non-zero.
     function transferOwner(address nextOwner) external onlyOwner {
         if (nextOwner == address(0)) revert ZeroAddress();
         emit OwnerChanged(owner, nextOwner);
         owner = nextOwner;
     }
 
+    /// @notice Replace the score-writing operator (e.g. rotate server EOA).
+    /// @param  nextOperator New operator; must be non-zero.
     function setOperator(address nextOperator) external onlyOwner {
         if (nextOperator == address(0)) revert ZeroAddress();
         emit OperatorChanged(operator, nextOperator);
@@ -67,11 +73,15 @@ contract FanScoreRegistry {
     }
 
     /// @notice Write a single score. Operator-only.
+    /// @param  wallet Address being scored.
+    /// @param  score  0..100 reputation; reverts on overflow.
     function setScore(address wallet, uint256 score) external onlyOperator {
         _setScore(wallet, score);
     }
 
-    /// @notice Batch-write scores (weekly cron from server). Operator-only.
+    /// @notice Batch-write scores in one transaction (weekly cron from server).
+    /// @param  wallets Addresses being scored (must match `scores.length`).
+    /// @param  scores  Each value 0..100; reverts on overflow.
     function setScores(address[] calldata wallets, uint256[] calldata scores) external onlyOperator {
         if (wallets.length != scores.length) revert LengthMismatch();
         for (uint256 i = 0; i < wallets.length; i++) {
@@ -79,12 +89,16 @@ contract FanScoreRegistry {
         }
     }
 
-    /// @notice Tier from score. Pure view, gas-cheap.
+    /// @notice Tier for a wallet's currently-stored score.
+    /// @param  wallet Address being checked.
+    /// @return tier   0 (unknown) | 1 (active) | 2 (trusted) | 3 (oracle-grade).
     function tierOf(address wallet) external view returns (uint8) {
         return _tierFromScore(scoreOf[wallet]);
     }
 
-    /// @notice Public helper so the hook + UI share one formula.
+    /// @notice Pure conversion `score -> tier`; useful for client-side preview.
+    /// @param  score 0..100 raw reputation.
+    /// @return tier  0..3 per the documented thresholds.
     function tierFromScore(uint256 score) external pure returns (uint8) {
         return _tierFromScore(score);
     }

@@ -47,6 +47,9 @@ skills-lock.json
 !/apps/hook/scripts/README.md
 !/apps/hook/server/README.md
 !/apps/xcup/server/README.md
+!/apps/hook/contracts/SECURITY.md
+!/apps/hook/docs/pitch-deck.md
+!/apps/hook/CONTRIBUTING.md
 !/packages/shared/config/docsContent.md
 
 # Root-level docs/ tree — covers non-markdown artefacts too (screenshots, diagrams).

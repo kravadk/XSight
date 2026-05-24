@@ -66,6 +66,9 @@ contract CupSidePot {
         _;
     }
 
+    /// @notice Deploys the pot with the caller as owner.
+    /// @param payoutToken     ERC-20 paid in/out (single token, e.g. USDC).
+    /// @param initialOperator Address allowed to call `settle`.
     constructor(address payoutToken, address initialOperator) {
         if (payoutToken == address(0)) revert ZeroAddress();
         if (initialOperator == address(0)) revert ZeroAddress();
