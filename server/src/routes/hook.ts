@@ -27,6 +27,39 @@ const ERC20_BAL_ABI = ['function balanceOf(address) view returns (uint256)'];
 // Topic-0 hash of FanFeeHook.FeeApplied(bytes32,address,uint8,uint24).
 const FEE_APPLIED_TOPIC = keccakId('FeeApplied(bytes32,address,uint8,uint24)');
 
+/**
+ * X Layer RPC enforces a 100-block max range on eth_getLogs.
+ * Chunk one large range into ≤CHUNK-sized windows and concatenate logs.
+ * Tolerates a few chunk failures (rate limit) by returning whatever succeeded.
+ */
+const LOG_CHUNK_SIZE = 100;
+async function getLogsChunked(
+  p: JsonRpcProvider,
+  address: string,
+  topics: (string | null)[],
+  fromBlock: number,
+  toBlock: number,
+): Promise<Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }>> {
+  const out: Array<{ blockNumber: number; transactionHash: string; topics: ReadonlyArray<string>; data: string }> = [];
+  for (let start = fromBlock; start <= toBlock; start += LOG_CHUNK_SIZE) {
+    const end = Math.min(start + LOG_CHUNK_SIZE - 1, toBlock);
+    try {
+      const logs = await p.getLogs({ address, topics, fromBlock: start, toBlock: end });
+      for (const log of logs) {
+        out.push({
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash,
+          topics: log.topics,
+          data: log.data,
+        });
+      }
+    } catch {
+      // swallow per-chunk failures; partial result is better than total 500
+    }
+  }
+  return out;
+}
+
 // DemoSwapRouter ABI fragment for client-side swap calldata encoding.
 const DEMO_ROUTER_IFACE = new Interface([
   'function swap((address currency0,address currency1,uint24 fee,int24 tickSpacing,address hooks) key,(bool zeroForOne,int256 amountSpecified,uint160 sqrtPriceLimitX96) params) external',
@@ -232,19 +265,15 @@ hookRouter.get('/backtest/real', async (req, res) => {
     res.json({ deployed: false, events: 0 });
     return;
   }
-  const lookback = Math.min(Number(req.query.lookback ?? 200_000), 500_000);
+  // Capped to keep chunk count manageable on X Layer's 100-block log range.
+  const lookback = Math.min(Number(req.query.lookback ?? 5_000), 10_000);
   const notionalPerEvent = Number(req.query.notional ?? 500); // 500 USDC per event for projection
 
   try {
     const p = provider();
     const tip = await p.getBlockNumber();
     const fromBlock = Math.max(tip - lookback, 0);
-    const logs = await p.getLogs({
-      address: hookAddress,
-      topics: [FEE_APPLIED_TOPIC],
-      fromBlock,
-      toBlock: tip,
-    });
+    const logs = await getLogsChunked(p, hookAddress, [FEE_APPLIED_TOPIC], fromBlock, tip);
 
     const byTier: Record<number, { events: number; savedUsd: number }> = {
       0: { events: 0, savedUsd: 0 },
@@ -366,19 +395,15 @@ hookRouter.get('/discounts', async (req, res) => {
     res.json({ deployed: false, events: [] });
     return;
   }
-  const lookback = Math.min(Number(req.query.lookback ?? 50_000), 200_000);
+  // Capped at 5k blocks (~50 chunks @ X Layer 100-block limit ≈ 5-10s).
+  const lookback = Math.min(Number(req.query.lookback ?? 3_000), 5_000);
   const limit = Math.min(Number(req.query.limit ?? 25), 50);
 
   try {
     const p = provider();
     const tip = await p.getBlockNumber();
     const fromBlock = Math.max(tip - lookback, 0);
-    const logs = await p.getLogs({
-      address: hookAddress,
-      topics: [FEE_APPLIED_TOPIC],
-      fromBlock,
-      toBlock: tip,
-    });
+    const logs = await getLogsChunked(p, hookAddress, [FEE_APPLIED_TOPIC], fromBlock, tip);
 
     const events = logs.slice(-limit).reverse().map((log) => {
       // topics[1] = poolId (indexed bytes32), topics[2] = swapper (indexed address)

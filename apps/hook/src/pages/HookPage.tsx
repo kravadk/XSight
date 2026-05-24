@@ -104,7 +104,10 @@ export function HookPage() {
     fetch('/api/hook/state').then((r) => r.json() as Promise<HookState>).then(setState).catch(() => setState(null));
     fetch('/api/hook/backtest').then((r) => r.json() as Promise<Backtest>).then(setBacktest).catch(() => setBacktest(null));
     fetch('/api/hook/pot').then((r) => r.json() as Promise<PotState>).then(setPot).catch(() => setPot(null));
-    fetch('/api/hook/discounts').then((r) => r.json() as Promise<DiscountsResponse>).then(setDiscounts).catch(() => setDiscounts(null));
+    fetch('/api/hook/discounts')
+      .then((r) => (r.ok ? (r.json() as Promise<DiscountsResponse>) : null))
+      .then((d) => setDiscounts(d && Array.isArray(d.events) ? d : null))
+      .catch(() => setDiscounts(null));
   }, []);
 
   useEffect(() => {
@@ -127,7 +130,7 @@ export function HookPage() {
   }, [backtest]);
 
   const firingsHistogram = useMemo(() => {
-    if (!discounts || discounts.events.length === 0) return [];
+    if (!discounts?.events || discounts.events.length === 0) return [];
     const events = discounts.events;
     const minBlock = Math.min(...events.map((e) => e.blockNumber));
     const maxBlock = Math.max(...events.map((e) => e.blockNumber));
@@ -207,7 +210,7 @@ export function HookPage() {
         <HookMiniWidget
           variant="firings"
           label="Hook firings"
-          value={backtest?.paidCalls ?? discounts?.events.length ?? 0}
+          value={backtest?.paidCalls ?? discounts?.events?.length ?? 0}
           series={firingsHistogram}
           loading={!backtest && !discounts}
         />
