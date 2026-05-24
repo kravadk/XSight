@@ -544,8 +544,16 @@ const REGISTRY_WRITE_ABI = [
   'function scoreOf(address wallet) view returns (uint256)',
   'function setScore(address wallet, uint256 score) external',
 ];
-const STARTER_SCORE = 35;
-const STARTER_TIER = 1; // Active per FanFeeHook tier thresholds (28/64/82)
+// Score granted to first-time wallets by the starter-score endpoint.
+// 35 puts the wallet in Active tier (20 bps) so they immediately see the
+// 1.5× discount instead of the default 30 bps. Configurable via env in case
+// tier thresholds shift post-deploy (28/64/82 today). Range-checked 1..100.
+const STARTER_SCORE = (() => {
+  const raw = Number(process.env.HOOK_STARTER_SCORE);
+  if (Number.isFinite(raw) && raw >= 1 && raw <= 100) return Math.floor(raw);
+  return 35;
+})();
+const STARTER_TIER = STARTER_SCORE >= 82 ? 3 : STARTER_SCORE >= 64 ? 2 : STARTER_SCORE >= 28 ? 1 : 0;
 const ipClaimLog = new Map<string, number>();
 const IP_THROTTLE_MS = 24 * 60 * 60 * 1000;
 
