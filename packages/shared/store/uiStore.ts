@@ -43,9 +43,32 @@ export type SubTab = 'chat' | 'trade';
 const DEFAULT_TAB: Record<Product, Tab> = { xsight: 'chat', xcup: 'markets', hook: 'hook' };
 
 /**
- * Read initial product/tab/subTab/marketId from URL synchronously so the
- * very first React render already shows the right surface — no "flash" of
- * the default product before the App-level URL effect catches up.
+ * Per-product canonical production hostnames. Single Vercel deployment
+ * serves all three; the hostname determines which product surface opens
+ * by default (when no ?product= param is set). Sidebar/ProductSwitch
+ * uses this for cross-domain navigation: clicking XTariff from
+ * x-striker.vercel.app navigates to x-tariff.vercel.app preserving
+ * tab state.
+ */
+export const PRODUCT_HOSTNAME: Record<Product, string> = {
+  xsight: 'x-sight.vercel.app',
+  xcup: 'x-striker.vercel.app',
+  hook: 'x-tariff.vercel.app',
+};
+
+function productFromHostname(host: string): Product | null {
+  for (const [k, v] of Object.entries(PRODUCT_HOSTNAME)) {
+    if (host === v) return k as Product;
+  }
+  return null;
+}
+
+/**
+ * Read initial product/tab/subTab/marketId synchronously so the very
+ * first React render already shows the right surface. Resolution order:
+ *   1. ?product= query param (explicit override)
+ *   2. window.location.hostname matched against PRODUCT_HOSTNAME
+ *   3. xcup fallback (covers localhost, preview deploys, unknown hosts)
  */
 function readInitialFromUrl(): {
   product: Product;
@@ -66,8 +89,13 @@ function readInitialFromUrl(): {
     const t = sp.get('tab');
     const st = sp.get('subTab');
     const mid = sp.get('marketId');
-    const product: Product =
-      p === 'xsight' || p === 'xcup' || p === 'hook' ? (p as Product) : fallback.product;
+    let product: Product;
+    if (p === 'xsight' || p === 'xcup' || p === 'hook') {
+      product = p as Product;
+    } else {
+      const hostProduct = productFromHostname(window.location.hostname);
+      product = hostProduct ?? fallback.product;
+    }
     const activeTab: Tab = (t as Tab) || DEFAULT_TAB[product];
     const activeSubTab: SubTab = st === 'trade' ? 'trade' : 'chat';
     const marketDetailId = activeTab === 'market-detail' && mid ? mid : null;

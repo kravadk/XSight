@@ -1,5 +1,5 @@
 import { Zap, Trophy, Anchor } from 'lucide-react';
-import { useUiStore, type Product } from '@shared/store/uiStore';
+import { useUiStore, type Product, PRODUCT_HOSTNAME } from '@shared/store/uiStore';
 import { cn } from '@shared/utils/format';
 
 interface ProductDef {
@@ -72,10 +72,31 @@ export function ProductSwitch() {
       {PRODUCTS.map((p) => {
         const active = product === p.id;
         const Icon = p.icon;
+        const handleClick = () => {
+          // If the target product has a different canonical hostname than the
+          // current page, navigate cross-domain (preserves brand-per-domain).
+          // Otherwise just flip in-app state (covers localhost + preview deploys).
+          const targetHost = PRODUCT_HOSTNAME[p.id];
+          if (
+            typeof window !== 'undefined' &&
+            targetHost &&
+            window.location.hostname !== targetHost
+          ) {
+            // Skip cross-domain on non-prod hosts (localhost, preview-*).
+            const isProdHost = (Object.values(PRODUCT_HOSTNAME) as string[]).includes(
+              window.location.hostname,
+            );
+            if (isProdHost) {
+              window.location.href = `https://${targetHost}/`;
+              return;
+            }
+          }
+          setProduct(p.id);
+        };
         return (
           <button
             key={p.id}
-            onClick={() => setProduct(p.id)}
+            onClick={handleClick}
             className={cn(
               'group relative flex items-center gap-3 overflow-hidden rounded-xl border px-3.5 py-3 text-left transition-all duration-200',
               !active && 'hover:scale-[1.01]',
