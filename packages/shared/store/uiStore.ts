@@ -42,6 +42,43 @@ export type SubTab = 'chat' | 'trade';
 
 const DEFAULT_TAB: Record<Product, Tab> = { xsight: 'chat', xcup: 'markets', hook: 'hook' };
 
+/**
+ * Read initial product/tab/subTab/marketId from URL synchronously so the
+ * very first React render already shows the right surface — no "flash" of
+ * the default product before the App-level URL effect catches up.
+ */
+function readInitialFromUrl(): {
+  product: Product;
+  activeTab: Tab;
+  activeSubTab: SubTab;
+  marketDetailId: string | null;
+} {
+  const fallback = {
+    product: 'xcup' as Product,
+    activeTab: 'markets' as Tab,
+    activeSubTab: 'chat' as SubTab,
+    marketDetailId: null,
+  };
+  if (typeof window === 'undefined') return fallback;
+  try {
+    const sp = new URLSearchParams(window.location.search);
+    const p = sp.get('product');
+    const t = sp.get('tab');
+    const st = sp.get('subTab');
+    const mid = sp.get('marketId');
+    const product: Product =
+      p === 'xsight' || p === 'xcup' || p === 'hook' ? (p as Product) : fallback.product;
+    const activeTab: Tab = (t as Tab) || DEFAULT_TAB[product];
+    const activeSubTab: SubTab = st === 'trade' ? 'trade' : 'chat';
+    const marketDetailId = activeTab === 'market-detail' && mid ? mid : null;
+    return { product, activeTab, activeSubTab, marketDetailId };
+  } catch {
+    return fallback;
+  }
+}
+
+const initial = readInitialFromUrl();
+
 interface UiState {
   product: Product;
   activeTab: Tab;
@@ -73,10 +110,10 @@ interface UiState {
 }
 
 export const useUiStore = create<UiState>((set) => ({
-  product: 'xcup',
-  activeTab: 'markets',
-  activeSubTab: 'chat',
-  marketDetailId: null,
+  product: initial.product,
+  activeTab: initial.activeTab,
+  activeSubTab: initial.activeSubTab,
+  marketDetailId: initial.marketDetailId,
   connectModalOpen: false,
   settingsOpen: false,
   helpOpen: false,
