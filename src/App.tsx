@@ -40,44 +40,59 @@ const DevelopersPage = lazy(() => import('./pages/DevelopersPage').then((m) => (
 const DocsPage = lazy(() => import('./pages/DocsPage').then((m) => ({ default: m.DocsPage })));
 
 export default function App() {
-  const { product, activeTab } = useUiStore();
+  const { product, activeTab, activeSubTab, marketDetailId } = useUiStore();
   const setProduct = useUiStore((s) => s.setProduct);
+  const setActiveTab = useUiStore((s) => s.setActiveTab);
+  const setActiveSubTab = useUiStore((s) => s.setActiveSubTab);
+  const openMarket = useUiStore((s) => s.openMarket);
   const reducedMotion = usePrefsStore((s) => s.reducedMotion);
   useBackendSync();
 
-  const setActiveTab = useUiStore((s) => s.setActiveTab);
-
-  // Deep-link entry from product-specific README links (?product=hook&tab=...).
-  // Bidirectional sync: URL ↔ store. Initial mount reads URL; subsequent state
-  // changes write URL via replaceState (no history spam — back-button still
-  // exits the SPA cleanly, browser-level popstate restores state).
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const p = params.get('product');
-    const t = params.get('tab');
+  // Bidirectional URL ↔ store sync. Tracks every stateful field that can
+  // change the visible page: product, tab, subTab (chat/trade in AI Chat),
+  // marketId (for X Cup market-detail). Uses replaceState — no history spam,
+  // back-button exits SPA cleanly, popstate restores state.
+  const applyFromUrl = (search: string) => {
+    const sp = new URLSearchParams(search);
+    const p = sp.get('product');
+    const t = sp.get('tab');
+    const st = sp.get('subTab');
+    const mid = sp.get('marketId');
     if (p === 'xsight' || p === 'xcup' || p === 'hook') setProduct(p as Product);
     if (t) setActiveTab(t as Tab);
+    if (st === 'chat' || st === 'trade') setActiveSubTab(st);
+    if (mid && t === 'market-detail') openMarket(mid);
+  };
 
-    const onPop = () => {
-      const sp = new URLSearchParams(window.location.search);
-      const pp = sp.get('product');
-      const tt = sp.get('tab');
-      if (pp === 'xsight' || pp === 'xcup' || pp === 'hook') setProduct(pp as Product);
-      if (tt) setActiveTab(tt as Tab);
-    };
+  useEffect(() => {
+    applyFromUrl(window.location.search);
+    const onPop = () => applyFromUrl(window.location.search);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [setProduct, setActiveTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Write URL whenever product or tab changes.
+  // Write URL whenever any tracked field changes.
   useEffect(() => {
     const url = new URL(window.location.href);
     url.searchParams.set('product', product);
     url.searchParams.set('tab', activeTab);
+    // subTab is meaningful only on the chat surface
+    if (activeTab === 'chat') {
+      url.searchParams.set('subTab', activeSubTab);
+    } else {
+      url.searchParams.delete('subTab');
+    }
+    // marketId is meaningful only on market-detail
+    if (activeTab === 'market-detail' && marketDetailId) {
+      url.searchParams.set('marketId', marketDetailId);
+    } else {
+      url.searchParams.delete('marketId');
+    }
     if (url.search !== window.location.search) {
       window.history.replaceState(null, '', url.toString());
     }
-  }, [product, activeTab]);
+  }, [product, activeTab, activeSubTab, marketDetailId]);
 
   return (
     <MotionConfig reducedMotion={reducedMotion ? 'always' : 'user'}>
