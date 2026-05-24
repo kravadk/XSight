@@ -6,13 +6,27 @@
 
 **Live deployment — X Layer mainnet (chain 196)**
 
+**v1 (production live, fee-routed):**
+
 | Contract | Address | Verified on OKLink |
 |---|---|---|
-| FanFeeHook | `0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0` | [view](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0) |
+| FanFeeHook v1 | `0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0` | [view](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0) |
 | FanScoreRegistry | `0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820) |
-| CupSidePot | `0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504) |
+| CupSidePot v1 | `0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504) |
 | DemoSwapRouter | `0x00d1a987beAC42FCB3513b6Fc23429164851694f` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x00d1a987beAC42FCB3513b6Fc23429164851694f) |
 | USDT/USDC pool ID | `0x3637650b74a2e05c6a381bb260a1695b004f3a9489362be8ec5aa86fa9df17c2` | — |
+
+**v2 (deployed, awaiting LP migration — Pausable + Merkle + stale-score fallback):**
+
+| Contract | Address | OKLink |
+|---|---|---|
+| FanFeeHook v2 | `0x956e97658cd3ce67788b01b5f012954f782480c0` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x956e97658cd3ce67788b01b5f012954f782480c0) |
+| CupSidePot v2 | `0x8d1de90753889d57c709cbd77c5e5f3c56add4fa` | [view](https://www.okx.com/web3/explorer/xlayer/address/0x8d1de90753889d57c709cbd77c5e5f3c56add4fa) |
+
+> v2 reuses the same `FanScoreRegistry` so tier inheritance is automatic.
+> Source: [`apps/hook/contracts/src/FanFeeHookV2.sol`](../contracts/src/FanFeeHookV2.sol),
+> [`CupSidePotV2.sol`](../contracts/src/CupSidePotV2.sol). v2 mitigations
+> documented in [`SECURITY.md`](../contracts/SECURITY.md).
 
 ---
 

@@ -4,6 +4,13 @@ This document is intentionally transparent about what the hackathon-submission
 contracts assume, what they do not yet protect against, and how each
 limitation is mitigated in the v2 upgrade path documented in code.
 
+> **2026-05-24 update:** v2 contracts are now deployed to X Layer mainnet
+> as well — `FanFeeHookV2` at `0x956e97658cd3ce67788b01b5f012954f782480c0`
+> and `CupSidePotV2` at `0x8d1de90753889d57c709cbd77c5e5f3c56add4fa`.
+> v2 reuses the live `FanScoreRegistry`. The new USDT/USDC pool +
+> liquidity migration is pending LP top-up; v1 remains the fee-routed
+> production path until then.
+
 ## 1. Trust model (v1)
 
 | Actor | Capability | Risk if compromised |

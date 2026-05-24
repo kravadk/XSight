@@ -60,15 +60,31 @@ apps/hook/
 
 ### Live on X Layer mainnet (chain 196)
 
+**v1 — production live, fee-routed:**
+
 | Contract / artifact | Address / hash |
 |---|---|
-| FanFeeHook | [`0xE667…C0c0`](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0) |
+| FanFeeHook v1 | [`0xE667…C0c0`](https://www.okx.com/web3/explorer/xlayer/address/0xE667DFeD54E3FdfA514cCE775F4325DeD919C0c0) |
 | FanScoreRegistry | [`0x9533…2820`](https://www.okx.com/web3/explorer/xlayer/address/0x9533C6Cf77597095F2eBF3dBC02FC133eDf42820) |
-| CupSidePot | [`0x9104…F504`](https://www.okx.com/web3/explorer/xlayer/address/0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504) |
+| CupSidePot v1 | [`0x9104…F504`](https://www.okx.com/web3/explorer/xlayer/address/0x9104C24A5108Ef46CC1aa15117715B3f8Dd5F504) |
 | DemoSwapRouter | [`0x00d1…694f`](https://www.okx.com/web3/explorer/xlayer/address/0x00d1a987beAC42FCB3513b6Fc23429164851694f) |
 | USDC/USDT pool ID | `0x3637650b74a2e05c6a381bb260a1695b004f3a9489362be8ec5aa86fa9df17c2` |
-| LP NFT tokenId | `3128` (held by deployer) |
+| LP NFT tokenId 3128 | burned post-demo · recovery tx [`0x1eb84a90…0824e`](https://www.okx.com/web3/explorer/xlayer/tx/0x1eb84a90b59d37aff5a532335f8ce9393017f33a8ee2fd025f43d51dee50824e) |
 | **Demo swap tx (hook fired)** | [`0x757c0c75…8fca7`](https://www.okx.com/web3/explorer/xlayer/tx/0x757c0c75a1f65d2cc675b8f750a713e7ec90e6073716405fd4117eb12a68fca7) |
+
+**v2 — Pausable + Merkle-claim + 30d stale-score fallback (deployed, awaiting LP migration):**
+
+| Contract / artifact | Address |
+|---|---|
+| FanFeeHook v2 | [`0x956e…80c0`](https://www.okx.com/web3/explorer/xlayer/address/0x956e97658cd3ce67788b01b5f012954f782480c0) |
+| CupSidePot v2 | [`0x8d1d…d4Fa`](https://www.okx.com/web3/explorer/xlayer/address/0x8d1de90753889d57c709cbd77c5e5f3c56add4fa) |
+| FanScoreRegistry | reuses v1 (`0x9533…2820`) — no migration needed |
+
+v2 shares the existing score registry, so every wallet that earned a tier
+on v1 inherits it on v2 the moment a pool is initialized against the new
+hook. Source: [`contracts/src/FanFeeHookV2.sol`](contracts/src/FanFeeHookV2.sol)
++ [`CupSidePotV2.sol`](contracts/src/CupSidePotV2.sol). See
+[`SECURITY.md`](contracts/SECURITY.md) for the v1→v2 mitigations.
 
 ### Multi-tier proof — same wallet, 4 different fees (X Layer mainnet)
 
