@@ -5,6 +5,20 @@ prize pool. [Hackathon page](https://web3.okx.com/xlayer/build-x-hackathon/hook)
 
 **Live:** [x-sight.vercel.app?product=hook](https://x-sight.vercel.app?product=hook)
 
+## Why this matters
+
+DeFi has no native loyalty layer. Every fan-token, NFT-club, DAO
+membership program *wants* tier-gated economics and every one of them
+lives in Web2 because the AMM below it is identity-blind.
+
+**FanFeeHook is the rails for that loyalty layer.** A Uniswap V4 hook
+on X Layer mainnet that reads an on-chain reputation SBT and modulates
+the LP fee per swap (30 bps → 5 bps, 6× cheaper for an oracle-grade
+fan), then routes the spread into a weekly community side-pot. The
+`FanScoreRegistry` is generic — any SBT system (BrightID, Gitcoin
+Passport, Optimism Attestation, custom DAO badge) can plug in without
+changing a line of the hook.
+
 ## Where FanFeeHook sits among production V4 hooks
 
 | Hook | Mechanic | Mainnet | Identity-gated | Side mechanic | Audit / pause |

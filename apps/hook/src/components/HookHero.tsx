@@ -38,6 +38,13 @@ export function HookHero() {
           loyal X Cup fan, the lower your swap fee — automatically.
         </p>
 
+        <div className="max-w-xl rounded-xl border border-pitch-border bg-pitch-bg/50 px-4 py-3 text-[13px] leading-relaxed text-stadium-text-secondary">
+          <span className="block text-pitch text-[10px] tracking-[0.2em] uppercase font-bold mb-1">Why this matters</span>
+          DeFi has no native loyalty. FanFeeHook turns on-chain reputation
+          into a 6× cheaper swap, then routes the spread into a community
+          side-pot — composable rails any reputation system can plug into.
+        </div>
+
         <div className="flex items-center gap-2 flex-wrap mt-1">
           <span className="px-2.5 py-1 rounded-md text-[11px] font-mono bg-stadium-elevated border border-stadium-line text-stadium-text-secondary">
             22–28 May 2026

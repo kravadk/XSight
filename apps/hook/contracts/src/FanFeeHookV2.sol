@@ -42,6 +42,13 @@ contract FanFeeHookV2 is BaseHook, Pausable {
     mapping(PoolId => uint256) public afterSwapCount;
 
     event OwnerChanged(address indexed previous, address indexed next);
+
+    /// @notice Emitted on every swap with the tier resolution outcome.
+    /// @param poolId  Uniswap V4 pool identifier (`PoolKey.toId()`).
+    /// @param swapper Originating EOA (`tx.origin`).
+    /// @param tier    0 = unknown, 1 = active, 2 = trusted, 3 = oracle-grade.
+    ///                Always 0 while paused.
+    /// @param feePips LP fee actually charged in pip units (1 pip = 0.0001%).
     event FeeApplied(PoolId indexed poolId, address indexed swapper, uint8 tier, uint24 feePips);
 
     error OnlyOwner();
@@ -52,6 +59,10 @@ contract FanFeeHookV2 is BaseHook, Pausable {
         _;
     }
 
+    /// @notice Wires the v2 hook to the X Cup primitives + Uniswap V4 PoolManager.
+    /// @param _poolManager      Uniswap V4 PoolManager on X Layer.
+    /// @param _fanPassSbt       Existing X Cup FanPassSBT contract.
+    /// @param _fanScoreRegistry Companion `FanScoreRegistry` (shared with v1).
     constructor(IPoolManager _poolManager, address _fanPassSbt, address _fanScoreRegistry)
         BaseHook(_poolManager)
     {
@@ -62,16 +73,21 @@ contract FanFeeHookV2 is BaseHook, Pausable {
         emit OwnerChanged(address(0), msg.sender);
     }
 
+    /// @notice Hand ownership (pause / unpause authority) to a new address.
+    /// @param  nextOwner New owner; must be non-zero.
     function transferOwner(address nextOwner) external onlyOwner {
         if (nextOwner == address(0)) revert ZeroAddress();
         emit OwnerChanged(owner, nextOwner);
         owner = nextOwner;
     }
 
+    /// @notice Freeze tier resolution to the safe baseline (30 bps / tier 0).
+    ///         The pool keeps trading so users are never stranded.
     function pause() external onlyOwner {
         _pause();
     }
 
+    /// @notice Resume identity-aware fee resolution.
     function unpause() external onlyOwner {
         _unpause();
     }

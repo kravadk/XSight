@@ -26,11 +26,23 @@ import {IFanPassSBT} from "./interfaces/IFanPassSBT.sol";
 contract FanBoostHook is BaseHook {
     using PoolIdLibrary for PoolKey;
 
+    /// @notice Existing X Cup soulbound badge contract. Read-only.
     IFanPassSBT public immutable fanPassSbt;
 
+    /// @notice Cumulative boost points per liquidity provider across every pool.
+    /// @dev    Points are awarded one-for-one against the absolute `liquidityDelta`
+    ///         of the LP's add — purely off-chain consumable signal for the
+    ///         loyalty UI; no on-chain token is minted.
     mapping(address lp => uint256 points) public boostPointsOf;
+
+    /// @notice Per-pool counter of `afterAddLiquidity` invocations that awarded boost.
     mapping(PoolId => uint256) public boostEventCount;
 
+    /// @notice Emitted when a FanPass-holding LP receives boost points.
+    /// @param poolId      Uniswap V4 pool identifier.
+    /// @param lp          Originating EOA (`tx.origin`) — the actual provider.
+    /// @param pointsAdded Boost points awarded this event (= liquidityDelta).
+    /// @param newTotal    Updated cumulative boostPoints for `lp`.
     event BoostAwarded(
         PoolId indexed poolId,
         address indexed lp,
@@ -40,6 +52,9 @@ contract FanBoostHook is BaseHook {
 
     error ZeroAddress();
 
+    /// @notice Wires the boost hook to the X Cup FanPass + V4 PoolManager.
+    /// @param _poolManager Uniswap V4 PoolManager on X Layer.
+    /// @param _fanPassSbt  Existing X Cup FanPassSBT contract.
     constructor(IPoolManager _poolManager, address _fanPassSbt) BaseHook(_poolManager) {
         if (_fanPassSbt == address(0)) revert ZeroAddress();
         fanPassSbt = IFanPassSBT(_fanPassSbt);
