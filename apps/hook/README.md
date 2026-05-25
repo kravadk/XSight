@@ -211,7 +211,32 @@ forge test --gas-report
 
 `lib/` is git-ignored — re-install on clone via `forge install`.
 
+## Roadmap
+
+| Milestone | Scope | Status |
+|---|---|---|
+| **M1** | V4 hook + FanScoreRegistry + CupSidePot (v1 stack) live on X Layer mainnet | ✅ shipped (Day 1–3) |
+| **M2** | v2 stack (Pausable + Merkle-claim + 30-day stale-score fallback) + FanBoostHook companion | ✅ shipped (Day 4–5) |
+| **M3** | Adapter ecosystem — [`adapters/`](adapters/) hub with ADAPTER.md + registry.json; `@xtariff/hook-abis` npm package; invariant test suite (4 properties × 128k fuzz inputs) | 🔵 partial (this sprint) |
+| **M4** | MCP server for direct agent (Claude / GPT) integration; automatic `afterSwap` spread routing to CupSidePot; published `@xtariff/adapter-validator` | 🟡 building |
+| **M5** | External audit; DAO governance over `FanScoreRegistry` operator + `CupSidePotV2` Merkle-root key; onboard first 3 partner pools (sport DAOs / NFT clubs) | ⚪ projected |
+
+See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the architectural
+choices each milestone rests on, and [`REVIEW_POLICY.md`](REVIEW_POLICY.md)
+for how adapter contributions get merged.
+
 ## Repo
 
 Mirrored to [`github.com/kravadk/XTariff`](https://github.com/kravadk/XTariff) via
 `git subtree`. Edits land in the umbrella; the mirror is read-only.
+
+## License
+
+Licensed under either of **Apache License, Version 2.0**
+([LICENSE-APACHE](LICENSE-APACHE)) or **MIT license**
+([LICENSE-MIT](LICENSE-MIT)) at your option.
+
+Unless you explicitly state otherwise, any contribution intentionally
+submitted for inclusion in the Work by you, as defined in the Apache-2.0
+license, shall be dual-licensed as above, without any additional terms
+or conditions.

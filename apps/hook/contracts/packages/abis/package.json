@@ -1,0 +1,35 @@
+{
+  "name": "@xtariff/hook-abis",
+  "version": "0.1.0",
+  "description": "Typed Solidity ABIs for FanFeeHook v1/v2, FanScoreRegistry, CupSidePot v1/v2, FanBoostHook on X Layer chain 196.",
+  "license": "MIT",
+  "type": "module",
+  "main": "generated/index.ts",
+  "types": "generated/index.ts",
+  "files": [
+    "generated",
+    "scripts",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "node scripts/extract-abis.mjs",
+    "prepack": "npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "uniswap-v4",
+    "hook",
+    "abi",
+    "xlayer",
+    "okx",
+    "fanfeehook"
+  ],
+  "homepage": "https://github.com/kravadk/XTariff",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kravadk/XTariff.git",
+    "directory": "contracts/packages/abis"
+  }
+}

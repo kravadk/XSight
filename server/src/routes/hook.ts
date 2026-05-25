@@ -186,6 +186,8 @@ hookRouter.get('/tier', async (req, res) => {
   const feeBps = TIER_FEE_BPS[tier];
 
   res.json({
+    '@context': 'https://x-tariff.vercel.app/contexts/hook.jsonld',
+    '@type': 'TierInfo',
     wallet,
     score: fanScore.score,
     tier,
@@ -194,6 +196,12 @@ hookRouter.get('/tier', async (req, res) => {
     hasFanPass: fanPassBoost,
     breakdown: fanScore.breakdown,
     verdict: fanScore.verdict,
+    operation: [
+      { '@type': 'Operation', method: 'GET', url: '/api/hook/tier?address={wallet}' },
+      { '@type': 'Operation', method: 'GET', url: '/api/hook/encode-swap?wallet={wallet}&amount={amount}' },
+      { '@type': 'Operation', method: 'GET', url: '/api/hook/discounts?limit={n}' },
+      { '@type': 'Operation', method: 'GET', url: '/api/hook/pot' },
+    ],
   });
 });
 

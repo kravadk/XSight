@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "0.1.0",
+  "tiers": {
+    "official": [],
+    "verified": [],
+    "community": [
+      "brightid",
+      "gitcoin-passport",
+      "optimism-attestation"
+    ],
+    "deprecated": []
+  },
+  "notes": "Trust tier is authority-controlled, not self-declared in ADAPTER.md frontmatter. To promote an adapter to 'verified' or 'official', open a PR moving its name between arrays here AND update the matching ADAPTER.md `trust_tier:` field. Reviewer must satisfy REVIEW_POLICY.md before merge."
+}

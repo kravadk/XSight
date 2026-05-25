@@ -38,6 +38,14 @@ export function HookHero() {
           loyal X Cup fan, the lower your swap fee — automatically.
         </p>
 
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px] font-bold text-stadium-text max-w-xl">
+          <span>Identity, not accounts.</span>
+          <span className="text-pitch">·</span>
+          <span>Real fans pay 5 bps.</span>
+          <span className="text-pitch">·</span>
+          <span>Composable rails for any SBT.</span>
+        </div>
+
         <div className="max-w-xl rounded-xl border border-pitch-border bg-pitch-bg/50 px-4 py-3 text-[13px] leading-relaxed text-stadium-text-secondary">
           <span className="block text-pitch text-[10px] tracking-[0.2em] uppercase font-bold mb-1">Why this matters</span>
           DeFi has no native loyalty. FanFeeHook turns on-chain reputation

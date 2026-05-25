@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "0.1.0",
+  "generatedAt": "2026-05-25T00:00:00.000Z",
+  "adapters": [
+    {
+      "name": "brightid",
+      "title": "BrightID Reputation Adapter",
+      "category": "identity",
+      "trust_tier": "community",
+      "version": "0.1.0",
+      "source": "apps/hook/contracts/examples/BrightIDAdapter.sol",
+      "doc": "apps/hook/adapters/brightid/ADAPTER.md"
+    },
+    {
+      "name": "gitcoin-passport",
+      "title": "Gitcoin Passport Adapter",
+      "category": "reputation",
+      "trust_tier": "community",
+      "version": "0.1.0",
+      "source": "apps/hook/contracts/examples/GitcoinPassportAdapter.sol",
+      "doc": "apps/hook/adapters/gitcoin-passport/ADAPTER.md"
+    },
+    {
+      "name": "optimism-attestation",
+      "title": "Optimism Attestation Station Adapter",
+      "category": "attestation",
+      "trust_tier": "community",
+      "version": "0.1.0",
+      "source": "apps/hook/contracts/examples/OptimismAttestationAdapter.sol",
+      "doc": "apps/hook/adapters/optimism-attestation/ADAPTER.md"
+    }
+  ]
+}

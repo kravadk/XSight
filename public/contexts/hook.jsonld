@@ -1,0 +1,24 @@
+{
+  "@context": {
+    "@version": 1.1,
+    "@vocab": "https://x-tariff.vercel.app/contexts/hook.jsonld#",
+    "schema": "https://schema.org/",
+    "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+    "TierInfo": "FanFeeHook tier resolution result for a wallet",
+    "Operation": "schema:Action",
+
+    "wallet": { "@type": "xsd:string", "@id": "schema:identifier" },
+    "score": { "@type": "xsd:integer" },
+    "tier": { "@type": "xsd:integer" },
+    "tierLabel": { "@type": "xsd:string" },
+    "feeBps": { "@type": "xsd:integer", "@comment": "LP fee in pip units (1 pip = 0.0001%); 5 bps = 500" },
+    "hasFanPass": { "@type": "xsd:boolean" },
+    "breakdown": "@nest",
+    "verdict": { "@type": "xsd:string" },
+
+    "method": { "@id": "schema:httpMethod" },
+    "url": { "@id": "schema:target", "@type": "@id" },
+    "operation": "schema:potentialAction"
+  }
+}

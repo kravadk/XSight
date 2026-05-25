@@ -52,7 +52,13 @@ skills-lock.json
 !/apps/hook/docs/INTEGRATION-GUIDE.md
 !/apps/hook/docs/COMPETITIVE-ANALYSIS.md
 !/apps/hook/docs/RENDER-ENV.md
+!/apps/hook/docs/DECISIONS.md
 !/apps/hook/CONTRIBUTING.md
+!/apps/hook/REVIEW_POLICY.md
+!/apps/hook/adapters/**/ADAPTER.md
+!/apps/hook/contracts/docs/ECONOMICS.md
+!/apps/hook/contracts/docs/INTEGRATE.md
+!/apps/hook/contracts/packages/abis/README.md
 !/packages/shared/config/docsContent.md
 
 # Root-level docs/ tree — covers non-markdown artefacts too (screenshots, diagrams).

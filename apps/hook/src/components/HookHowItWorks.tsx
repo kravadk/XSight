@@ -1,23 +1,29 @@
-import { Wallet, Anchor, TrendingDown, ArrowRight } from 'lucide-react';
+import { Wallet, Anchor, TrendingDown, Puzzle, ArrowRight } from 'lucide-react';
 
 const STEPS = [
   {
     icon: Wallet,
-    title: 'Hold FanPass',
-    body: 'Earn reputation by participating in X Cup brackets — your score lives on-chain.',
+    title: 'Identity',
+    body: 'Hold a FanPass SBT or accrue a 0..100 FanScore on X Cup — your reputation lives on-chain, no signup required.',
     color: '#4AA8E0',
   },
   {
     icon: Anchor,
-    title: 'Hook reads it',
-    body: 'On every swap, FanFeeHook fetches your tier from FanScoreRegistry in beforeSwap.',
+    title: 'Hook fires',
+    body: 'On every swap, FanFeeHook reads your tier from FanScoreRegistry in beforeSwap and returns the dynamic fee.',
     color: '#34C172',
   },
   {
     icon: TrendingDown,
-    title: 'Pay less',
-    body: 'Dynamic fee flag overrides the pool fee — top tier swaps 6× cheaper than unknown.',
+    title: 'LPs win',
+    body: 'The override flag makes the PoolManager charge 5–30 bps based on tier; the extra spread above 5 bps routes to CupSidePot.',
     color: '#E7B84F',
+  },
+  {
+    icon: Puzzle,
+    title: 'Composability',
+    body: 'Any SBT system (BrightID, Gitcoin Passport, Optimism Attestation) plugs in via FanScoreRegistry — no fork of the hook needed.',
+    color: '#C77DFF',
   },
 ];
 
@@ -26,7 +32,7 @@ export function HookHowItWorks() {
     <div className="stadium-card p-5 md:p-6 h-full">
       <div className="flex items-center justify-between mb-4">
         <span className="text-pitch text-[10px] tracking-[0.2em] uppercase font-bold">How it works</span>
-        <span className="text-[11px] text-stadium-text-muted font-mono">3 steps</span>
+        <span className="text-[11px] text-stadium-text-muted font-mono">4 steps</span>
       </div>
 
       <div className="flex flex-col gap-3">
