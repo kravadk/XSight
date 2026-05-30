@@ -43,7 +43,7 @@ without forcing the user out of the dashboard:
 |---|---|---|
 | **X Layer chain 196** | Native deploy target — V4 PoolManager, Universal Router, our 3 contracts all live here | ✅ shipped |
 | **OKX Wallet SDK** | Connect via `useWalletStore` (OKX injected provider preferred over generic EIP-1193) | ✅ shipped (shared across XSight + XCup + Hook) |
-| **OnchainOS DEX aggregator** | Fallback router pattern: when the FanFeeHook pool lacks depth, route a portion through OnchainOS aggregator multi-hop, then settle the discount-bearing leg through our hook | 📐 design-only (see `CONTRIBUTING.md` extension guide) |
+| **OnchainOS DEX aggregator** | Fallback router pattern: when the FanFeeHook pool lacks depth, route a portion through OnchainOS aggregator multi-hop, then settle the discount-bearing leg through our hook | 📐 design-only |
 | **X402 paid endpoints** | Hook analytics + per-wallet tier history exposed via `/api/v1/cup/fan-edge` (existing X Cup x402 stack) — paid in USDT, no off-chain auth | ✅ shipped (existing X Cup tier; FanFeeHook scores read by it) |
 | **OKX Explorer (OKLink)** | Every contract deploy + swap tx clickable from the dashboard's contract panel | ✅ shipped |
 
@@ -108,8 +108,7 @@ hook versions.**
 v2 shares the existing score registry, so every wallet that earned a tier
 on v1 inherits it on v2 automatically. Source:
 [`contracts/src/FanFeeHookV2.sol`](contracts/src/FanFeeHookV2.sol),
-[`CupSidePotV2.sol`](contracts/src/CupSidePotV2.sol). See
-[`SECURITY.md`](contracts/SECURITY.md) for v1→v2 mitigations.
+[`CupSidePotV2.sol`](contracts/src/CupSidePotV2.sol).
 
 **FanBoostHook (companion hook — `afterAddLiquidity` boost points):**
 
@@ -121,11 +120,6 @@ Deployed standalone to prove the architecture: FanFeeHook (beforeSwap +
 afterSwap, bits `0xC0`) and FanBoostHook (afterAddLiquidity, bit `0x400`)
 attach to the same pool simultaneously without bit collision. Source:
 [`contracts/src/FanBoostHook.sol`](contracts/src/FanBoostHook.sol).
-
-**Honest comparison vs the rest of the V4-hook ecosystem:**
-[`docs/COMPETITIVE-ANALYSIS.md`](docs/COMPETITIVE-ANALYSIS.md) — 14
-projects compared on 7 dimensions, code-level honesty audit, where we
-exceed and where we honestly don't.
 
 ### Multi-tier proof — same wallet, 4 different fees (X Layer mainnet)
 
@@ -182,15 +176,12 @@ swap → V4 PoolManager → FanFeeHook.beforeSwap
 
 ## For other protocols building on FanFeeHook
 
-- **[`docs/INTEGRATION-GUIDE.md`](docs/INTEGRATION-GUIDE.md)** —
-  60-second snippet to point your own V4 pool at our live hook
-  address. No deploy required.
 - **[`contracts/examples/`](contracts/examples/)** — three drop-in
   reputation adapters (BrightID / Gitcoin Passport / OP Attestation
   Station). Copy, swap interface addresses, deploy your own
   permissionless variant.
-- **[`CONTRIBUTING.md`](CONTRIBUTING.md)** — full deploy-to-another-
-  chain runbook.
+- **[`adapters/`](adapters/)** — adapter registry + per-adapter
+  metadata referenced by `@xtariff/hook-abis` consumers.
 
 ## Develop
 
@@ -217,13 +208,9 @@ forge test --gas-report
 |---|---|---|
 | **M1** | V4 hook + FanScoreRegistry + CupSidePot (v1 stack) live on X Layer mainnet | ✅ shipped (Day 1–3) |
 | **M2** | v2 stack (Pausable + Merkle-claim + 30-day stale-score fallback) + FanBoostHook companion | ✅ shipped (Day 4–5) |
-| **M3** | Adapter ecosystem — [`adapters/`](adapters/) hub with ADAPTER.md + registry.json; `@xtariff/hook-abis` npm package; invariant test suite (4 properties × 128k fuzz inputs) | 🔵 partial (this sprint) |
+| **M3** | Adapter ecosystem — [`adapters/`](adapters/) registry + `@xtariff/hook-abis` npm package + invariant test suite (4 properties × 128k fuzz inputs) | 🔵 partial (this sprint) |
 | **M4** | MCP server for direct agent (Claude / GPT) integration; automatic `afterSwap` spread routing to CupSidePot; published `@xtariff/adapter-validator` | 🟡 building |
 | **M5** | External audit; DAO governance over `FanScoreRegistry` operator + `CupSidePotV2` Merkle-root key; onboard first 3 partner pools (sport DAOs / NFT clubs) | ⚪ projected |
-
-See [`docs/DECISIONS.md`](docs/DECISIONS.md) for the architectural
-choices each milestone rests on, and [`REVIEW_POLICY.md`](REVIEW_POLICY.md)
-for how adapter contributions get merged.
 
 ## Repo
 

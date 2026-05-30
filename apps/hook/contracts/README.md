@@ -17,17 +17,7 @@ Uniswap V4 / X Layer mainnet.
 | [`DemoSwapRouter`](src/DemoSwapRouter.sol) | Minimal swap router used by demo scripts (UI uses Universal Router). |
 
 Adapter reference implementations live in [`examples/`](examples/),
-documented in [`apps/hook/adapters/`](../adapters/).
-
-## Economics
-
-See [`docs/ECONOMICS.md`](docs/ECONOMICS.md) — tier → fee table, side-pot
-flow, revenue model, on-chain invariants.
-
-## Integrating your pool
-
-See [`docs/INTEGRATE.md`](docs/INTEGRATE.md) — 8-step recipe from
-picking the hook variant to indexing `FeeApplied` events.
+with metadata in [`apps/hook/adapters/`](../adapters/).
 
 ## Deployments
 
@@ -83,11 +73,7 @@ Deploy scripts under [`script/`](script/):
 
 ## Audit
 
-No external audit yet. See [`SECURITY.md`](SECURITY.md) for the
-self-disclosed threat model + v2 mitigations (Pausable, Merkle-proof
-claim, stale-score fallback, O(1) double-claim guard).
-
-Internal verification:
+No external audit yet. Internal verification:
 - 59/59 Foundry tests pass (55 unit + 4 invariants).
 - Invariant fuzzer: 128k inputs per invariant, 0 reverts.
 - 15+ live `FeeApplied` events on mainnet across all 4 tiers.
